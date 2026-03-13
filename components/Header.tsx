@@ -18,8 +18,8 @@ export default function Header() {
         <SearchField />
       </div>
       <div>
-        <Link href="/sign-in" className="text-text-primary">
-          Sign In
+        <Link href="/sign-up" className="text-text-primary">
+          Sign Up
         </Link>
       </div>
     </header>
