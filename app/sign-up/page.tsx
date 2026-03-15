@@ -1,18 +1,26 @@
+// "use client"
 
+import { SignUpForm } from "@/components/sign-up-form"
+import { GalleryVerticalEndIcon } from "lucide-react"
 import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";
-import SignUpForm from "@/components/sign-up-form";
-
 
 export default async function SignUpPage() {
   const session = await getSession();
   if (session?.user) {
-    redirect("/");
+    redirect("/profile");
   }
-
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-10rem)] w-full max-w-md items-center justify-center px-4">
-      <SignUpForm />
-    </main>
-  );
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
+      <div className="flex w-full max-w-md flex-col gap-6">
+        <a href="#" className="flex items-center gap-2 self-center font-medium">
+          <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <GalleryVerticalEndIcon className="size-4" />
+          </div>
+          NKAB Vault
+        </a>
+        <SignUpForm />
+      </div>
+    </div>
+  )
 }

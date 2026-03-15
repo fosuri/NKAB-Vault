@@ -1,24 +1,27 @@
 import Link from "next/link";
-import { Button } from "./ui/button";
 import SearchField from "./SearchField";
-import Image from "next/image";
+import { ThemeToggle } from "./theme-toggle";
 
 export default function Header() {
   return (
-    <header className="flex items-center justify-between bg-header-background px-4 py-0 h-16 border border-accent">
+    <header className="flex items-center justify-between bg-background text-foreground px-4 py-0 h-16 border-b border-border">
       <Link href="/" className=" px-3 h-10 flex items-center gap-2">
         <div className="bg-amber-300 w-8 h-8 " >
           
         </div>
-        <div className="bg-accent text-text-primary text-2xl font-bold px-3">
+        <div className="bg-accent text-accent-foreground text-2xl font-bold px-3">
           NKAB Vault
         </div>
       </Link>
       <div>
         <SearchField />
       </div>
-      <div>
-        <Link href="/sign-up" className="text-text-primary">
+      <div className="flex items-center gap-4">
+        <ThemeToggle />
+        <Link href="/sign-in" className="text-foreground text-base">
+          Sign In
+        </Link>
+        <Link href="/sign-up" className="text-foreground text-base">
           Sign Up
         </Link>
       </div>

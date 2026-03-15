@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { Button } from "./ui/button";
 import { useState } from "react";
 
 
@@ -20,7 +19,7 @@ export default function SearchField() {
   "
     >
       <div>
-        <Link href="/" className="text-text-primary text-base px-4 py-2 block font-semibold fon">
+        <Link href="/" className="text-foreground text-base px-4 py-2 block font-semibold fon">
           FEED
         </Link>
       </div>
@@ -30,7 +29,7 @@ export default function SearchField() {
         placeholder="Search..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="text-text-secondary text-base font-semibold bg-transparent outline-none inline-block px-4 py-2"
+        className="text-muted-foreground placeholder:text-muted-foreground text-base font-semibold bg-transparent outline-none inline-block px-4 py-2"
       />
     </form>
   )

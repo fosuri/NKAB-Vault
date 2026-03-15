@@ -30,17 +30,12 @@ import { authClient, signInWithGoogle } from "@/lib/auth/auth-client"
 import Link from "next/link"
 
 const formSchema = z.object({
-  username: z.string().min(3).max(20),
   email: z.email(),
   password: z.string().min(8),
-  confirmPassword: z.string().min(8),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 })
 
 
-export function SignUpForm({
+export function SignInForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
@@ -49,25 +44,22 @@ export function SignUpForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
-      confirmPassword: "",
     },
   })
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    const { error } = await authClient.signUp.email({
+    const { error } = await authClient.signIn.email({
       email: data.email,
       password: data.password,
-      name: data.username,
     });
 
     if (error) {
       toast.error(error.message || "An error occurred");
     } else {
-      toast.success("Account created successfully");
+      toast.success("Signed in successfully");
       router.push("/profile");
     }
     setIsLoading(false);
@@ -77,9 +69,9 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="px-2 py-6">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome</CardTitle>
+          <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
-            Sign up with your Google account
+            Login with your Google account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -93,7 +85,7 @@ export function SignUpForm({
                       fill="currentColor"
                     />
                   </svg>
-                  Sign up with Google
+                  Login with Google
                 </Button>
               </Field>
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
@@ -101,36 +93,15 @@ export function SignUpForm({
               </FieldSeparator>
 
               <Controller
-                name="username"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="username">Username</FieldLabel>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="username"
-                      type="text"
-                      placeholder="Username"
-                      required
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-
-              <Controller
                 name="email"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                    <FieldLabel htmlFor="email">Email</FieldLabel>
                     <Input
                       {...field}
-                      id={field.name}
                       aria-invalid={fieldState.invalid}
+                      id="email"
                       type="email"
                       placeholder="m@example.com"
                       required
@@ -156,54 +127,27 @@ export function SignUpForm({
                       aria-invalid={fieldState.invalid}
                       id="password"
                       type="password"
-                      placeholder=""
                       required
                     />
+                    <a
+                      href="#"
+                      className="text-right text-sm underline-offset-4 hover:underline"
+                    >
+                      Forgot your password?
+                    </a>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
-                    <FieldDescription>
-                      Must be at least 8 characters long.
-                    </FieldDescription>
                   </Field>
                 )}
               />
-
-              <Controller
-                name="confirmPassword"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <div className="flex items-center">
-                      <FieldLabel htmlFor="password">Confirm Password</FieldLabel>
-
-                    </div>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="confirm-password"
-                      type="password"
-                      placeholder=""
-                      required
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                    <FieldDescription>
-                      Must match the password above.
-                    </FieldDescription>
-                  </Field>
-                )}
-              />
-
-
 
               <Field>
                 <Button type="submit" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Sign up"}
+                  {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Sign in"}
                 </Button>
                 <FieldDescription className="text-center">
-                  Already have an account? <Link href="/sign-in">Sign in</Link>
+                  Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

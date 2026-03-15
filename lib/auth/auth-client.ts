@@ -4,4 +4,9 @@ export const authClient = createAuthClient({
   baseURL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL!,
 });
 
-export const { signIn, signUp, signOut, useSession } = authClient;
+export const signInWithGoogle = async () => {
+  await authClient.signIn.social({
+    provider: "google",
+    callbackURL: "/profile",
+  });
+};
