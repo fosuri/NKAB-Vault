@@ -1,6 +1,6 @@
 // "use client"
 
-import { SignInForm } from "@/components/sign-in-form"
+import { SignInForm } from "@/components/forms/sign-in-form"
 import { GalleryVerticalEndIcon } from "lucide-react"
 import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";

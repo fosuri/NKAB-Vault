@@ -1,11 +1,9 @@
-// "use client"
-
-import { SignUpForm } from "@/components/forms/sign-up-form"
 import { GalleryVerticalEndIcon } from "lucide-react"
 import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";
+import { ForgotPasswordForm } from "@/components/forms/forgot-password-form";
 
-export default async function SignUpPage() {
+export default async function SignInPage() {
   const session = await getSession();
   if (session?.user) {
     redirect("/profile");
@@ -19,7 +17,7 @@ export default async function SignUpPage() {
           </div>
           NKAB Vault
         </a>
-        <SignUpForm />
+        <ForgotPasswordForm />
       </div>
     </div>
   )

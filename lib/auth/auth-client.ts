@@ -21,6 +21,7 @@ export const signInWithEmail = async (credentials: { email: string; password: st
   return await authClient.signIn.email(credentials);
 };
 
+
 export const signOut = async (router: ReturnType<typeof useRouter>) => {
   return await authClient.signOut({
     fetchOptions: {

@@ -130,7 +130,7 @@ export function SignInForm({
                       required
                     />
                     <a
-                      href="#"
+                      href="/forgot-password"
                       className="text-right text-sm underline-offset-4 hover:underline"
                     >
                       Forgot your password?
