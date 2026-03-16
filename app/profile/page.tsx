@@ -1,12 +1,17 @@
-import SignOutButton from "@/components/ui/sign-out";
+"use client";
 
+import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/auth/auth-client";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
-
+  const router = useRouter();
   return (
     <div>
       Profile Page
-      <SignOutButton />
+      <Button onClick={() => signOut(router)}>
+        Sign out
+      </Button>
     </div>
   )
 }

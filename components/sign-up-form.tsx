@@ -26,7 +26,7 @@ import { Controller, useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
-import { authClient, signInWithGoogle } from "@/lib/auth/auth-client"
+import { signInWithGoogle, signUpWithEmail } from "@/lib/auth/auth-client"
 import Link from "next/link"
 
 const formSchema = z.object({
@@ -58,7 +58,7 @@ export function SignUpForm({
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    const { error } = await authClient.signUp.email({
+    const { error } = await signUpWithEmail({
       email: data.email,
       password: data.password,
       name: data.username,
