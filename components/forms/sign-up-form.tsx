@@ -74,8 +74,8 @@ export function SignUpForm({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card className="px-2 py-6">
+    <div className={cn("flex flex-col gap-6 ", className)} {...props}>
+      <Card className="px-2 py-6  shadow-[0_0_400px] shadow-card-foreground/10 ">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome</CardTitle>
           <CardDescription>

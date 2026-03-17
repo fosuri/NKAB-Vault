@@ -13,7 +13,7 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-card">
       <h1 className="text-4xl font-bold mb-4">Profile Page</h1>
       
       {loading ? (
