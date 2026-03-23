@@ -47,4 +47,10 @@ docker exec nkab-postgres pg_dump -U nkab nkab_vault > dump.sql
 
 #import sql dumb
 cat dump.sql | docker exec -i nkab-postgres psql -U nkab -d nkab_vault
+
+#seed roles
+bun ./lib/db/seed-roles.ts
+
+#push schema to db
+bunx drizzle-kit push
 ```

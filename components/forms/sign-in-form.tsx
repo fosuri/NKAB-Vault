@@ -80,7 +80,7 @@ export function SignInForm({
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
           <CardDescription>
-            Login with your Google account
+            Sign in with your Google account
           </CardDescription>
         </CardHeader>
         <CardContent>

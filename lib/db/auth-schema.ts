@@ -7,6 +7,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  role: text("role").references(() => roles.name).default("user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
@@ -73,9 +74,21 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const userRelations = relations(user, ({ many }) => ({
+export const roles = pgTable("roles", {
+  name: text("name").primaryKey().notNull(),
+});
+
+export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
+  userRole: one(roles, {
+    fields: [user.role],
+    references: [roles.name],
+  }),
+}));
+
+export const rolesRelations = relations(roles, ({ many }) => ({
+  users: many(user),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({

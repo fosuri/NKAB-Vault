@@ -6,6 +6,8 @@ const globalForDb = globalThis as unknown as {
   pool?: Pool;
 };
 
+import * as schema from "./auth-schema";
+
 const pool =
   globalForDb.pool ??
   new Pool({
@@ -16,4 +18,4 @@ if (process.env.NODE_ENV !== "production") {
   globalForDb.pool = pool;
 }
 
-export const db = drizzle({ client: pool });
+export const db = drizzle({ client: pool, schema });
