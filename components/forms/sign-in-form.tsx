@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth/auth-client"
+import { checkIsGoogleOnlyAccount } from "@/lib/actions/check-signup"
 import Link from "next/link"
 
 const formSchema = z.object({
@@ -51,6 +52,14 @@ export function SignInForm({
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
+
+    const isGoogleOnly = await checkIsGoogleOnlyAccount(data.email);
+    if (isGoogleOnly) {
+      toast.error("This email is linked to a Google account. Please sign in with Google.");
+      setIsLoading(false);
+      return;
+    }
+
     const { error } = await signInWithEmail({
       email: data.email,
       password: data.password,
