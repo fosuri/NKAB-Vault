@@ -39,14 +39,17 @@ export default function Header() {
         </div>
       </Link>
 
-      <Field orientation="horizontal" className="bg-accent/50 items-center gap-2 pl-9 pr-3 rounded-lg mx-2 md:mx-4 lg:mx-8 max-w-lg relative group h-8">
-        <Search className="absolute left-3 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
+      <Field
+        orientation="horizontal"
+          className="relative group flex h-8 w-full max-w-lg items-center rounded-lg border border-input bg-input/10 dark:bg-input/30 px-3 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 mx-2 md:mx-4 lg:mx-8"
+      >
+        <Search className="size-4 text-muted-foreground transition-colors group-focus-within:text-foreground shrink-0" />
         <Input
-          type="text"
+          type="search"
           placeholder="Search..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="text-muted-foreground placeholder:text-muted-foreground text-base border-none focus-visible:ring-0 p-0 w-full bg-transparent dark:bg-transparent"
+          className="flex-1 h-full border-none bg-transparent dark:bg-transparent px-2 focus-visible:ring-0 md:text-sm shadow-none"
         />
       </Field>
 

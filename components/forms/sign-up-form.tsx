@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { signInWithGoogle, signUpWithEmail } from "@/lib/auth/auth-client"
+import { checkEmailAvailable, checkUsernameAvailable } from "@/lib/actions/check-signup"
 import Link from "next/link"
 
 const formSchema = z.object({
@@ -58,6 +59,29 @@ export function SignUpForm({
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
+
+    const [usernameAvailable, emailAvailable] = await Promise.all([
+      checkUsernameAvailable(data.username),
+      checkEmailAvailable(data.email),
+    ]);
+
+    if (!usernameAvailable || !emailAvailable) {
+      if (!usernameAvailable) {
+        form.setError("username", {
+          type: "server",
+          message: "This username is already taken.",
+        });
+      }
+      if (!emailAvailable) {
+        form.setError("email", {
+          type: "server",
+          message: "This email is already registered.",
+        });
+      }
+      setIsLoading(false);
+      return;
+    }
+
     const { error } = await signUpWithEmail({
       email: data.email,
       password: data.password,
@@ -65,7 +89,10 @@ export function SignUpForm({
     });
 
     if (error) {
-      toast.error(error.message || "An error occurred");
+      form.setError("username", {
+        type: "server",
+        message: error.message || "An error occurred. Please try again.",
+      });
     } else {
       toast.success("Account created successfully");
       router.push("/profile");

@@ -4,7 +4,7 @@ import Link from "next/link"
 export default function Footer() {
 
   return (
-    <div className="h-fit fixed bottom-0 py-6 bg-sidebar border-t border-border flex flex-col items-center justify-center w-full gap-2">
+    <div className="h-fit py-6 bg-sidebar border-t border-border flex flex-col items-center justify-center w-full gap-2">
       <h2 className="text-foreground text-lg font-bold tracking-wider">NKAB-Vault</h2>
       <div className="flex items-center gap-2">
         <Link href="https://github.com/fosuri" className="flex items-center gap-2 hover:underline">
