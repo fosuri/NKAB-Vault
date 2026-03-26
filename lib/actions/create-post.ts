@@ -1,0 +1,143 @@
+"use server";
+
+import { randomUUID } from "node:crypto";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { db } from "@/lib/db/db";
+import { getSession } from "@/lib/auth/auth-server";
+import { cloudinary } from "@/lib/cloudinary";
+import { postMedia, posts } from "@/lib/db/auth-schema";
+
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const allowedMimeTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+];
+
+const createPostSchema = z.object({
+  description: z.string().trim().min(1, "Description is required").max(500, "Description is too long"),
+});
+
+type CreatePostResult = {
+  error?: string;
+  success?: boolean;
+};
+
+function detectResourceType(file: File) {
+  if (file.type === "image/gif") {
+    return "image";
+  }
+
+  if (file.type.startsWith("video/")) {
+    return "video";
+  }
+
+  return "image";
+}
+
+async function uploadFileToCloudinary(file: File, userId: string) {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const resourceType = detectResourceType(file);
+
+  return new Promise<{
+    public_id: string;
+    secure_url: string;
+    resource_type: string;
+    format?: string;
+    width?: number;
+    height?: number;
+    bytes?: number;
+    original_filename?: string;
+  }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: `nkab-vault/${userId}`,
+        resource_type: resourceType,
+      },
+      (error, result) => {
+        if (error || !result) {
+          reject(error ?? new Error("Upload failed"));
+          return;
+        }
+
+        resolve(result);
+      }
+    );
+
+    stream.end(buffer);
+  });
+}
+
+export async function createPost(formData: FormData): Promise<CreatePostResult> {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return { error: "You must be signed in to create a post" };
+  }
+
+  const parsed = createPostSchema.safeParse({
+    description: formData.get("description"),
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid form data" };
+  }
+
+  const files = formData
+    .getAll("files")
+    .filter((value): value is File => value instanceof File && value.size > 0);
+
+  if (!files.length) {
+    return { error: "Add at least one file" };
+  }
+
+  for (const file of files) {
+    if (!allowedMimeTypes.includes(file.type)) {
+      return { error: `Unsupported file type: ${file.name}` };
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return { error: `File is too large: ${file.name}` };
+    }
+  }
+
+  const uploaded = await Promise.all(
+    files.map((file) => uploadFileToCloudinary(file, session.user.id))
+  );
+
+  const postId = randomUUID();
+
+  await db.transaction(async (tx) => {
+    await tx.insert(posts).values({
+      id: postId,
+      userId: session.user.id,
+      description: parsed.data.description,
+    });
+
+    await tx.insert(postMedia).values(
+      uploaded.map((item, index) => ({
+        id: randomUUID(),
+        postId,
+        publicId: item.public_id,
+        resourceType: item.resource_type,
+        format: item.format ?? null,
+        secureUrl: item.secure_url,
+        width: item.width ?? null,
+        height: item.height ?? null,
+        bytes: item.bytes ?? null,
+        originalFilename: item.original_filename ?? files[index]?.name ?? null,
+        sortOrder: index,
+      }))
+    );
+  });
+
+  revalidatePath("/");
+
+  return { success: true };
+}

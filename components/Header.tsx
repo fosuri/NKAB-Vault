@@ -105,7 +105,7 @@ export default function Header() {
 
                   <DropdownMenuItem asChild>
                     <Link
-                      href="/add-post"
+                      href="/"
                       className="w-full text-base font-medium px-2 py-1.5 rounded-sm hover:bg-muted hover:text-primary transition-colors cursor-pointer"
                     >
                       Add Post
@@ -201,7 +201,7 @@ export default function Header() {
                 Profile
               </Link>
               <Link
-                href="/add-post"
+                href="/"
                 onClick={() => setIsSidebarOpen(false)}
                 className="text-base hover:bg-muted rounded-sm px-2 py-1 font-medium hover:text-primary transition-colors"
               >

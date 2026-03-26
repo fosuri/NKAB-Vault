@@ -6,9 +6,12 @@ import * as schema from "@/lib/db/auth-schema";
 import { nextCookies } from "better-auth/next-js";
 import { Resend } from "resend";
 import ForgotPasswordEmail from "@/components/emails/reset-password";
+import { ensureDefaultRoles } from "@/lib/db/ensure-roles";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const resendFrom = process.env.RESEND_FROM || "nkab@resend.dev";
+
+await ensureDefaultRoles();
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

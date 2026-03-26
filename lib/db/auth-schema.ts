@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, integer } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -78,9 +78,51 @@ export const roles = pgTable("roles", {
   name: text("name").primaryKey().notNull(),
 });
 
+export const posts = pgTable(
+  "posts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    description: text("description").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [index("posts_userId_idx").on(table.userId)]
+);
+
+export const postMedia = pgTable(
+  "post_media",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    publicId: text("public_id").notNull().unique(),
+    resourceType: text("resource_type").notNull(),
+    format: text("format"),
+    secureUrl: text("secure_url").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    bytes: integer("bytes"),
+    originalFilename: text("original_filename"),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("post_media_postId_idx").on(table.postId),
+    index("post_media_resourceType_idx").on(table.resourceType),
+  ]
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
+  posts: many(posts),
   userRole: one(roles, {
     fields: [user.role],
     references: [roles.name],
@@ -102,5 +144,20 @@ export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
     references: [user.id],
+  }),
+}));
+
+export const postsRelations = relations(posts, ({ many, one }) => ({
+  author: one(user, {
+    fields: [posts.userId],
+    references: [user.id],
+  }),
+  media: many(postMedia),
+}));
+
+export const postMediaRelations = relations(postMedia, ({ one }) => ({
+  post: one(posts, {
+    fields: [postMedia.postId],
+    references: [posts.id],
   }),
 }));

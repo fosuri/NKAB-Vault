@@ -1,18 +1,9 @@
-import { db } from "./db";
-import { roles } from "./auth-schema";
+import { ensureDefaultRoles } from "./ensure-roles";
 
 async function seed() {
   console.log("Seeding roles...");
-  
-  const rolesToSeed = [
-    { name: "user" },
-    { name: "moderator" },
-    { name: "admin" },
-  ];
 
-  for (const r of rolesToSeed) {
-    await db.insert(roles).values(r).onConflictDoNothing();
-  }
+  await ensureDefaultRoles();
 
   console.log("Roles seeded successfully!");
 }
