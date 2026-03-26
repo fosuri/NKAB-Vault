@@ -1,5 +1,3 @@
-// "use client"
-
 import { SignUpForm } from "@/components/forms/sign-up-form"
 import { GalleryVerticalEndIcon } from "lucide-react"
 import { getSession } from "@/lib/auth/auth-server";

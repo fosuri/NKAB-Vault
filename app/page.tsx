@@ -1,13 +1,15 @@
-import { CreatePostForm } from "@/components/create-post-form";
+import { CreatePostForm } from "@/components/forms/create-post-form";
 import { FeedPostCard } from "@/components/feed-post-card";
 import { getSession } from "@/lib/auth/auth-server";
 import { getFeedPosts } from "@/lib/posts";
 
 export default async function Home() {
-  const [session, feedPosts] = await Promise.all([getSession(), getFeedPosts()]);
+  const session = await getSession();
+  const viewerUserId = session?.user?.id;
+  const feedPosts = await getFeedPosts(viewerUserId);
 
   return (
-    <div className="min-h-full bg-[radial-gradient(circle_at_top_left,_rgba(243,244,246,0.95),_transparent_40%),linear-gradient(180deg,_rgba(255,255,255,1)_0%,_rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(55,65,81,0.35),_transparent_35%),linear-gradient(180deg,_rgba(15,23,42,1)_0%,_rgba(2,6,23,1)_100%)]">
+    <div className="min-h-full bg-[radial-gradient(circle_at_top_left,rgba(243,244,246,0.95),transparent_40%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top_left,rgba(55,65,81,0.35),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
       <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
         <section className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-[28px] border border-border/50 bg-background/70 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -35,7 +37,9 @@ export default async function Home() {
 
         <section className="grid gap-6">
           {feedPosts.length ? (
-            feedPosts.map((post) => <FeedPostCard key={post.id} post={post} />)
+            feedPosts.map((post) => (
+              <FeedPostCard key={post.id} post={post} currentUserId={viewerUserId} />
+            ))
           ) : (
             <div className="rounded-[28px] border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
               No posts yet. The first uploaded image, GIF, or video will appear here.

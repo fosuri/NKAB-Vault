@@ -61,6 +61,7 @@ export default async function ProfilePage() {
                     image: session.user.image ?? null,
                   },
                 }}
+                currentUserId={session.user.id}
               />
             ))
           ) : (

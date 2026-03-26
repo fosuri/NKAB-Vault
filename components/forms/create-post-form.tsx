@@ -61,6 +61,23 @@ export function CreatePostForm() {
             </Field>
 
             <Field>
+              <FieldLabel htmlFor="access">Access type</FieldLabel>
+              <select
+                id="access"
+                name="access"
+                defaultValue="public"
+                className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              >
+                <option value="public">🌐 Public — visible to everyone</option>
+                <option value="private">🔒 Private — only you</option>
+                <option value="paid">💎 Paid — for subscribers</option>
+              </select>
+              <FieldDescription>
+                Controls who can see this post in the feed.
+              </FieldDescription>
+            </Field>
+
+            <Field>
               <FieldLabel htmlFor="files">Media files</FieldLabel>
               <Input
                 id="files"

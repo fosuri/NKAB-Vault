@@ -142,9 +142,7 @@ export default function Header() {
       </div>
     </header>
 
-    {/* sidebar */}
     <div className="lg:hidden">
-      {/* sidebar overlay */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
@@ -152,7 +150,6 @@ export default function Header() {
         />
       )}
 
-      {/* sidebar panel */}
       <div
         className={`fixed inset-y-0 right-0 z-50 h-full w-64 bg-background p-4 shadow-lg transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}

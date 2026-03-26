@@ -86,13 +86,36 @@ export const posts = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     description: text("description").notNull(),
+    access: text("access").default("public").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("posts_userId_idx").on(table.userId)]
+  (table) => [
+    index("posts_userId_idx").on(table.userId),
+    index("posts_access_idx").on(table.access),
+  ]
+);
+
+export const comments = pgTable(
+  "comments",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("comments_postId_idx").on(table.postId),
+    index("comments_userId_idx").on(table.userId),
+  ]
 );
 
 export const postMedia = pgTable(
@@ -153,6 +176,7 @@ export const postsRelations = relations(posts, ({ many, one }) => ({
     references: [user.id],
   }),
   media: many(postMedia),
+  comments: many(comments),
 }));
 
 export const postMediaRelations = relations(postMedia, ({ one }) => ({
@@ -160,4 +184,19 @@ export const postMediaRelations = relations(postMedia, ({ one }) => ({
     fields: [postMedia.postId],
     references: [posts.id],
   }),
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  post: one(posts, {
+    fields: [comments.postId],
+    references: [posts.id],
+  }),
+  author: one(user, {
+    fields: [comments.userId],
+    references: [user.id],
+  }),
+}));
+
+export const userRelations2 = relations(user, ({ many }) => ({
+  comments: many(comments),
 }));

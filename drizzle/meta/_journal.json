@@ -15,6 +15,13 @@
       "when": 1774518264790,
       "tag": "0001_friendly_brother_voodoo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774521038028,
+      "tag": "0002_abnormal_giant_man",
+      "breakpoints": true
     }
   ]
 }

@@ -19,8 +19,12 @@ const allowedMimeTypes = [
   "video/quicktime",
 ];
 
+const ACCESS_VALUES = ["public", "private", "paid"] as const;
+type AccessValue = (typeof ACCESS_VALUES)[number];
+
 const createPostSchema = z.object({
   description: z.string().trim().min(1, "Description is required").max(500, "Description is too long"),
+  access: z.enum(ACCESS_VALUES).default("public"),
 });
 
 type CreatePostResult = {
@@ -83,6 +87,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
 
   const parsed = createPostSchema.safeParse({
     description: formData.get("description"),
+    access: formData.get("access") ?? "public",
   });
 
   if (!parsed.success) {
@@ -118,6 +123,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
       id: postId,
       userId: session.user.id,
       description: parsed.data.description,
+      access: parsed.data.access,
     });
 
     await tx.insert(postMedia).values(
