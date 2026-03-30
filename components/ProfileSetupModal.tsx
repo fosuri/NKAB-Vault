@@ -152,12 +152,12 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
                   Enter an image URL for your avatar (optional).
                 </CardDescription>
               </CardHeader>
-              <Field className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-4">
                 {avatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatar} alt="Avatar preview" className="w-24 h-24 object-cover rounded-full border border-border" />
+                  <img src={avatar} alt="Avatar preview" className="w-32 h-32 shrink-0 object-cover rounded-full border border-border shadow-sm" />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border border-dashed border-border text-muted-foreground text-xs">
+                  <div className="w-32 h-32 shrink-0 rounded-full bg-muted flex items-center justify-center border border-dashed border-border text-muted-foreground text-xs font-medium">
                     Preview
                   </div>
                 )}
@@ -171,7 +171,7 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
                     type="url"
                   />
                 </Field>
-              </Field>
+              </div>
             </FieldGroup>
           </Step>
         </Stepper>
