@@ -1,5 +1,8 @@
 import React, { useState, Children, useRef, useLayoutEffect, HTMLAttributes, ReactNode } from 'react';
 import { motion, AnimatePresence, Variants } from 'motion/react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -79,11 +82,10 @@ export default function Stepper({
       className="flex min-h-full flex-1 flex-col items-center justify-center p-4 sm:aspect-[4/3] md:aspect-[2/1]"
       {...rest}
     >
-      <div
-        className={`mx-auto w-full max-w-md rounded-2xl shadow-xl ${stepCircleContainerClassName}`}
-        style={{ border: '1px solid #222' }}
+      <Card
+        className={cn("mx-auto w-full max-w-md px-2 py-6 shadow-[0_0_400px] shadow-card-foreground/10", stepCircleContainerClassName)}
       >
-        <div className={`${stepContainerClassName} flex w-full items-center p-8`}>
+        <div className={`${stepContainerClassName} flex w-full items-center px-4 pb-4`}>
           {stepsArray.map((_, index) => {
             const stepNumber = index + 1;
             const isNotLastStep = index < totalSteps - 1;
@@ -119,38 +121,34 @@ export default function Stepper({
           isCompleted={isCompleted}
           currentStep={currentStep}
           direction={direction}
-          className={`space-y-2 px-8 ${contentClassName}`}
+          className={`space-y-4 px-4 ${contentClassName}`}
         >
           {stepsArray[currentStep - 1]}
         </StepContentWrapper>
 
         {!isCompleted && (
-          <div className={`px-8 pb-8 ${footerClassName}`}>
-            <div className={`mt-10 flex ${currentStep !== 1 ? 'justify-between' : 'justify-end'}`}>
+          <div className={`px-4 pb-0 ${footerClassName}`}>
+            <div className={`mt-6 flex ${currentStep !== 1 ? 'justify-between' : 'justify-end'}`}>
               {currentStep !== 1 && (
-                <button
+                <Button
+                  variant="ghost"
                   onClick={handleBack}
-                  className={`duration-350 rounded px-2 py-1 transition ${
-                    currentStep === 1
-                      ? 'pointer-events-none opacity-50 text-neutral-400'
-                      : 'text-neutral-400 hover:text-neutral-700'
-                  }`}
+                  className={currentStep === 1 ? 'pointer-events-none opacity-50' : ''}
                   {...backButtonProps}
                 >
                   {backButtonText}
-                </button>
+                </Button>
               )}
-              <button
+              <Button
                 onClick={isLastStep ? handleComplete : handleNext}
-                className="duration-350 flex items-center justify-center rounded-full bg-green-500 py-1.5 px-3.5 font-medium tracking-tight text-white transition hover:bg-green-600 active:bg-green-700"
                 {...nextButtonProps}
               >
                 {isLastStep ? 'Complete' : nextButtonText}
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
@@ -241,7 +239,7 @@ interface StepProps {
 }
 
 export function Step({ children }: StepProps) {
-  return <div className="px-8">{children}</div>;
+  return <div className="px-4">{children}</div>;
 }
 
 interface StepIndicatorProps {
@@ -295,11 +293,11 @@ interface StepConnectorProps {
 function StepConnector({ isComplete }: StepConnectorProps) {
   const lineVariants: Variants = {
     incomplete: { width: 0, backgroundColor: 'transparent' },
-    complete: { width: '100%', backgroundColor: '#5227FF' }
+    complete: { width: '100%', backgroundColor: 'var(--primary)' }
   };
 
   return (
-    <div className="relative mx-2 h-0.5 flex-1 overflow-hidden rounded bg-neutral-600">
+    <div className="relative mx-2 h-0.5 flex-1 overflow-hidden rounded bg-muted">
       <motion.div
         className="absolute left-0 top-0 h-full"
         variants={lineVariants}

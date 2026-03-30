@@ -5,6 +5,8 @@ import Stepper, { Step } from "@/components/Stepper";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field";
 
 import { User } from "better-auth";
 
@@ -95,53 +97,62 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
           nextButtonText={isSubmitting ? "Saving..." : "Continue"}
         >
           <Step>
-            <div className="flex flex-col gap-4 text-center">
-              <h2 className="text-2xl font-bold tracking-tight">Choose a Username</h2>
-              <p className="text-muted-foreground text-sm">
-                Your username must be a single word using English letters only.
-              </p>
-              <div className="relative mt-4">
+            <FieldGroup>
+              <CardHeader className="text-center p-0 mb-2">
+                <CardTitle className="text-xl">Choose a Username</CardTitle>
+                <CardDescription>
+                  Your username must be a single word using English letters only.
+                </CardDescription>
+              </CardHeader>
+              <Field>
+                <FieldLabel htmlFor="username">Username</FieldLabel>
                 <Input 
+                  id="username"
                   placeholder="Enter username" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="h-12 text-lg text-center rounded-xl"
                   maxLength={20}
                 />
-                <div className="mt-2 text-sm h-5">
+                <div className="text-sm h-5">
                   {usernameStatus === "loading" && <span className="text-muted-foreground animate-pulse">Checking availability...</span>}
                   {usernameStatus === "valid" && <span className="text-green-500">Username is available!</span>}
                   {usernameStatus === "invalid" && <span className="text-red-500">{usernameError}</span>}
                 </div>
-              </div>
-            </div>
+              </Field>
+            </FieldGroup>
           </Step>
 
           <Step>
-            <div className="flex flex-col gap-4 text-center">
-              <h2 className="text-2xl font-bold tracking-tight">Profile Description</h2>
-              <p className="text-muted-foreground text-sm">
-                Write a short bio about yourself (optional).
-              </p>
-              <div className="mt-4">
+            <FieldGroup>
+              <CardHeader className="text-center p-0 mb-2">
+                <CardTitle className="text-xl">Profile Description</CardTitle>
+                <CardDescription>
+                  Write a short bio about yourself (optional).
+                </CardDescription>
+              </CardHeader>
+              <Field>
+                <FieldLabel htmlFor="description">Bio</FieldLabel>
                 <textarea 
+                  id="description"
                   placeholder="Tell us a little bit about yourself..." 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full flex min-h-[120px] resize-none rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[80px] w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
                   maxLength={500}
                 />
-              </div>
-            </div>
+              </Field>
+            </FieldGroup>
           </Step>
 
           <Step>
-            <div className="flex flex-col gap-4 text-center">
-              <h2 className="text-2xl font-bold tracking-tight">Profile Avatar</h2>
-              <p className="text-muted-foreground text-sm">
-                Enter an image URL for your avatar (optional).
-              </p>
-              <div className="mt-4 flex flex-col items-center gap-4">
+            <FieldGroup>
+              <CardHeader className="text-center p-0 mb-2">
+                <CardTitle className="text-xl">Profile Avatar</CardTitle>
+                <CardDescription>
+                  Enter an image URL for your avatar (optional).
+                </CardDescription>
+              </CardHeader>
+              <Field className="flex flex-col items-center gap-4">
                 {avatar ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatar} alt="Avatar preview" className="w-24 h-24 object-cover rounded-full border border-border" />
@@ -150,15 +161,18 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
                     Preview
                   </div>
                 )}
-                <Input 
-                  placeholder="https://example.com/avatar.png" 
-                  value={avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
-                  className="h-12 rounded-xl"
-                  type="url"
-                />
-              </div>
-            </div>
+                <Field className="w-full">
+                  <FieldLabel htmlFor="avatar">Avatar URL</FieldLabel>
+                  <Input 
+                    id="avatar"
+                    placeholder="https://example.com/avatar.png" 
+                    value={avatar}
+                    onChange={(e) => setAvatar(e.target.value)}
+                    type="url"
+                  />
+                </Field>
+              </Field>
+            </FieldGroup>
           </Step>
         </Stepper>
     </div>
