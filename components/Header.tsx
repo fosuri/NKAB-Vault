@@ -17,6 +17,7 @@ import { authClient, signOut } from "@/lib/auth/auth-client";
 import { Field } from "./ui/field";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
+import Image from "next/image";
 
 
 
@@ -31,8 +32,8 @@ export default function Header() {
     <>
       <header className="flex items-center justify-between bg-background text-foreground px-4 h-16 border-b border-border">
       <Link href="/" className=" h-10 flex items-center gap-2">
-        <div className="bg-amber-300 min-w-8 min-h-8 " >
-
+        <div className="bg-amber-300 bg-transparent min-w-8 min-h-8 " >
+          <Image src="/Logo.png" alt="Logo" width={32} height={32} />
         </div>
         <div className="hidden lg:block text-foreground text-2xl font-bold px-3">
           <h2>NKAB Vault</h2>
