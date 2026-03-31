@@ -23,7 +23,7 @@ import * as z from "zod"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
-import { useRouter } from "next/navigation"
+
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth/auth-client"
@@ -41,7 +41,6 @@ export function SignInForm({
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,7 +68,7 @@ export function SignInForm({
       toast.error(error.message || "An error occurred");
     } else {
       toast.success("Signed in successfully");
-      router.push("/profile");
+      window.location.assign("/profile");
     }
     setIsLoading(false);
   }

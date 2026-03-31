@@ -23,15 +23,14 @@ import * as z from "zod"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
-import { useRouter } from "next/navigation"
+
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { signInWithGoogle, signUpWithEmail } from "@/lib/auth/auth-client"
-import { checkEmailAvailable, checkUsernameAvailable } from "@/lib/actions/check-signup"
+import { checkEmailAvailable } from "@/lib/actions/check-signup"
 import Link from "next/link"
 
 const formSchema = z.object({
-  username: z.string().min(3).max(20),
   email: z.email(),
   password: z.string().min(8),
   confirmPassword: z.string().min(8),
@@ -40,17 +39,19 @@ const formSchema = z.object({
   path: ["confirmPassword"],
 })
 
+function generateRandomName() {
+  return "user_" + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
+}
+
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -60,24 +61,13 @@ export function SignUpForm({
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
-    const [usernameAvailable, emailAvailable] = await Promise.all([
-      checkUsernameAvailable(data.username),
-      checkEmailAvailable(data.email),
-    ]);
+    const emailAvailable = await checkEmailAvailable(data.email);
 
-    if (!usernameAvailable || !emailAvailable) {
-      if (!usernameAvailable) {
-        form.setError("username", {
-          type: "server",
-          message: "This username is already taken.",
-        });
-      }
-      if (!emailAvailable) {
-        form.setError("email", {
-          type: "server",
-          message: "This email is already registered.",
-        });
-      }
+    if (!emailAvailable) {
+      form.setError("email", {
+        type: "server",
+        message: "This email is already registered.",
+      });
       setIsLoading(false);
       return;
     }
@@ -85,17 +75,17 @@ export function SignUpForm({
     const { error } = await signUpWithEmail({
       email: data.email,
       password: data.password,
-      name: data.username,
+      name: generateRandomName(),
     });
 
     if (error) {
-      form.setError("username", {
+      form.setError("email", {
         type: "server",
         message: error.message || "An error occurred. Please try again.",
       });
     } else {
       toast.success("Account created successfully");
-      router.push("/profile");
+      window.location.assign("/profile");
     }
     setIsLoading(false);
   }
@@ -126,27 +116,6 @@ export function SignUpForm({
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
               </FieldSeparator>
-
-              <Controller
-                name="username"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="username">Username</FieldLabel>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="username"
-                      type="text"
-                      placeholder="Username"
-                      required
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
 
               <Controller
                 name="email"

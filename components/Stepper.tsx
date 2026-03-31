@@ -2,8 +2,8 @@ import React, { useState, Children, useRef, useLayoutEffect, HTMLAttributes, Rea
 import { motion, AnimatePresence, Variants } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   initialStep?: number;
@@ -146,6 +146,13 @@ export default function Stepper({
                 {isLastStep ? 'Complete' : nextButtonText}
               </Button>
             </div>
+          </div>
+        )}
+
+        {isCompleted && (
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <Loader2 className="size-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground animate-pulse">Processing...</p>
           </div>
         )}
       </Card>

@@ -20,7 +20,7 @@ const allowedMimeTypes = [
 ];
 
 const ACCESS_VALUES = ["public", "private", "paid"] as const;
-type AccessValue = (typeof ACCESS_VALUES)[number];
+
 
 const createPostSchema = z.object({
   description: z.string().trim().min(1, "Description is required").max(500, "Description is too long"),
