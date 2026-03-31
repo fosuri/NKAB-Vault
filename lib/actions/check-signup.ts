@@ -24,7 +24,6 @@ export async function checkEmailAvailable(email: string): Promise<boolean> {
   return existing.length === 0;
 }
 
-/** Returns true when the email belongs to a Google-only account (no password set). */
 export async function checkIsGoogleOnlyAccount(email: string): Promise<boolean> {
   const existing = await db
     .select({ id: account.id })

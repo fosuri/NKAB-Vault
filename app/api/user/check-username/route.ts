@@ -34,7 +34,6 @@ export async function GET(request: Request) {
       where: eq(user.name, result.data.username),
     });
 
-    // If the existing user is the current user, the username is still "available" for them
     if (existingUser && existingUser.id !== session.user.id) {
         return NextResponse.json({ available: false, error: "Username is already taken" });
     }
