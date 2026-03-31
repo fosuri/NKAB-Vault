@@ -85,7 +85,7 @@ export function SignUpForm({
       });
     } else {
       toast.success("Account created successfully");
-      window.location.assign("/profile");
+      window.location.assign("/");
     }
     setIsLoading(false);
   }

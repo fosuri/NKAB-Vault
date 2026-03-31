@@ -68,7 +68,7 @@ export function SignInForm({
       toast.error(error.message || "An error occurred");
     } else {
       toast.success("Signed in successfully");
-      window.location.assign("/profile");
+      window.location.assign("/");
     }
     setIsLoading(false);
   }

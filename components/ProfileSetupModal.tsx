@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Stepper, { Step } from "@/components/Stepper";
-import { useRouter } from "next/navigation";
+
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { User } from "better-auth";
 
 export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: boolean } }) {
   const [open, setOpen] = useState(false);
-  const router = useRouter();
+
 
   useEffect(() => {
     if (user && user.setupCompleted === false) {
@@ -71,7 +71,7 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
       if (res.ok && data.success) {
         toast.success("Profile setup complete!");
         setOpen(false);
-        router.refresh();
+        window.location.assign("/profile");
       } else {
         toast.error(data.error || "Something went wrong.");
       }

@@ -31,18 +31,24 @@ export const auth = betterAuth({
       },
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          return {
+            data: {
+              ...user,
+              name: `user_${Math.random().toString(36).substring(2, 11)}`,
+            },
+          };
+        },
+      },
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      mapProfileToUser: (profile) => {
-        return {
-          name: `user_${Math.random().toString(36).substring(2, 11)}`,
-          email: profile.email,
-          emailVerified: profile.email_verified,
-          image: profile.picture,
-        };
-      },
     },
   },
   emailAndPassword: {
