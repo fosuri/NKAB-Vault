@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { FeedPostCard } from "@/components/feed-post-card";
 import { getSession } from "@/lib/auth/auth-server";
 import { getFeedPosts } from "@/lib/posts";
@@ -11,40 +9,19 @@ export default async function Home() {
 
   return (
     <div className="min-h-full bg-[radial-gradient(circle_at_top_left,rgba(243,244,246,0.95),transparent_40%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top_left,rgba(55,65,81,0.35),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
-      <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
-        <section className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-[28px] border border-border/50 bg-background/70 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
-              NKAB Vault feed
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
-              Share images, GIFs and video in one stream.
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Logged-in users can publish media posts to the main page. Every post keeps one description and one or more uploaded files.
-            </p>
-          </div>
-
-          <div className="mt-6 rounded-[28px] border border-border/60 bg-background/70 p-6 backdrop-blur">
-            <p className="text-sm text-muted-foreground">
-              Create post now lives on a dedicated page with an improved upload experience.
-            </p>
-            <Button asChild className="mt-4 w-full sm:w-auto">
-              <Link href={session?.user ? "/new-post" : "/sign-in"}>
-                {session?.user ? "Go to new post" : "Sign in to create post"}
-              </Link>
-            </Button>
-          </div>
-        </section>
-
-        <section className="grid gap-6">
+      <div className="mx-auto w-full max-w-7xl">
+        <section className="min-h-[60vh]">
           {feedPosts.length ? (
-            feedPosts.map((post) => (
-              <FeedPostCard key={post.id} post={post} currentUserId={viewerUserId} />
-            ))
+            <div className="grid gap-6 md:grid-cols-2 2xl:grid-cols-3">
+              {feedPosts.map((post) => (
+                <FeedPostCard key={post.id} post={post} currentUserId={viewerUserId} showDeleteButton={false} />
+              ))}
+            </div>
           ) : (
-            <div className="rounded-[28px] border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
-              No posts yet. The first uploaded image, GIF, or video will appear here.
+            <div className="flex h-full min-h-[60vh] items-center justify-center">
+              <div className="max-w-2xl rounded-[28px] border border-dashed border-border/60 bg-background/75 px-8 py-14 text-center text-lg font-medium leading-relaxed text-muted-foreground backdrop-blur">
+                No posts yet. The first uploaded image, GIF, or video will appear here.
+              </div>
             </div>
           )}
         </section>

@@ -34,9 +34,11 @@ const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; clas
 export function FeedPostCard({
   post,
   currentUserId,
+  showDeleteButton = true,
 }: {
   post: FeedPost;
   currentUserId?: string;
+  showDeleteButton?: boolean;
 }) {
   const isOwner = Boolean(currentUserId && currentUserId === post.userId);
   const accessMeta = ACCESS_META[post.access] ?? ACCESS_META.public;
@@ -86,7 +88,7 @@ export function FeedPostCard({
         >
           View details &amp; comments
         </Link>
-        {isOwner && <DeletePostButton postId={post.id} />}
+        {isOwner && showDeleteButton ? <DeletePostButton postId={post.id} /> : null}
       </CardFooter>
     </Card>
   );

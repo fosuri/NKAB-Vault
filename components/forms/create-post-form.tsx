@@ -151,11 +151,11 @@ export function CreatePostForm() {
                 id="access"
                 name="access"
                 defaultValue="public"
-                className="h-10 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                className="h-10 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
               >
-                <option value="public">Public - visible to everyone</option>
-                <option value="private">Private - only you</option>
-                <option value="paid">Paid - for subscribers</option>
+                <option className="bg-background text-foreground" value="public">Public - visible to everyone</option>
+                <option className="bg-background text-foreground" value="private">Private - only you</option>
+                <option className="bg-background text-foreground" value="paid">Paid - for subscribers</option>
               </select>
               <FieldDescription>
                 Controls who can see this post in the feed.
