@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Globe, Lock, BadgeDollarSign } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeletePostButton } from "@/components/delete-post-button";
+import Image from "next/image";
 
 type FeedPost = {
   id: string;
@@ -62,12 +63,14 @@ export function FeedPostCard({
         {post.media.map((item) => (
           <div key={item.id} className="overflow-hidden rounded-2xl border border-border/40 bg-black/5">
             {item.resourceType === "video" ? (
-              <video src={item.secureUrl} controls className="max-h-[520px] w-full bg-black" />
+              <video src={item.secureUrl} controls className="max-h-130 w-full bg-black" />
             ) : (
-              <img
+              <Image
                 src={item.secureUrl}
                 alt={item.originalFilename ?? post.description}
-                className="max-h-[620px] w-full object-cover"
+                className="max-h-155 w-full object-cover"
+                width={520}
+                height={520}
               />
             )}
           </div>
