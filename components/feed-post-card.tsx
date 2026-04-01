@@ -8,6 +8,7 @@ import Image from "next/image";
 type FeedPost = {
   id: string;
   userId: string;
+  title: string;
   description: string;
   access: string;
   createdAt: Date;
@@ -56,6 +57,7 @@ export function FeedPostCard({
             {label}
           </span>
         </div>
+        <h2 className="text-sm leading-6 text-foreground/90">{post.title}</h2>
         <p className="text-sm leading-6 text-foreground/90">{post.description}</p>
       </CardHeader>
 

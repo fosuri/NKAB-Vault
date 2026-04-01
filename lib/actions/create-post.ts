@@ -21,10 +21,31 @@ const allowedMimeTypes = [
 
 const ACCESS_VALUES = ["public", "private", "paid"] as const;
 
+const fileSchema = z
+  .instanceof(File, { message: "Invalid file payload" })
+  .refine((file) => file.size > 0, "Empty file is not allowed");
 
 const createPostSchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(120, "Title is too long"),
   description: z.string().trim().min(1, "Description is required").max(500, "Description is too long"),
   access: z.enum(ACCESS_VALUES).default("public"),
+  files: z.array(fileSchema).min(1, "Add at least one file").max(12, "Too many files selected"),
+}).superRefine((data, ctx) => {
+  for (const file of data.files) {
+    if (!allowedMimeTypes.includes(file.type)) {
+      ctx.addIssue({
+        code: "custom",
+        message: `Unsupported file type: ${file.name}`,
+      });
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      ctx.addIssue({
+        code: "custom",
+        message: `File is too large: ${file.name}`,
+      });
+    }
+  }
 });
 
 type CreatePostResult = {
@@ -86,31 +107,19 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
   }
 
   const parsed = createPostSchema.safeParse({
+    title: formData.get("title"),
     description: formData.get("description"),
     access: formData.get("access") ?? "public",
+    files: formData
+      .getAll("files")
+      .filter((value): value is File => value instanceof File),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid form data" };
   }
 
-  const files = formData
-    .getAll("files")
-    .filter((value): value is File => value instanceof File && value.size > 0);
-
-  if (!files.length) {
-    return { error: "Add at least one file" };
-  }
-
-  for (const file of files) {
-    if (!allowedMimeTypes.includes(file.type)) {
-      return { error: `Unsupported file type: ${file.name}` };
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return { error: `File is too large: ${file.name}` };
-    }
-  }
+  const files = parsed.data.files;
 
   const uploaded = await Promise.all(
     files.map((file) => uploadFileToCloudinary(file, session.user.id))
@@ -122,6 +131,7 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
     await tx.insert(posts).values({
       id: postId,
       userId: session.user.id,
+      title: parsed.data.title,
       description: parsed.data.description,
       access: parsed.data.access,
     });

@@ -1,4 +1,5 @@
-import { CreatePostForm } from "@/components/forms/create-post-form";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { FeedPostCard } from "@/components/feed-post-card";
 import { getSession } from "@/lib/auth/auth-server";
 import { getFeedPosts } from "@/lib/posts";
@@ -24,14 +25,15 @@ export default async function Home() {
             </p>
           </div>
 
-          <div className="mt-6">
-            {session?.user ? (
-              <CreatePostForm />
-            ) : (
-              <div className="rounded-[28px] border border-dashed border-border/60 bg-background/70 p-6 text-sm text-muted-foreground backdrop-blur">
-                Sign in to unlock the Create post form and upload media to the feed.
-              </div>
-            )}
+          <div className="mt-6 rounded-[28px] border border-border/60 bg-background/70 p-6 backdrop-blur">
+            <p className="text-sm text-muted-foreground">
+              Create post now lives on a dedicated page with an improved upload experience.
+            </p>
+            <Button asChild className="mt-4 w-full sm:w-auto">
+              <Link href={session?.user ? "/new-post" : "/sign-in"}>
+                {session?.user ? "Go to new post" : "Sign in to create post"}
+              </Link>
+            </Button>
           </div>
         </section>
 

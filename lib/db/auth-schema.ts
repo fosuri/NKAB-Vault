@@ -87,6 +87,7 @@ export const posts = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    title: text("title").default("").notNull(),
     description: text("description").notNull(),
     access: text("access").default("public").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
