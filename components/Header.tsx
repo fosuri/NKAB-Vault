@@ -44,16 +44,19 @@ export default function Header() {
 
         <Field
           orientation="horizontal"
-          className="relative group flex h-8 w-full max-w-lg items-center rounded-lg border border-input bg-input/10 dark:bg-input/30 px-3 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 mx-2 md:mx-4 lg:mx-8"
+          className=" cursor-default relative group flex h-8 w-full max-w-lg items-center rounded-lg border border-input bg-input/10  dark:bg-input/30 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 mx-2 md:mx-4 lg:mx-8"
         >
-          <Search className="size-4 text-muted-foreground transition-colors group-focus-within:text-foreground shrink-0" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 h-full border-none bg-transparent dark:bg-transparent px-2 focus-visible:ring-0 md:text-sm shadow-none"
-          />
+          <label htmlFor="header-search" className="flex items-center w-full h-full px-3 cursor-default">
+            <Search className=" cursor-default size-4 text-muted-foreground transition-colors group-focus-within:text-foreground shrink-0" />
+            <Input
+              id="header-search"
+              type="search"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="cursor-text flex-1 h-full border-none bg-transparent dark:bg-transparent px-2 focus-visible:ring-0 md:text-sm shadow-none"
+            />
+          </label>
         </Field>
 
         <div className="flex items-center gap-4">
