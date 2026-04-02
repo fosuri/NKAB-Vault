@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 import { ThemeToggle } from "./theme-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient, signOut } from "@/lib/auth/auth-client";
-import { Field } from "./ui/field";
 import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
 import Image from "next/image";
@@ -33,6 +33,7 @@ export default function Header() {
   return (
     <>
       <header className="flex items-center justify-between bg-background text-foreground px-4 h-16 border-b border-border">
+        <div className="flex items-center gap-2">
         <Link href="/" className=" h-10 flex items-center gap-2">
           <div className="bg-transparent min-w-8 min-h-8 " >
             <Image src="/Logo.png" alt="Logo" width={32} height={32} />
@@ -41,25 +42,45 @@ export default function Header() {
             <h2>NKAB Vault</h2>
           </div>
         </Link>
-
-        <Field
-          orientation="horizontal"
-          className=" cursor-default relative group flex h-8 w-full max-w-lg items-center rounded-lg border border-input bg-input/10  dark:bg-input/30 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 mx-2 md:mx-4 lg:mx-8"
+        <Link
+          href="/new-post"
+          className="flex items-center justify-center h-8 px-2  gap-2 rounded-md outline-none hover:bg-accent hover:text-accent-foreground ring-ring/50 focus-visible:ring-3 border border-border text-foreground transition-colors"
+          aria-label="Upload Post"
         >
-          <label htmlFor="header-search" className="flex items-center w-full h-full px-3 cursor-default">
-            <Search className=" cursor-default size-4 text-muted-foreground transition-colors group-focus-within:text-foreground shrink-0" />
-            <Input
-              id="header-search"
-              type="search"
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="cursor-text flex-1 h-full border-none bg-transparent dark:bg-transparent px-2 focus-visible:ring-0 md:text-sm shadow-none"
-            />
-          </label>
-        </Field>
+          <div className="flex items-center justify-center">
+            <Plus className="size-4" />
+          </div>
+          <span className="hidden lg:block text-foreground text-sm">New Post</span>
+        </Link>
+        </div>
+        
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* GitHub-like Search */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                className="group flex h-8 w-[180px] md:w-[260px] items-center gap-2 rounded-md border border-input bg-transparent  px-2 text-sm text-muted-foreground transition-colors hover:bg-muted"
+              >
+                <Search className="size-4 shrink-0 mx-1" />
+                <span className="flex-1 text-left">Search...</span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="p-0 border-none ring-0 bg-transparent shadow-none w-full max-w-2xl top-4 translate-y-0 px-4 md:px-0 [&>button]:hidden">
+              <div className="flex h-8 w-full items-center gap-2 rounded-md border border-input bg-card shadow-lg px-2">
+                <Search className="size-4 shrink-0 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  placeholder="Search..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="flex-1 border-0 bg-transparent dark:bg-transparent text-sm focus-visible:ring-0 px-0 h-full shadow-none rounded-none"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+
+
           <ThemeToggle />
           {isPending ? (
             <div className="size-8 animate-pulse rounded-full bg-muted" />
