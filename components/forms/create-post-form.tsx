@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useTransition } from "react";
+import { useCallback, useRef, useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import {
   CheckIcon,
@@ -45,6 +45,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 const ACCEPTED_MEDIA_TYPES = {
   "image/jpeg": [".jpg", ".jpeg"],
@@ -81,38 +89,65 @@ export function CreatePostForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
 
-  const [entry, setEntry] = useState<FileEntry | null>(null);
-  const [cropOpen, setCropOpen] = useState(false);
+  const [entries, setEntries] = useState<FileEntry[]>([]);
+  const [cropIndex, setCropIndex] = useState<number | null>(null);
+
+  const [api, setApi] = useState<CarouselApi>()
+  const [current, setCurrent] = useState(0)
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    const updateSlideInfo = () => {
+      setCount(api.scrollSnapList().length);
+      setCurrent(api.selectedScrollSnap() + 1);
+    };
+
+    // run initially
+    updateSlideInfo();
+
+    // add event listeners
+    api.on("select", updateSlideInfo);
+    api.on("reInit", updateSlideInfo);
+  }, [api]);
 
   const handleDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
-    setEntry((prev) => {
-      if (prev) URL.revokeObjectURL(prev.previewUrl);
-      return {
-        original: file,
-        croppedDataUrl: null,
-        previewUrl: URL.createObjectURL(file),
-      };
+    setEntries((prev) => {
+      const newEntries = [...prev];
+      for (const file of acceptedFiles) {
+        if (newEntries.length >= 3) break;
+        newEntries.push({
+          original: file,
+          croppedDataUrl: null,
+          previewUrl: URL.createObjectURL(file),
+        });
+      }
+      return newEntries;
     });
-    setCropOpen(false);
   }, []);
 
   const handleCropApplied = useCallback((dataUrl: string) => {
-    setEntry((prev) => (prev ? { ...prev, croppedDataUrl: dataUrl } : prev));
-    setCropOpen(false);
-  }, []);
-
-  const handleRemove = useCallback(() => {
-    setEntry((prev) => {
-      if (prev) URL.revokeObjectURL(prev.previewUrl);
-      return null;
+    if (cropIndex === null) return;
+    setEntries((prev) => {
+      const next = [...prev];
+      next[cropIndex] = { ...next[cropIndex], croppedDataUrl: dataUrl };
+      return next;
     });
-    setCropOpen(false);
+    setCropIndex(null);
+  }, [cropIndex]);
+
+  const handleRemove = useCallback((indexToRemove: number) => {
+    setEntries((prev) => {
+      const removed = prev[indexToRemove];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return prev.filter((_, i) => i !== indexToRemove);
+    });
   }, []);
 
-  const isImage = entry?.original.type.startsWith("image/") ?? false;
-  const isVideo = entry?.original.type.startsWith("video/") ?? false;
+  const entryToCrop = cropIndex !== null ? entries[cropIndex] : null;
 
   return (
     <Card className="px-2 py-6 shadow-[0_0_400px] shadow-card-foreground/10">
@@ -128,14 +163,16 @@ export function CreatePostForm() {
           className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!entry) return;
+            if (entries.length === 0) return;
             const formData = new FormData(event.currentTarget);
 
-            if (entry.croppedDataUrl) {
-              formData.append("files", dataUrlToFile(entry.croppedDataUrl, entry.original));
-            } else {
-              formData.append("files", entry.original);
-            }
+            entries.forEach((entry) => {
+              if (entry.croppedDataUrl) {
+                formData.append("files", dataUrlToFile(entry.croppedDataUrl, entry.original));
+              } else {
+                formData.append("files", entry.original);
+              }
+            });
 
             startTransition(async () => {
               const result = await createPost(formData);
@@ -147,9 +184,9 @@ export function CreatePostForm() {
 
               toast.success("Post created");
               formRef.current?.reset();
-              if (entry) URL.revokeObjectURL(entry.previewUrl);
-              setEntry(null);
-              setCropOpen(false);
+              entries.forEach((e) => URL.revokeObjectURL(e.previewUrl));
+              setEntries([]);
+              setCropIndex(null);
             });
           }}
         >
@@ -157,10 +194,9 @@ export function CreatePostForm() {
             <div className="rounded-xl border border-border p-4">
               <Dropzone
                 className="h-52 rounded-lg border border-dashed border-border bg-background p-6 hover:bg-muted/40"
-                src={entry ? [entry.original] : undefined}
                 accept={ACCEPTED_MEDIA_TYPES}
                 maxSize={MAX_FILE_SIZE}
-                maxFiles={1}
+                maxFiles={3}
                 onDrop={handleDrop}
                 onError={(error) => {
                   toast.error(error.message || "Unable to add file");
@@ -173,15 +209,15 @@ export function CreatePostForm() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-lg font-semibold tracking-tight text-foreground">
-                        Drop your file here
+                        Drop your files here
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        JPG, PNG, WEBP, GIF, MP4, WEBM, MOV
+                        JPG, PNG, WEBP, GIF, MP4, WEBM, MOV (Max 3 files)
                       </p>
                       <p className="text-xs text-muted-foreground">Max 25 MB</p>
                     </div>
                     <span className="rounded-lg border border-border bg-background px-5 py-2 text-sm font-semibold text-foreground">
-                      Choose file
+                      Choose files
                     </span>
                   </div>
                 </DropzoneEmptyState>
@@ -190,96 +226,132 @@ export function CreatePostForm() {
                   <div className="flex h-full flex-col justify-between gap-3">
                     <div className="space-y-2">
                       <p className="text-sm text-muted-foreground">
-                        1 file selected
+                        {entries.length} file{entries.length !== 1 ? "s" : ""} selected
                       </p>
-                      {entry && (
-                        <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-3 text-left text-muted-foreground">
-                          {isVideo ? (
-                            <Video className="size-4 shrink-0" />
-                          ) : (
-                            <ImagePlus className="size-4 shrink-0" />
-                          )}
-                          <span className="truncate text-xs">
-                            {entry.original.name}
-                          </span>
-                          {entry.croppedDataUrl && (
-                            <CheckIcon className="size-3 shrink-0 text-green-500" />
-                          )}
-                          <span className="ml-auto text-[11px] shrink-0">
-                            {(entry.original.size / 1024 / 1024).toFixed(1)} MB
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-2 max-h-[100px] overflow-y-auto">
+                        {entries.map((entry, idx) => {
+                          const isVideo = entry.original.type.startsWith("video/");
+                          return (
+                            <div key={idx} className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 p-2 text-left text-muted-foreground">
+                              {isVideo ? (
+                                <Video className="size-4 shrink-0" />
+                              ) : (
+                                <ImagePlus className="size-4 shrink-0" />
+                              )}
+                              <span className="truncate text-xs flex-1">
+                                {entry.original.name}
+                              </span>
+                              {entry.croppedDataUrl && (
+                                <CheckIcon className="size-3 shrink-0 text-green-500" />
+                              )}
+                              <span className="ml-auto text-[11px] shrink-0">
+                                {(entry.original.size / 1024 / 1024).toFixed(1)} MB
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Drag and drop or click to replace.
-                    </p>
+                    {entries.length >= 3 ? (
+                      <p className="text-xs font-medium text-destructive">
+                        Maximum 3 files reached.
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Drag and drop to add more files.
+                      </p>
+                    )}
                   </div>
                 </DropzoneContent>
               </Dropzone>
             </div>
 
-            {entry && (
-              <div className="rounded-xl border border-border overflow-hidden">
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
-                  {isVideo ? (
-                    <Video className="size-4 text-muted-foreground shrink-0" />
-                  ) : (
-                    <ImagePlus className="size-4 text-muted-foreground shrink-0" />
-                  )}
-                  <span className="truncate text-xs font-medium text-foreground flex-1">
-                    {entry.original.name}
-                  </span>
-                  {entry.croppedDataUrl && (
-                    <span className="flex items-center gap-1 text-[11px] text-green-500 shrink-0">
-                      <CheckIcon className="size-3" /> Cropped
-                    </span>
-                  )}
-                  {isImage && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1.5 px-2 text-xs shrink-0"
-                      onClick={() => setCropOpen(true)}
-                    >
-                      <CropIcon className="size-3" />
-                      {entry.croppedDataUrl ? "Re-crop" : "Crop"}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0 text-muted-foreground shrink-0"
-                    onClick={handleRemove}
-                  >
-                    <XIcon className="size-3" />
-                  </Button>
-                </div>
+            {entries.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Carousel className="w-full" setApi={setApi}>
+                  <CarouselContent>
+                    {entries.map((entry, idx) => {
+                      const isImage = entry.original.type.startsWith("image/");
+                      const isStaticImage = isImage && entry.original.type !== "image/gif";
+                      const isVideo = entry.original.type.startsWith("video/");
+                      return (
+                        <CarouselItem key={idx}>
+                          <div className="rounded-xl border border-border overflow-hidden bg-background">
+                            <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
+                              {isVideo ? (
+                                <Video className="size-4 text-muted-foreground shrink-0" />
+                              ) : (
+                                <ImagePlus className="size-4 text-muted-foreground shrink-0" />
+                              )}
+                              <span className="truncate text-xs font-medium text-foreground flex-1">
+                                {entry.original.name}
+                              </span>
+                              {entry.croppedDataUrl && (
+                                <span className="flex items-center gap-1 text-[11px] text-green-500 shrink-0">
+                                  <CheckIcon className="size-3" /> Cropped
+                                </span>
+                              )}
+                              {isStaticImage && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 gap-1.5 px-2 text-xs shrink-0"
+                                  onClick={() => setCropIndex(idx)}
+                                >
+                                  <CropIcon className="size-3" />
+                                  {entry.croppedDataUrl ? "Re-crop" : "Crop"}
+                                </Button>
+                              )}
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 text-muted-foreground shrink-0"
+                                onClick={() => handleRemove(idx)}
+                              >
+                                <XIcon className="size-3" />
+                              </Button>
+                            </div>
 
-                <div className="p-3">
-                  {isImage ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={entry.croppedDataUrl ?? entry.previewUrl}
-                      alt={entry.original.name}
-                      className="mx-auto max-h-64 max-w-full rounded-md object-contain bg-muted/40"
-                    />
-                  ) : isVideo ? (
-                    <video
-                      src={entry.previewUrl}
-                      controls
-                      className="w-full max-h-64 rounded-md bg-muted/40"
-                    />
-                  ) : null}
-                </div>
+                            <div className="p-3">
+                              {isImage ? (
+                                <img
+                                  src={entry.croppedDataUrl ?? entry.previewUrl}
+                                  alt={entry.original.name}
+                                  className="mx-auto max-h-64 h-64 max-w-full rounded-md object-contain bg-muted/40"
+                                />
+                              ) : isVideo ? (
+                                <video
+                                  src={entry.previewUrl}
+                                  controls
+                                  className="mx-auto max-h-64 h-64 w-full rounded-md bg-muted/40 object-contain"
+                                />
+                              ) : null}
+                            </div>
+                          </div>
+                        </CarouselItem>
+                      );
+                    })}
+                  </CarouselContent>
+                  {entries.length > 1 && (
+                    <>
+                      <CarouselPrevious className="left-2" type="button" />
+                      <CarouselNext className="right-2" type="button" />
+                    </>
+                  )}
+                </Carousel>
+                {entries.length > 1 && count > 0 && (
+                  <div className="text-center text-sm text-muted-foreground">
+                    File {current} of {count} (Max 3 files)
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           
-          <FieldGroup className="gap-4 rounded-xl border border-border p-4">
+          <FieldGroup className="gap-4 p-0">
             <Field>
               <FieldLabel htmlFor="title">Title</FieldLabel>
               <input
@@ -333,16 +405,16 @@ export function CreatePostForm() {
               </FieldDescription>
             </Field>
 
-            {!entry && (
+            {entries.length === 0 && (
               <p className="rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
-                Add a media file to publish your post.
+                Add at least one media file to publish your post.
               </p>
             )}
 
             <Button
               type="submit"
               className="mt-2 h-10 w-full"
-              disabled={isPending || !entry}
+              disabled={isPending || entries.length === 0}
             >
               {isPending ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -358,8 +430,8 @@ export function CreatePostForm() {
         </form>
       </CardContent>
 
-      {entry && isImage && (
-        <Dialog open={cropOpen} onOpenChange={setCropOpen}>
+      {entryToCrop && entryToCrop.original.type.startsWith("image/") && (
+        <Dialog open={cropIndex !== null} onOpenChange={(open) => !open && setCropIndex(null)}>
           <DialogContent
             className="sm:max-w-lg"
             showCloseButton={false}
@@ -371,7 +443,7 @@ export function CreatePostForm() {
               <DialogTitle>Crop image</DialogTitle>
             </DialogHeader>
 
-            <ImageCrop file={entry.original} onCrop={handleCropApplied}>
+            <ImageCrop file={entryToCrop.original} onCrop={handleCropApplied}>
               <div className="flex flex-col items-center gap-4">
                 <ImageCropContent className="max-h-[400px] rounded-md" />
               </div>
@@ -386,7 +458,7 @@ export function CreatePostForm() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setCropOpen(false)}
+                  onClick={() => setCropIndex(null)}
                 >
                   Cancel
                 </Button>
