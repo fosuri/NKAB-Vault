@@ -1,0 +1,34 @@
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/auth/auth-server";
+import { getSearchSuggestions } from "@/lib/posts";
+import { parsePostContentFilter, parsePostTimeFilter } from "@/lib/post-filters";
+
+export async function GET(request: Request) {
+  try {
+    const session = await getSession();
+    const { searchParams } = new URL(request.url);
+
+    const q = (searchParams.get("q") ?? "").trim();
+    const time = parsePostTimeFilter(searchParams.get("time"));
+    const contentType = parsePostContentFilter(searchParams.get("contentType"));
+    const rawLimit = Number(searchParams.get("limit") ?? "6");
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 10) : 6;
+
+    if (!q) {
+      return NextResponse.json({ suggestions: [] });
+    }
+
+    const suggestions = await getSearchSuggestions({
+      viewerUserId: session?.user?.id,
+      query: q,
+      time,
+      contentType,
+      limit,
+    });
+
+    return NextResponse.json({ suggestions });
+  } catch (error) {
+    console.error("Post search API error", error);
+    return NextResponse.json({ error: "Failed to search posts" }, { status: 500 });
+  }
+}

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Menu, X, Search, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Menu, Plus, Search, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 import { ThemeToggle } from "./theme-toggle";
@@ -19,15 +19,87 @@ import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
 import Image from "next/image";
 
-
+type SearchSuggestion = {
+  id: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  authorName: string;
+};
 
 
 export default function Header() {
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState("");
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const user = session?.user;
+  const searchQuery = search.trim();
+
+  useEffect(() => {
+    if (!isSearchOpen) {
+      return;
+    }
+
+    if (!searchQuery) {
+      setSuggestions([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(async () => {
+      try {
+        setIsSearching(true);
+        const params = new URLSearchParams({
+          q: searchQuery,
+          limit: "6",
+        });
+
+        const response = await fetch(`/api/posts/search?${params.toString()}`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          setSuggestions([]);
+          return;
+        }
+
+        const data = (await response.json()) as { suggestions?: SearchSuggestion[] };
+        setSuggestions(data.suggestions ?? []);
+      } catch {
+        if (!controller.signal.aborted) {
+          setSuggestions([]);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
+      }
+    }, 220);
+
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [isSearchOpen, searchQuery]);
+
+  const submitSearch = () => {
+    if (!searchQuery) {
+      return;
+    }
+
+    setIsSearchOpen(false);
+    router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+  };
+
+  const openPostFromSuggestion = (postId: string) => {
+    setIsSearchOpen(false);
+    router.push(`/post/${postId}`);
+  };
 
 
   return (
@@ -56,26 +128,69 @@ export default function Header() {
         
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* GitHub-like Search */}
-          <Dialog>
+          <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
             <DialogTrigger asChild>
               <button
-                className="group flex h-8 w-[180px] md:w-[260px] items-center gap-2 rounded-md border border-input bg-transparent  px-2 text-sm text-muted-foreground transition-colors hover:bg-muted"
+                className="group flex h-8 w-45 items-center gap-2 rounded-md border border-input bg-transparent px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-65"
               >
-                <Search className="size-4 shrink-0 mx-1" />
+                <Search className="mx-1 size-4 shrink-0" />
                 <span className="flex-1 text-left">Search...</span>
               </button>
             </DialogTrigger>
             <DialogContent className="p-0 border-none ring-0 bg-transparent shadow-none w-full max-w-2xl top-4 translate-y-0 px-4 md:px-0 [&>button]:hidden">
-              <div className="flex h-8 w-full items-center gap-2 rounded-md border border-input bg-card shadow-lg px-2">
-                <Search className="size-4 shrink-0 text-muted-foreground" />
-                <Input
-                  autoFocus
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="flex-1 border-0 bg-transparent dark:bg-transparent text-sm focus-visible:ring-0 px-0 h-full shadow-none rounded-none"
-                />
+              <div className="rounded-xl border border-input bg-card shadow-lg">
+                <div className="flex h-10 w-full items-center gap-2 border-b border-border/60 px-2">
+                  <Search className="size-4 shrink-0 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    placeholder="Search posts..."
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        submitSearch();
+                      }
+                    }}
+                    className="h-full flex-1 rounded-none border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+                  />
+                  {isSearching ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}
+                </div>
+
+                <div className="max-h-80 overflow-y-auto p-2">
+                  {!searchQuery ? (
+                    <p className="px-2 py-4 text-sm text-muted-foreground">Start typing to see matching posts.</p>
+                  ) : suggestions.length ? (
+                    <div className="space-y-1">
+                      {suggestions.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => openPostFromSuggestion(item.id)}
+                          className="w-full rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-muted/60"
+                        >
+                          <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                          <p className="text-[11px] text-muted-foreground/80">by {item.authorName}</p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="px-2 py-4 text-sm text-muted-foreground">No matching posts found.</p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 border-t border-border/60 p-2">
+                  <p className="text-xs text-muted-foreground">Press Enter to open all results.</p>
+                  <button
+                    type="button"
+                    onClick={submitSearch}
+                    disabled={!searchQuery}
+                    className="h-8 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Show all results
+                  </button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
