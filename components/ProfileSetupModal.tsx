@@ -85,7 +85,7 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-lg p-4">
         <Stepper 
           initialStep={1}
           onStepChange={(step) => setCurrentStep(step)}

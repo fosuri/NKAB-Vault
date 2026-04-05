@@ -83,7 +83,7 @@ export default function Stepper({
       {...rest}
     >
       <Card
-        className={cn("mx-auto w-full max-w-md px-2 py-6 shadow-[0_0_400px] shadow-card-foreground/10", stepCircleContainerClassName)}
+        className={cn("mx-auto w-full max-w-md px-2 py-6", stepCircleContainerClassName)}
       >
         <div className={`${stepContainerClassName} flex w-full items-center px-4 pb-4`}>
           {stepsArray.map((_, index) => {
