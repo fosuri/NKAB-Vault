@@ -6,6 +6,7 @@ import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
 import { postMedia, posts } from "@/lib/db/auth-schema";
+import { getUserModerationState } from "@/lib/auth/moderation";
 
 type DeletePostResult = { error?: string; success?: boolean };
 
@@ -14,6 +15,11 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
 
   if (!session?.user?.id) {
     return { error: "Not authenticated" };
+  }
+
+  const moderationState = await getUserModerationState(session.user.id);
+  if (moderationState?.activeBan) {
+    return { error: "Your account is banned" };
   }
 
   const post = await db.query.posts.findFirst({
@@ -25,7 +31,9 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     return { error: "Post not found" };
   }
 
-  if (post.userId !== session.user.id) {
+  const isAdmin = moderationState?.role === "admin";
+
+  if (post.userId !== session.user.id && !isAdmin) {
     return { error: "Not authorised" };
   }
 

@@ -7,6 +7,7 @@ import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
 import { postMedia, posts } from "@/lib/db/auth-schema";
+import { ensureCanCreatePost } from "@/lib/auth/moderation";
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 const allowedMimeTypes = [
@@ -104,6 +105,11 @@ export async function createPost(formData: FormData): Promise<CreatePostResult> 
 
   if (!session?.user?.id) {
     return { error: "You must be signed in to create a post" };
+  }
+
+  const permissions = await ensureCanCreatePost(session.user.id);
+  if (!permissions.allowed) {
+    return { error: permissions.error };
   }
 
   const parsed = createPostSchema.safeParse({

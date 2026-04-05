@@ -24,10 +24,12 @@ export function CommentSection({
   postId,
   initialComments,
   currentUserId,
+  canModerateComments = false,
 }: {
   postId: string;
   initialComments: Comment[];
   currentUserId?: string;
+  canModerateComments?: boolean;
 }) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [body, setBody] = useState("");
@@ -137,7 +139,7 @@ export function CommentSection({
                       })}
                     </span>
                   </div>
-                  {currentUserId && comment.author?.id === currentUserId && (
+                  {currentUserId && (comment.author?.id === currentUserId || canModerateComments) && (
                     <button
                       type="button"
                       onClick={() => handleDelete(comment.id)}

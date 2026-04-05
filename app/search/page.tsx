@@ -1,8 +1,10 @@
 import { FeedPostCard } from "@/components/feed-post-card";
 import { PostFilterControls } from "@/components/post-filter-controls";
 import { getSession } from "@/lib/auth/auth-server";
+import { getUserModerationState } from "@/lib/auth/moderation";
 import { parsePostContentFilter, parsePostTimeFilter } from "@/lib/post-filters";
 import { searchPosts } from "@/lib/posts";
+import { redirect } from "next/navigation";
 
 export default async function SearchPage({
   searchParams,
@@ -16,6 +18,13 @@ export default async function SearchPage({
 
   const session = await getSession();
   const viewerUserId = session?.user?.id;
+
+  if (viewerUserId) {
+    const moderationState = await getUserModerationState(viewerUserId);
+    if (moderationState?.activeBan) {
+      redirect("/banned");
+    }
+  }
 
   const posts = query
     ? await searchPosts({

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { comments } from "@/lib/db/auth-schema";
+import { ensureCanCreateComment, getUserModerationState } from "@/lib/auth/moderation";
 
 const bodySchema = z
   .string()
@@ -24,6 +25,11 @@ export async function createComment(
 
   if (!session?.user?.id) {
     return { error: "You must be signed in to comment" };
+  }
+
+  const permissions = await ensureCanCreateComment(session.user.id);
+  if (!permissions.allowed) {
+    return { error: permissions.error };
   }
 
   const parsed = bodySchema.safeParse(body);
@@ -53,6 +59,11 @@ export async function deleteComment(
     return { error: "Not authenticated" };
   }
 
+  const moderationState = await getUserModerationState(session.user.id);
+  if (moderationState?.activeBan) {
+    return { error: "Your account is banned" };
+  }
+
   const comment = await db.query.comments.findFirst({
     where: eq(comments.id, commentId),
   });
@@ -61,7 +72,9 @@ export async function deleteComment(
     return { error: "Comment not found" };
   }
 
-  if (comment.userId !== session.user.id) {
+  const isAdmin = moderationState?.role === "admin";
+
+  if (comment.userId !== session.user.id && !isAdmin) {
     return { error: "Not authorised" };
   }
 

@@ -1,6 +1,7 @@
 ﻿import { and, desc, eq, gte, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/lib/db/db";
 import { comments, postMedia, posts, user } from "@/lib/db/auth-schema";
+import { getUserModerationState } from "@/lib/auth/moderation";
 
 export type PostTimeFilter = "all" | "24h" | "7d" | "30d" | "365d";
 export type PostContentFilter = "all" | "image" | "gif" | "video";
@@ -50,6 +51,13 @@ export async function getFeedPosts(
   viewerUserId?: string,
   options: PostFilterOptions = {}
 ) {
+  if (viewerUserId) {
+    const moderationState = await getUserModerationState(viewerUserId);
+    if (moderationState?.activeBan) {
+      return [];
+    }
+  }
+
   const time = options.time ?? "all";
   const contentType = options.contentType ?? "all";
   const createdAfter = getCreatedAfterDate(time);
@@ -103,6 +111,13 @@ export async function searchPosts({
   contentType = "all",
   limit = 24,
 }: PostSearchOptions) {
+  if (viewerUserId) {
+    const moderationState = await getUserModerationState(viewerUserId);
+    if (moderationState?.activeBan) {
+      return [];
+    }
+  }
+
   const trimmedQuery = query.trim();
 
   if (!trimmedQuery) {
@@ -187,6 +202,11 @@ export async function getSearchSuggestions({
 }
 
 export async function getPostsByUserId(userId: string) {
+  const moderationState = await getUserModerationState(userId);
+  if (moderationState?.activeBan) {
+    return [];
+  }
+
   return db.query.posts.findMany({
     where: eq(posts.userId, userId),
     orderBy: [desc(posts.createdAt)],
@@ -199,6 +219,23 @@ export async function getPostsByUserId(userId: string) {
 }
 
 export async function getPostById(postId: string) {
+  const lightweightPost = await db.query.posts.findFirst({
+    where: eq(posts.id, postId),
+    columns: {
+      id: true,
+      userId: true,
+    },
+  });
+
+  if (!lightweightPost) {
+    return null;
+  }
+
+  const moderationState = await getUserModerationState(lightweightPost.userId);
+  if (moderationState?.activeBan) {
+    return null;
+  }
+
   return db.query.posts.findFirst({
     where: eq(posts.id, postId),
     with: {

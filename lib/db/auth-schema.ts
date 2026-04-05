@@ -145,10 +145,61 @@ export const postMedia = pgTable(
   ]
 );
 
+export const userSanctions = pgTable(
+  "user_sanctions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: text("type").notNull(),
+    reason: text("reason").notNull(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at"),
+    revokedAt: timestamp("revoked_at"),
+    revokedByUserId: text("revoked_by_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("user_sanctions_userId_idx").on(table.userId),
+    index("user_sanctions_type_idx").on(table.type),
+    index("user_sanctions_createdByUserId_idx").on(table.createdByUserId),
+  ]
+);
+
+export const adminActionLog = pgTable(
+  "admin_action_log",
+  {
+    id: text("id").primaryKey(),
+    actorUserId: text("actor_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    actionType: text("action_type").notNull(),
+    targetUserId: text("target_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    targetPostId: text("target_post_id"),
+    targetCommentId: text("target_comment_id"),
+    details: text("details"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("admin_action_log_actorUserId_idx").on(table.actorUserId),
+    index("admin_action_log_actionType_idx").on(table.actionType),
+    index("admin_action_log_targetUserId_idx").on(table.targetUserId),
+  ]
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
   posts: many(posts),
+  sanctions: many(userSanctions),
+  adminActions: many(adminActionLog),
   userRole: one(roles, {
     fields: [user.role],
     references: [roles.name],
@@ -202,4 +253,30 @@ export const commentsRelations = relations(comments, ({ one }) => ({
 
 export const userRelations2 = relations(user, ({ many }) => ({
   comments: many(comments),
+}));
+
+export const userSanctionsRelations = relations(userSanctions, ({ one }) => ({
+  targetUser: one(user, {
+    fields: [userSanctions.userId],
+    references: [user.id],
+  }),
+  actorUser: one(user, {
+    fields: [userSanctions.createdByUserId],
+    references: [user.id],
+  }),
+  revokedByUser: one(user, {
+    fields: [userSanctions.revokedByUserId],
+    references: [user.id],
+  }),
+}));
+
+export const adminActionLogRelations = relations(adminActionLog, ({ one }) => ({
+  actorUser: one(user, {
+    fields: [adminActionLog.actorUserId],
+    references: [user.id],
+  }),
+  targetUser: one(user, {
+    fields: [adminActionLog.targetUserId],
+    references: [user.id],
+  }),
 }));

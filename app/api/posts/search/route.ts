@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/auth-server";
+import { getUserModerationState } from "@/lib/auth/moderation";
 import { getSearchSuggestions } from "@/lib/posts";
 import { parsePostContentFilter, parsePostTimeFilter } from "@/lib/post-filters";
 
 export async function GET(request: Request) {
   try {
     const session = await getSession();
+
+    if (session?.user?.id) {
+      const moderationState = await getUserModerationState(session.user.id);
+      if (moderationState?.activeBan) {
+        return NextResponse.json({ error: "Your account is banned" }, { status: 403 });
+      }
+    }
+
     const { searchParams } = new URL(request.url);
 
     const q = (searchParams.get("q") ?? "").trim();

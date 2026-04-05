@@ -4,9 +4,11 @@ import { formatDistanceToNow } from "date-fns";
 import { Globe, Lock, BadgeDollarSign, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/auth-server";
+import { getUserModerationState } from "@/lib/auth/moderation";
 import { getPostById } from "@/lib/posts";
 import { CommentSection } from "@/components/comment-section";
 import { DeletePostButton } from "@/components/delete-post-button";
+import { redirect } from "next/navigation";
 
 const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; className: string }> = {
   public: { label: "Public", Icon: Globe, className: "text-emerald-600 dark:text-emerald-400" },
@@ -18,12 +20,21 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const [session, post] = await Promise.all([getSession(), getPostById(id)]);
 
+  if (session?.user?.id) {
+    const moderationState = await getUserModerationState(session.user.id);
+    if (moderationState?.activeBan) {
+      redirect("/banned");
+    }
+  }
+
   if (!post) {
     notFound();
   }
 
   const currentUserId = session?.user?.id;
+  const moderationState = currentUserId ? await getUserModerationState(currentUserId) : null;
   const isOwner = currentUserId === post.userId;
+  const isAdmin = moderationState?.role === "admin";
 
   if (post.access !== "public" && !isOwner) {
     notFound();
@@ -43,7 +54,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <ArrowLeft className="size-4" />
             Back to feed
           </Link>
-          {isOwner && <DeletePostButton postId={post.id} redirectTo="/" />}
+          {(isOwner || isAdmin) && <DeletePostButton postId={post.id} redirectTo="/" />}
         </div>
 
         <Card className="overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur">
@@ -75,13 +86,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                   <video
                     src={item.secureUrl}
                     controls
-                    className="max-h-[600px] w-full bg-black"
+                    className="max-h-150 w-full bg-black"
                   />
                 ) : (
                   <img
                     src={item.secureUrl}
                     alt={item.originalFilename ?? post.description}
-                    className="max-h-[800px] w-full object-contain"
+                    className="max-h-200 w-full object-contain"
                   />
                 )}
               </div>
@@ -94,6 +105,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             postId={post.id}
             initialComments={post.comments}
             currentUserId={currentUserId}
+            canModerateComments={Boolean(isAdmin)}
           />
         </section>
       </div>

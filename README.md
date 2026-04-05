@@ -51,6 +51,9 @@ cat dump.sql | docker exec -i nkab-postgres psql -U nkab -d nkab_vault
 #seed roles
 bun ./lib/db/seed-roles.ts
 
+#seed admin
+bun ./lib/db/seed-admin.ts
+
 #push schema to db
 bunx drizzle-kit push
 ```

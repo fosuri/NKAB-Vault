@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { FeedPostCard } from "@/components/feed-post-card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getSession } from "@/lib/auth/auth-server";
+import { getUserModerationState } from "@/lib/auth/moderation";
 import { getPostsByUserId } from "@/lib/posts";
 import { ProfileContent } from "@/components/profile-content";
 
@@ -10,6 +11,11 @@ export default async function ProfilePage() {
 
   if (!session?.user) {
     redirect("/sign-in");
+  }
+
+  const moderationState = await getUserModerationState(session.user.id);
+  if (moderationState?.activeBan) {
+    redirect("/banned");
   }
 
   const userPosts = await getPostsByUserId(session.user.id);

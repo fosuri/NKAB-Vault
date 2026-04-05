@@ -3,12 +3,18 @@ import { redirect } from "next/navigation";
 import { CreatePostForm } from "@/components/forms/create-post-form";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth/auth-server";
+import { getUserModerationState } from "@/lib/auth/moderation";
 
 export default async function NewPostPage() {
   const session = await getSession();
 
   if (!session?.user) {
     redirect("/sign-in");
+  }
+
+  const moderationState = await getUserModerationState(session.user.id);
+  if (moderationState?.activeBan) {
+    redirect("/banned");
   }
 
   return (
