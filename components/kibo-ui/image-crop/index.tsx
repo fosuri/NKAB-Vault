@@ -14,8 +14,10 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
 } from "react";
 import ReactCrop, {
   centerCrop,
@@ -112,7 +114,7 @@ type ImageCropContextType = {
     percentCrop: PercentCrop
   ) => Promise<void>;
   onImageLoad: (e: SyntheticEvent<HTMLImageElement>) => void;
-  applyCrop: () => Promise<void>;
+  applyCrop: () => Promise<string | void>;
   resetCrop: () => void;
 };
 
@@ -135,7 +137,11 @@ export type ImageCropProps = {
   onComplete?: ReactCropProps["onComplete"];
 } & Omit<ReactCropProps, "onChange" | "onComplete" | "children">;
 
-export const ImageCrop = ({
+export type ImageCropRef = {
+  applyCrop: () => Promise<string | undefined>;
+};
+
+export const ImageCrop = forwardRef<ImageCropRef, ImageCropProps>(({
   file,
   maxImageSize = 1024 * 1024 * 5,
   onCrop,
@@ -143,7 +149,7 @@ export const ImageCrop = ({
   onChange,
   onComplete,
   ...reactCropProps
-}: ImageCropProps) => {
+}, ref) => {
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [imgSrc, setImgSrc] = useState<string>("");
   const [crop, setCrop] = useState<PercentCrop>();
@@ -160,10 +166,29 @@ export const ImageCrop = ({
 
   const onImageLoad = useCallback(
     (e: SyntheticEvent<HTMLImageElement>) => {
-      const { width, height } = e.currentTarget;
+      const { width, height, naturalWidth, naturalHeight } = e.currentTarget;
       const newCrop = centerAspectCrop(width, height, reactCropProps.aspect);
       setCrop(newCrop);
       setInitialCrop(newCrop);
+      // Simulate pixel crop for default center crop
+      if (reactCropProps.aspect) {
+        const size = Math.min(naturalWidth, naturalHeight) * 0.9;
+        setCompletedCrop({
+           unit: 'px',
+           width: size,
+           height: size,
+           x: (naturalWidth - size) / 2,
+           y: (naturalHeight - size) / 2
+        });
+      } else {
+        setCompletedCrop({
+           unit: 'px',
+           width: naturalWidth * 0.9,
+           height: naturalHeight * 0.9,
+           x: naturalWidth * 0.05,
+           y: naturalHeight * 0.05
+        });
+      }
     },
     [reactCropProps.aspect]
   );
@@ -195,7 +220,12 @@ export const ImageCrop = ({
     );
 
     onCrop?.(croppedImage);
+    return croppedImage;
   };
+
+  useImperativeHandle(ref, () => ({
+    applyCrop,
+  }));
 
   const resetCrop = () => {
     if (initialCrop) {
@@ -225,7 +255,7 @@ export const ImageCrop = ({
       {children}
     </ImageCropContext.Provider>
   );
-};
+});
 
 export type ImageCropContentProps = {
   style?: CSSProperties;

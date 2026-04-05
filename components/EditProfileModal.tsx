@@ -1,7 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import {
+  ImageCrop,
+  ImageCropContent,
+  type ImageCropRef,
+} from "@/components/kibo-ui/image-crop";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,6 +24,22 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
   const [username, setUsername] = useState("");
   const [description, setDescription] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [croppedImage, setCroppedImage] = useState<string | null>(null);
+  const cropRef = useRef<ImageCropRef>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setCroppedImage(null);
+    }
+  };
+
+  const handleResetCrop = () => {
+    setSelectedFile(null);
+    setCroppedImage(null);
+  };
   
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [usernameError, setUsernameError] = useState("");
@@ -65,11 +86,26 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
     }
     
     setIsSubmitting(true);
+    let finalAvatar = avatar;
+
+    if (selectedFile && cropRef.current) {
+      try {
+        const cropped = await cropRef.current.applyCrop();
+        if (cropped) {
+          finalAvatar = cropped;
+        }
+      } catch (err) {
+        console.error("Crop applied error:", err);
+      }
+    } else {
+      finalAvatar = croppedImage || avatar;
+    }
+
     try {
       const res = await fetch("/api/user/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, description, avatar })
+        body: JSON.stringify({ username, description, avatar: finalAvatar })
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -93,7 +129,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4">
-      <div className="w-full max-w-md rounded-2xl border border-border/50 bg-background p-6 shadow-lg">
+      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-2xl border border-border/50 bg-background p-6 shadow-lg">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-semibold text-foreground">Edit Profile</h2>
@@ -108,7 +144,6 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
           </button>
         </div>
 
-        {/* Form */}
         <FieldGroup>
           <Field>
             <FieldLabel htmlFor="edit-username">Username</FieldLabel>
@@ -133,7 +168,6 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
             </div>
           </Field>
 
-          {/* Description */}
           <Field>
             <FieldLabel htmlFor="edit-description">Bio</FieldLabel>
             <textarea 
@@ -148,29 +182,65 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
             <p className="text-xs text-muted-foreground mt-1">{description.length}/500</p>
           </Field>
 
-          {/* Avatar URL */}
           <Field>
-            <FieldLabel htmlFor="edit-avatar">Avatar URL</FieldLabel>
-            <Input 
-              id="edit-avatar"
-              type="url"
-              placeholder="https://example.com/avatar.jpg" 
-              value={avatar}
-              onChange={(e) => setAvatar(e.target.value)}
-              disabled={isSubmitting}
-            />
-            {avatar && (
-              <Image 
-                src={avatar} 
-                alt="Avatar preview" 
-                width={64}
-                height={64}
-                className="mt-2 w-16 h-16 rounded-lg object-cover border border-border"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            )}
+            <FieldLabel>Profile Avatar</FieldLabel>
+            <div className="flex flex-col items-center gap-4 mt-2">
+              {selectedFile ? (
+                <div className="space-y-4 w-full flex flex-col items-center">
+                  <ImageCrop
+                    ref={cropRef}
+                    aspect={1}
+                    circularCrop
+                    file={selectedFile}
+                    maxImageSize={1024 * 1024 * 5}
+                  >
+                    <ImageCropContent className="max-w-md w-full" />
+                  </ImageCrop>
+                  <Button
+                    onClick={handleResetCrop}
+                    size="sm"
+                    variant="destructive"
+                    className="mt-2"
+                    type="button"
+                    disabled={isSubmitting}
+                  >
+                    Remove Selected Image
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {croppedImage || avatar ? (
+                    <img 
+                      src={croppedImage || avatar} 
+                      alt="Avatar preview" 
+                      className="w-24 h-24 shrink-0 object-cover rounded-full border border-border shadow-sm"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-24 h-24 shrink-0 rounded-full bg-muted flex items-center justify-center border border-border text-foreground text-3xl font-medium shadow-sm uppercase">
+                      {username ? username.charAt(0) : "U"}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col items-center gap-2 mt-2 w-full">
+                    <Button asChild variant="outline" className="w-full relative cursor-pointer" disabled={isSubmitting}>
+                      <label>
+                        Choose New Avatar
+                        <input 
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          type="file"
+                          className="hidden"
+                          disabled={isSubmitting}
+                        />
+                      </label>
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </Field>
         </FieldGroup>
 

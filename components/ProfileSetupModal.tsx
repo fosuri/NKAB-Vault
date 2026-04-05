@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Stepper, { Step } from "@/components/Stepper";
 
 import { toast } from "sonner";
@@ -9,6 +9,12 @@ import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field";
 
 import { User } from "better-auth";
+import { Button } from "@/components/ui/button";
+import {
+  ImageCrop,
+  ImageCropContent,
+  type ImageCropRef,
+} from "@/components/kibo-ui/image-crop";
 
 export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: boolean } }) {
   const [open, setOpen] = useState(false);
@@ -23,7 +29,47 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
   const [currentStep, setCurrentStep] = useState(1);
   const [username, setUsername] = useState("");
   const [description, setDescription] = useState("");
-  const [avatar, setAvatar] = useState("");
+  const [avatar, setAvatar] = useState(user?.image || "");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [croppedImage, setCroppedImage] = useState<string | null>(null);
+  const [fileAspect, setFileAspect] = useState<number | null>(null);
+  const cropRef = useRef<ImageCropRef>(null);
+
+  useEffect(() => {
+    if (user?.image && !avatar && !croppedImage) {
+      setAvatar(user.image);
+    }
+  }, [user?.image, avatar, croppedImage]);
+
+  useEffect(() => {
+    if (selectedFile) {
+      const url = URL.createObjectURL(selectedFile);
+      const img = new window.Image();
+      img.onload = () => {
+        setFileAspect(img.width / img.height);
+      };
+      img.src = url;
+      return () => {
+        URL.revokeObjectURL(url);
+        setFileAspect(null);
+      };
+    } else {
+      setFileAspect(null);
+    }
+  }, [selectedFile]);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setCroppedImage(null);
+    }
+  };
+
+  const handleResetCrop = () => {
+    setSelectedFile(null);
+    setCroppedImage(null);
+  };
   
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [usernameError, setUsernameError] = useState("");
@@ -61,11 +107,26 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
     }
     
     setIsSubmitting(true);
+    let finalAvatar = avatar;
+
+    if (selectedFile && cropRef.current) {
+      try {
+        const cropped = await cropRef.current.applyCrop();
+        if (cropped) {
+          finalAvatar = cropped;
+        }
+      } catch (err) {
+        console.error("Crop applied error:", err);
+      }
+    } else {
+      finalAvatar = croppedImage || avatar;
+    }
+
     try {
       const res = await fetch("/api/user/setup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, description, avatar })
+        body: JSON.stringify({ username, description, avatar: finalAvatar })
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -148,27 +209,66 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
               <CardHeader className="text-center p-0 mb-2">
                 <CardTitle className="text-xl">Profile Avatar</CardTitle>
                 <CardDescription>
-                  Enter an image URL for your avatar (optional).
+                  Upload an image for your avatar (optional).
                 </CardDescription>
               </CardHeader>
               <div className="flex flex-col items-center gap-4">
-                {avatar ? (
-                  <img src={avatar} alt="Avatar preview" className="w-32 h-32 shrink-0 object-cover rounded-full border border-border shadow-sm" />
-                ) : (
-                  <div className="w-32 h-32 shrink-0 rounded-full bg-muted flex items-center justify-center border border-dashed border-border text-muted-foreground text-xs font-medium">
-                    Preview
+                {selectedFile ? (
+                  <div 
+                    className="space-y-4 w-full flex flex-col items-center"
+                    style={{ minHeight: fileAspect ? `${384 / fileAspect}px` : 'auto' }}
+                  >
+                    <ImageCrop
+                      ref={cropRef}
+                      aspect={1}
+                      circularCrop
+                      file={selectedFile}
+                      maxImageSize={1024 * 1024 * 5}
+                    >
+                      <ImageCropContent className="max-w-md w-full" />
+                    </ImageCrop>
+                    <Button
+                      onClick={handleResetCrop}
+                      size="sm"
+                      variant="destructive"
+                      className="mt-2"
+                      type="button"
+                    >
+                      Remove Selected Image
+                    </Button>
                   </div>
+                ) : (
+                  <>
+                    {croppedImage || avatar ? (
+                      <div className="relative">
+                        <img 
+                          src={croppedImage || avatar} 
+                          alt="Avatar preview" 
+                          className="w-32 h-32 shrink-0 object-cover rounded-full border border-border shadow-sm" 
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-32 h-32 shrink-0 rounded-full bg-muted flex items-center justify-center border border-border text-muted-foreground text-4xl font-medium shadow-sm uppercase">
+                        {username ? username.charAt(0) : (user?.name?.charAt(0) || user?.email?.charAt(0) || "?")}
+                      </div>
+                    )}
+                    
+                    <div className="flex flex-col items-center gap-2 mt-2 w-full">
+                      <Button asChild variant="outline" className="w-full relative cursor-pointer">
+                        <label htmlFor="avatar-upload">
+                          Choose New Avatar
+                          <input 
+                            id="avatar-upload"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            type="file"
+                            className="hidden"
+                          />
+                        </label>
+                      </Button>
+                    </div>
+                  </>
                 )}
-                <Field className="w-full">
-                  <FieldLabel htmlFor="avatar">Avatar URL</FieldLabel>
-                  <Input 
-                    id="avatar"
-                    placeholder="https://example.com/avatar.png" 
-                    value={avatar}
-                    onChange={(e) => setAvatar(e.target.value)}
-                    type="url"
-                  />
-                </Field>
               </div>
             </FieldGroup>
           </Step>
