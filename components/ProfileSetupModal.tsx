@@ -33,13 +33,14 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
   const [fileAspect, setFileAspect] = useState<number | null>(null);
+  const [hasRemovedAvatar, setHasRemovedAvatar] = useState(false);
   const cropRef = useRef<ImageCropRef>(null);
 
   useEffect(() => {
-    if (user?.image && !avatar && !croppedImage) {
+    if (user?.image && !avatar && !croppedImage && !hasRemovedAvatar) {
       setAvatar(user.image);
     }
-  }, [user?.image, avatar, croppedImage]);
+  }, [user?.image, avatar, croppedImage, hasRemovedAvatar]);
 
   useEffect(() => {
     if (selectedFile) {
@@ -253,8 +254,19 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
                       </div>
                     )}
                     
-                    <div className="flex flex-col items-center gap-2 mt-2 w-full">
-                      <Button asChild variant="outline" className="w-full relative cursor-pointer">
+                    <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full">
+                      {(croppedImage || avatar) && (
+                        <Button 
+                          onClick={() => { setAvatar(""); setCroppedImage(null); setHasRemovedAvatar(true); }} 
+                          variant="destructive" 
+                          className="w-full sm:flex-1"
+                          type="button"
+                          disabled={isSubmitting}
+                        >
+                          Remove Avatar
+                        </Button>
+                      )}
+                      <Button asChild variant="outline" className="w-full sm:flex-1 relative cursor-pointer" disabled={isSubmitting}>
                         <label htmlFor="avatar-upload">
                           Choose New Avatar
                           <input 
@@ -263,6 +275,7 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
                             onChange={handleFileChange}
                             type="file"
                             className="hidden"
+                            disabled={isSubmitting}
                           />
                         </label>
                       </Button>

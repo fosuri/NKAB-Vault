@@ -47,8 +47,8 @@ export async function POST(request: Request) {
       setupCompleted: true,
     };
     
-    if (avatar) {
-      updateData.image = avatar;
+    if (avatar !== undefined) {
+      updateData.image = avatar === "" ? null : avatar;
     }
 
     await db.update(user)

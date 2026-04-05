@@ -224,8 +224,19 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
                     </div>
                   )}
 
-                  <div className="flex flex-col items-center gap-2 mt-2 w-full">
-                    <Button asChild variant="outline" className="w-full relative cursor-pointer" disabled={isSubmitting}>
+                  <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full">
+                    {(croppedImage || avatar) && (
+                      <Button 
+                        onClick={() => { setAvatar(""); setCroppedImage(null); }} 
+                        variant="destructive" 
+                        className="w-full sm:flex-1"
+                        type="button"
+                        disabled={isSubmitting}
+                      >
+                        Remove Avatar
+                      </Button>
+                    )}
+                    <Button asChild variant="outline" className="w-full sm:flex-1 relative cursor-pointer" disabled={isSubmitting}>
                       <label>
                         Choose New Avatar
                         <input 

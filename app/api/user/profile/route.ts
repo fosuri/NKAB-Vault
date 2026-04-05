@@ -45,9 +45,8 @@ export async function PUT(request: Request) {
       name: username,
       profileDescription: description || "",
     };
-    
-    if (avatar) {
-      updateData.image = avatar;
+    if (avatar !== undefined) {
+      updateData.image = avatar === "" ? null : avatar;
     }
 
     await db.update(user)
