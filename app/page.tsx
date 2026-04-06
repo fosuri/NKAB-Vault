@@ -34,12 +34,9 @@ export default async function Home({
             <PostFilterControls actionPath="/" time={time} contentType={contentType} />
           </div>
           {feedPosts.length ? (
-            <div className="columns-1 sm:columns-2 md:columns-3 xl:columns-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
               {feedPosts.map((post) => (
-                <div 
-                  key={post.id} 
-                  className="break-inside-avoid mb-6"
-                >
+                <div key={post.id}>
                   <FeedPostCard post={post} currentUserId={viewerUserId} showDeleteButton={false} />
                 </div>
               ))}

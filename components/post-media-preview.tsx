@@ -28,12 +28,12 @@ export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: st
   const imageUrl = isVideo ? src.replace(/\.[^/.]+$/, ".jpg") : src;
 
   return (
-    <div className="relative overflow-hidden rounded-lg border border-border/40 bg-black/5">
+    <div className="relative overflow-hidden rounded-lg border border-border/40 bg-black/5 aspect-3/2 w-full">
       <Image
         src={imageUrl}
         alt={alt}
-        className="max-h-155 w-full object-cover"
-        width={520}
+        className="h-full w-full object-cover"
+        width={780}
         height={520}
       />
       
