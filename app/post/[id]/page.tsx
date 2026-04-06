@@ -9,6 +9,8 @@ import { getPostById } from "@/lib/posts";
 import { CommentSection } from "@/components/comment-section";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { redirect } from "next/navigation";
+import { PostMediaCarousel } from "@/components/post-media-carousel";
+
 
 const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; className: string }> = {
   public: { label: "Public", Icon: Globe, className: "text-emerald-600 dark:text-emerald-400" },
@@ -76,27 +78,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <p className="text-sm leading-6 text-foreground/90">{post.description}</p>
           </CardHeader>
 
-          <CardContent className="grid gap-4 pt-4">
-            {post.media.map((item) => (
-              <div
-                key={item.id}
-                className="overflow-hidden rounded-2xl border border-border/40 bg-black/5"
-              >
-                {item.resourceType === "video" ? (
-                  <video
-                    src={item.secureUrl}
-                    controls
-                    className="max-h-150 w-full bg-black"
-                  />
-                ) : (
-                  <img
-                    src={item.secureUrl}
-                    alt={item.originalFilename ?? post.description}
-                    className="max-h-200 w-full object-contain"
-                  />
-                )}
-              </div>
-            ))}
+          <CardContent className="pt-4">
+            <PostMediaCarousel media={post.media} />
           </CardContent>
         </Card>
 
