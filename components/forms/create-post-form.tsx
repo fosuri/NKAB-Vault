@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { createPost } from "@/lib/actions/create-post";
+import { getCloudinarySignature } from "@/lib/actions/cloudinary";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -165,28 +166,67 @@ export function CreatePostForm() {
             event.preventDefault();
             if (entries.length === 0) return;
             const formData = new FormData(event.currentTarget);
-
-            entries.forEach((entry) => {
-              if (entry.croppedDataUrl) {
-                formData.append("files", dataUrlToFile(entry.croppedDataUrl, entry.original));
-              } else {
-                formData.append("files", entry.original);
-              }
-            });
+            const title = formData.get("title") as string;
+            const description = formData.get("description") as string;
+            const access = formData.get("access") as "public" | "private" | "paid";
 
             startTransition(async () => {
-              const result = await createPost(formData);
+              try {
+                const sig = await getCloudinarySignature();
+                
+                const uploadedMedia = [];
+                for (const entry of entries) {
+                  const file = entry.croppedDataUrl ? dataUrlToFile(entry.croppedDataUrl, entry.original) : entry.original;
+                  
+                  const uploadData = new FormData();
+                  uploadData.append("file", file);
+                  uploadData.append("api_key", sig.apiKey);
+                  uploadData.append("timestamp", sig.timestamp.toString());
+                  uploadData.append("signature", sig.signature);
+                  uploadData.append("folder", sig.folder);
+                  
+                  const uploadRes = await fetch(
+                    `https://api.cloudinary.com/v1_1/${sig.cloudName}/auto/upload`,
+                    { method: "POST", body: uploadData }
+                  );
+                  
+                  if (!uploadRes.ok) {
+                    throw new Error(`Failed to upload ${file.name}`);
+                  }
+                  
+                  const data = await uploadRes.json();
+                  uploadedMedia.push({
+                    publicId: data.public_id,
+                    secureUrl: data.secure_url,
+                    resourceType: data.resource_type,
+                    format: data.format,
+                    width: data.width,
+                    height: data.height,
+                    bytes: data.bytes,
+                    originalFilename: data.original_filename ?? file.name,
+                  });
+                }
 
-              if (result.error) {
-                toast.error(result.error);
-                return;
+                const result = await createPost({
+                  title,
+                  description,
+                  access,
+                  media: uploadedMedia,
+                });
+
+                if (result.error) {
+                  toast.error(result.error);
+                  return;
+                }
+
+                toast.success("Post created");
+                formRef.current?.reset();
+                entries.forEach((e) => URL.revokeObjectURL(e.previewUrl));
+                setEntries([]);
+                setCropIndex(null);
+              } catch (error) {
+                toast.error(error instanceof Error ? error.message : "Failed to create post");
               }
-
-              toast.success("Post created");
-              formRef.current?.reset();
-              entries.forEach((e) => URL.revokeObjectURL(e.previewUrl));
-              setEntries([]);
-              setCropIndex(null);
             });
           }}
         >
