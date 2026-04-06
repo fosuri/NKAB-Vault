@@ -1,9 +1,9 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Globe, Lock, BadgeDollarSign } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeletePostButton } from "@/components/delete-post-button";
-import Image from "next/image";
+import { PostMediaPreview } from "@/components/post-media-preview";
 
 type FeedPost = {
   id: string;
@@ -43,13 +43,24 @@ export function FeedPostCard({
   const isOwner = Boolean(currentUserId && currentUserId === post.userId);
   const accessMeta = ACCESS_META[post.access] ?? ACCESS_META.public;
   const { Icon, label, className } = accessMeta;
+  
+  const firstMedia = post.media?.[0];
 
   return (
-    <Card className="overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur">
+    <Card className="group relative flex h-fit flex-col overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur transition-colors hover:bg-card/90">
+      <Link href={`/post/${post.id}`} className="absolute inset-0 z-10" aria-label="View post" />
+      
       <CardHeader className="gap-2 border-b border-border/50 pb-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <CardTitle>{post.author?.name ?? post.author?.email ?? "Unknown user"}</CardTitle>
+            <CardTitle>
+              <Link
+                href={isOwner ? "/profile" : `/profile/${post.author?.name}`}
+                className="relative z-20 hover:underline"
+              >
+                {post.author?.name ?? post.author?.email ?? "Unknown user"}
+              </Link>
+            </CardTitle>
             <p className="text-sm text-muted-foreground">
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
             </p>
@@ -63,33 +74,26 @@ export function FeedPostCard({
         <p className="text-sm leading-6 text-foreground/90">{post.description}</p>
       </CardHeader>
 
-      <CardContent className="grid gap-4 pt-4">
-        {post.media.map((item) => (
-          <div key={item.id} className="overflow-hidden rounded-2xl border border-border/40 bg-black/5">
-            {item.resourceType === "video" ? (
-              <video src={item.secureUrl} controls className="max-h-130 w-full bg-black" />
-            ) : (
-              <Image
-                src={item.secureUrl}
-                alt={item.originalFilename ?? post.description}
-                className="max-h-155 w-full object-cover"
-                width={520}
-                height={520}
-              />
-            )}
-          </div>
-        ))}
+      <CardContent className="mt-auto grid gap-4 pt-0">
+        {firstMedia && (
+          <PostMediaPreview
+            src={firstMedia.secureUrl}
+            alt={firstMedia.originalFilename ?? post.description}
+            isVideo={firstMedia.resourceType === "video"}
+          />
+        )}
+        {post.media && post.media.length > 1 && (
+          <p className="text-center text-xs font-medium text-muted-foreground">
+            {post.media.length} files attached
+          </p>
+        )}
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between gap-4 pt-4">
-        <Link
-          href={`/post/${post.id}`}
-          className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-        >
-          View details &amp; comments
-        </Link>
-        {isOwner && showDeleteButton ? <DeletePostButton postId={post.id} /> : null}
-      </CardFooter>
+      {isOwner && showDeleteButton && (
+        <CardFooter className="relative z-20 flex justify-end pb-4 pt-0">
+          <DeletePostButton postId={post.id} />
+        </CardFooter>
+      )}
     </Card>
   );
 }
