@@ -70,8 +70,8 @@ export function FeedPostCard({
             {label}
           </span>
         </div>
-        <h2 className="text-sm leading-6 text-foreground/90">{post.title}</h2>
-        <p className="text-sm leading-6 text-foreground/90">{post.description}</p>
+        <h2 className="text-lg font-bold leading-6 text-foreground/90 truncate">{post.title}</h2>
+        <p className="text-sm leading-6 text-muted-foreground truncate">{post.description}</p>
       </CardHeader>
 
       <CardContent className="mt-auto grid gap-4 pt-0">
