@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Field,
   FieldDescription,
@@ -409,13 +410,14 @@ export function CreatePostForm() {
 
             <Field>
               <FieldLabel htmlFor="description">Description</FieldLabel>
-              <textarea
+              <Textarea
                 id="description"
                 name="description"
                 maxLength={500}
                 required
                 placeholder="Describe what you are sharing"
                 className="min-h-40 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                showCount
               />
               <FieldDescription>
                 One description is attached to the whole post.

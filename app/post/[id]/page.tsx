@@ -100,7 +100,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           </CardContent>
         </Card>
 
-        <section className="rounded-[28px] border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
+        <section className="rounded-xl border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
           <CommentSection
             postId={post.id}
             initialComments={post.comments}

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { FieldGroup, Field, FieldLabel } from "@/components/ui/field";
 import { User } from "better-auth";
 import { X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface EditProfileModalProps {
   open: boolean;
@@ -170,7 +171,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
 
           <Field>
             <FieldLabel htmlFor="edit-description">Bio</FieldLabel>
-            <textarea 
+            <Textarea 
               id="edit-description"
               placeholder="Tell us a little bit about yourself..." 
               value={description}
@@ -178,8 +179,8 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
               disabled={isSubmitting}
               className="flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
               maxLength={500}
+              showCount
             />
-            <p className="text-xs text-muted-foreground mt-1">{description.length}/500</p>
           </Field>
 
           <Field>

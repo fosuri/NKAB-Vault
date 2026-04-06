@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { createComment, deleteComment } from "@/lib/actions/comments";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 
 type Comment = {
   id: string;
@@ -85,14 +86,15 @@ export function CommentSection({
 
       {currentUserId ? (
         <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-          <textarea
+          <Textarea
             ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            maxLength={1000}
+            maxLength={500}
             required
             placeholder="Write a comment…"
             className="min-h-24 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            showCount
           />
           <Button
             type="submit"
