@@ -34,20 +34,22 @@ export default async function ProfilePage() {
           </div>
 
           {userPosts.length ? (
-            userPosts.map((post) => (
-              <FeedPostCard
-                key={post.id}
-                post={{
-                  ...post,
-                  author: {
-                    name: session.user.name,
-                    email: session.user.email,
-                    image: session.user.image ?? null,
-                  },
-                }}
-                currentUserId={session.user.id}
-              />
-            ))
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {userPosts.map((post) => (
+                <FeedPostCard
+                  key={post.id}
+                  post={{
+                    ...post,
+                    author: {
+                      name: session.user.name,
+                      email: session.user.email,
+                      image: session.user.image ?? null,
+                    },
+                  }}
+                  currentUserId={session.user.id}
+                />
+              ))}
+            </div>
           ) : (
             <div className="rounded-[28px] border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
               You have not uploaded anything yet. Create your first post from the main page.
