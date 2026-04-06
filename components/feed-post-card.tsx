@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
 import { Globe, Lock, BadgeDollarSign } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { PostMediaPreview } from "@/components/post-media-preview";
+import { getRelativeTime } from "@/lib/utils";
 
 type FeedPost = {
   id: string;
@@ -52,23 +52,23 @@ export function FeedPostCard({
       
       <CardHeader className="gap-2 border-b border-border/50 pb-4">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <CardTitle>
-              <Link
-                href={isOwner ? "/profile" : `/profile/${post.author?.name}`}
-                className="relative z-20 hover:underline"
-              >
-                {post.author?.name ?? post.author?.email ?? "Unknown user"}
-              </Link>
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-            </p>
+          <CardTitle className="truncate">
+            <Link
+              href={isOwner ? "/profile" : `/profile/${post.author?.name}`}
+              className="relative z-20 hover:underline"
+            >
+              {post.author?.name ?? post.author?.email ?? "Unknown user"}
+            </Link>
+          </CardTitle>
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
+            {post.access !== "public" && (
+              <span className={`flex items-center gap-1.5 ${className}`}>
+                <Icon className="size-3.5" />
+                {label}
+              </span>
+            )}
+            <span>{getRelativeTime(new Date(post.createdAt))}</span>
           </div>
-          <span className={`flex items-center gap-1.5 text-xs font-medium ${className}`}>
-            <Icon className="size-3.5" />
-            {label}
-          </span>
         </div>
         <h2 className="text-lg font-bold leading-6 text-foreground/90 truncate">{post.title}</h2>
         <p className="text-sm leading-6 text-muted-foreground truncate">{post.description}</p>
@@ -86,7 +86,7 @@ export function FeedPostCard({
       </CardContent>
 
       {isOwner && showDeleteButton && (
-        <CardFooter className="relative z-20 flex justify-end pb-4 pt-0">
+        <CardFooter className="relative z-20 flex justify-end pb-4 pt-4">
           <DeletePostButton postId={post.id} />
         </CardFooter>
       )}

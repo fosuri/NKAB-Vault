@@ -51,7 +51,7 @@ export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: st
             </div>
           </div>
           {duration !== null && (
-            <div className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-semibold tracking-wide text-white backdrop-blur">
+            <div className="absolute bottom-2 right-2 rounded bg-black/65 px-1.5 py-0.5 text-xs font-semibold tracking-wide text-white">
               {formatDuration(duration)}
             </div>
           )}
