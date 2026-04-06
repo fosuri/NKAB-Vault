@@ -80,12 +80,8 @@ export function FeedPostCard({
             src={firstMedia.secureUrl}
             alt={firstMedia.originalFilename ?? post.description}
             isVideo={firstMedia.resourceType === "video"}
+            fileCount={post.media.length}
           />
-        )}
-        {post.media && post.media.length > 1 && (
-          <p className="text-center text-xs font-medium text-muted-foreground">
-            {post.media.length} files attached
-          </p>
         )}
       </CardContent>
 

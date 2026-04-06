@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Play } from "lucide-react";
 
-export function PostMediaPreview({ src, alt, isVideo }: { src: string; alt: string; isVideo: boolean }) {
+export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: string; alt: string; isVideo: boolean; fileCount?: number }) {
   const [duration, setDuration] = useState<number | null>(null);
 
   useEffect(() => {
@@ -36,6 +36,13 @@ export function PostMediaPreview({ src, alt, isVideo }: { src: string; alt: stri
         width={520}
         height={520}
       />
+      
+      {fileCount > 1 && (
+        <div className="absolute right-2 top-2 z-10 rounded-md bg-black/65 px-2 py-1 text-xs font-bold tracking-wider text-white">
+          1/{fileCount}
+        </div>
+      )}
+
       {isVideo && (
         <>
           <div className="absolute inset-0 flex items-center justify-center">
