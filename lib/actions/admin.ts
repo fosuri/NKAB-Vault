@@ -119,6 +119,23 @@ export async function issueSanctionAction(params: {
       return { error: "Invalid expiration date" };
     }
 
+    // Revoke any existing active sanction of the same type before issuing a new one
+    const existingSanction = await db.query.userSanctions.findFirst({
+      where: and(
+        eq(userSanctions.userId, params.targetUserId),
+        eq(userSanctions.type, params.type),
+        isNull(userSanctions.revokedAt),
+      ),
+      columns: { id: true },
+    });
+
+    if (existingSanction) {
+      await db
+        .update(userSanctions)
+        .set({ revokedAt: new Date(), revokedByUserId: adminUserId })
+        .where(eq(userSanctions.id, existingSanction.id));
+    }
+
     await db.insert(userSanctions).values({
       id: randomUUID(),
       userId: params.targetUserId,
