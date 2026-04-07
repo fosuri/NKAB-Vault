@@ -44,6 +44,42 @@ async function getAdminUserId() {
   return session.user.id;
 }
 
+async function purgeUserContentOnBan(targetUserId: string) {
+  const userPosts = await db.query.posts.findMany({
+    where: eq(posts.userId, targetUserId),
+    with: { media: true },
+    columns: { id: true },
+  });
+
+  const mediaItems = userPosts.flatMap((post) => post.media);
+
+  if (mediaItems.length > 0) {
+    await Promise.allSettled(
+      mediaItems.map((mediaItem) =>
+        cloudinary.uploader.destroy(mediaItem.publicId, {
+          resource_type: mediaItem.resourceType as "image" | "video" | "raw",
+        })
+      )
+    );
+  }
+
+  const deletedComments = await db
+    .delete(comments)
+    .where(eq(comments.userId, targetUserId))
+    .returning({ id: comments.id });
+
+  const deletedPosts = await db
+    .delete(posts)
+    .where(eq(posts.userId, targetUserId))
+    .returning({ id: posts.id });
+
+  return {
+    deletedCommentsCount: deletedComments.length,
+    deletedPostsCount: deletedPosts.length,
+    deletedMediaCount: mediaItems.length,
+  };
+}
+
 export async function setUserRoleAction(targetUserId: string, role: Role): Promise<AdminActionResult> {
   try {
     const adminUserId = await getAdminUserId();
@@ -145,12 +181,27 @@ export async function issueSanctionAction(params: {
       expiresAt: parsedExpiresAt,
     });
 
+    const purgeResult =
+      params.type === "ban" ? await purgeUserContentOnBan(params.targetUserId) : null;
+
+    const details = `Reason: ${trimmedReason}${parsedExpiresAt ? ` | Expires: ${parsedExpiresAt.toISOString()}` : " | Expires: never"}${
+      purgeResult
+        ? ` | Deleted posts: ${purgeResult.deletedPostsCount} | Deleted comments: ${purgeResult.deletedCommentsCount} | Deleted media: ${purgeResult.deletedMediaCount}`
+        : ""
+    }`;
+
     await createAdminLog({
       actorUserId: adminUserId,
       actionType: params.type === "ban" ? "ban_user" : "mute_user",
       targetUserId: params.targetUserId,
-      details: `Reason: ${trimmedReason}${parsedExpiresAt ? ` | Expires: ${parsedExpiresAt.toISOString()}` : " | Expires: never"}`,
+      details,
     });
+
+    if (params.type === "ban") {
+      revalidatePath("/");
+      revalidatePath("/search");
+      revalidatePath("/profile");
+    }
 
     revalidatePath("/admin");
 
