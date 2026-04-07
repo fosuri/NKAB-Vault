@@ -27,15 +27,15 @@ export default async function RootLayout({
   const session = await getSession();
 
   return (
-    <html lang="en" className={geistMono.className} suppressHydrationWarning>
-      <body className="">
+    <html lang="en" className={`${geistMono.className} h-full`} suppressHydrationWarning>
+      <body className="h-full">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col h-full">
             <Header />
             <main className="flex-1 flex flex-col">
               {children}
