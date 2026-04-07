@@ -75,6 +75,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 {label}
               </span>
             </div>
+            <h2 className="font-semibold text-lg">{post.title}</h2>
             <p className="text-sm leading-6 text-foreground/90">{post.description}</p>
           </CardHeader>
 
