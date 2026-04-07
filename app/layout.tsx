@@ -18,6 +18,9 @@ export const metadata: Metadata = {
 
 import { getSession } from "@/lib/auth/auth-server";
 import { ProfileSetupModal } from "@/components/ProfileSetupModal";
+import { db } from "@/lib/db/db";
+import { user } from "@/lib/db/auth-schema";
+import { eq } from "drizzle-orm";
 
 export default async function RootLayout({
   children,
@@ -25,6 +28,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getSession();
+  const dbUser = session?.user?.id
+    ? await db.query.user.findFirst({
+        where: eq(user.id, session.user.id),
+        columns: {
+          role: true,
+        },
+      })
+    : null;
 
   return (
     <html lang="en" className={`${geistMono.className} h-full`} suppressHydrationWarning>
@@ -37,7 +48,7 @@ export default async function RootLayout({
         >
           <div className="flex min-h-screen flex-col">
             <div className="shrink-0">
-              <Header />
+              <Header userRole={dbUser?.role ?? null} />
             </div>
             <main className="flex flex-1 flex-col">
               {children}
