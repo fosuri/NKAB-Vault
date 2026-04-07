@@ -25,6 +25,7 @@ type SearchSuggestion = {
   description: string;
   createdAt: string;
   authorName: string;
+  previewUrl: string | null;
 };
 
 
@@ -131,13 +132,13 @@ export default function Header() {
           <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
             <DialogTrigger asChild>
               <button
-                className="group flex h-8 w-45 items-center gap-2 rounded-md border border-input bg-transparent px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-65"
+                className="group flex h-8 w-44 items-center gap-2 rounded-md border border-input bg-transparent px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-64 lg:w-80"
               >
                 <Search className="mx-1 size-4 shrink-0" />
                 <span className="flex-1 text-left">Search...</span>
               </button>
             </DialogTrigger>
-            <DialogContent className="p-0 border-none ring-0 bg-transparent shadow-none w-full max-w-2xl top-4 translate-y-0 px-4 md:px-0 [&>button]:hidden">
+            <DialogContent className="top-4 w-full max-w-2xl translate-y-0 border-none bg-transparent p-0 px-4 ring-0 shadow-none sm:max-w-2xl lg:max-w-3xl md:px-0 [&>button]:hidden">
               <div className="rounded-xl border border-input bg-card shadow-lg">
                 <div className="flex h-10 w-full items-center gap-2 border-b border-border/60 px-2">
                   <Search className="size-4 shrink-0 text-muted-foreground" />
@@ -161,17 +162,34 @@ export default function Header() {
                   {!searchQuery ? (
                     <p className="px-2 py-4 text-sm text-muted-foreground">Start typing to see matching posts.</p>
                   ) : suggestions.length ? (
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {suggestions.map((item) => (
                         <button
                           key={item.id}
                           type="button"
                           onClick={() => openPostFromSuggestion(item.id)}
-                          className="w-full rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-muted/60"
+                          className="grid min-h-16 w-full grid-cols-[3rem,minmax(0,1fr)] items-start gap-3 overflow-hidden rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/60"
                         >
-                          <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{item.description}</p>
-                          <p className="text-[11px] text-muted-foreground/80">by {item.authorName}</p>
+                          <div className="relative mt-0.5 size-12 overflow-hidden rounded-md border border-border/70 bg-muted">
+                            {item.previewUrl ? (
+                              <Image
+                                src={item.previewUrl}
+                                alt={item.title || "Post preview"}
+                                fill
+                                sizes="48px"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                <Search className="size-3.5" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 space-y-0.5 pt-0.5">
+                            <p className="truncate text-sm leading-tight font-semibold text-foreground">{item.title}</p>
+                            <p className="truncate text-xs leading-tight text-muted-foreground">{item.description}</p>
+                            <p className="truncate text-[11px] leading-tight text-muted-foreground/80">by {item.authorName}</p>
+                          </div>
                         </button>
                       ))}
                     </div>

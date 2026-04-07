@@ -19,7 +19,7 @@ export default async function BannedPage() {
   const ban = moderationState.activeBan;
 
   return (
-    <div className="min-h-full bg-[radial-gradient(circle_at_top,rgba(254,226,226,0.65),transparent_40%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(254,242,242,1)_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top,rgba(127,29,29,0.35),transparent_40%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
+    <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top,rgba(254,226,226,0.65),transparent_40%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(254,242,242,1)_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top,rgba(127,29,29,0.35),transparent_40%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
       <div className="mx-auto w-full max-w-2xl rounded-2xl border border-destructive/30 bg-background/90 p-8 shadow-xl">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-destructive">Account restricted</p>
         <h1 className="mt-3 text-3xl font-semibold text-foreground">Your account is banned</h1>

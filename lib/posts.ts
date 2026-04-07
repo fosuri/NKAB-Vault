@@ -198,6 +198,11 @@ export async function getSearchSuggestions({
     description: post.description,
     createdAt: post.createdAt,
     authorName: post.author?.name ?? post.author?.email ?? "Unknown user",
+    previewUrl: post.media[0]
+      ? post.media[0].resourceType === "video"
+        ? post.media[0].secureUrl.replace(/\.[^/.?]+(?=(\?|$))/, ".jpg")
+        : post.media[0].secureUrl
+      : null,
   }));
 }
 

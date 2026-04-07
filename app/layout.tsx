@@ -35,12 +35,16 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col h-full">
-            <Header />
-            <main className="flex-1 flex flex-col">
+          <div className="flex min-h-screen flex-col">
+            <div className="shrink-0">
+              <Header />
+            </div>
+            <main className="flex flex-1 flex-col">
               {children}
             </main>
-            <Footer />
+            <div className="shrink-0">
+              <Footer />
+            </div>
           </div>
           <Toaster />
           {session?.user && <ProfileSetupModal user={session.user} />}
