@@ -156,7 +156,7 @@ export const postReactions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    type: text("type").notNull(), // "like" | "dislike"
+    type: text("type").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

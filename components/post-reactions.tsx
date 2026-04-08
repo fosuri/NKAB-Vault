@@ -35,7 +35,6 @@ export function PostReactions({
     const prevLike = likeCount;
     const prevDislike = dislikeCount;
 
-    // Optimistic update
     if (prevReaction === type) {
       setUserReaction(null);
       if (type === "like") setLikeCount((c) => c - 1);

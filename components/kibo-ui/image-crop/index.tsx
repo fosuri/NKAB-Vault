@@ -170,7 +170,6 @@ export const ImageCrop = forwardRef<ImageCropRef, ImageCropProps>(({
       const newCrop = centerAspectCrop(width, height, reactCropProps.aspect);
       setCrop(newCrop);
       setInitialCrop(newCrop);
-      // Simulate pixel crop for default center crop
       if (reactCropProps.aspect) {
         const size = Math.min(naturalWidth, naturalHeight) * 0.9;
         setCompletedCrop({
@@ -198,7 +197,6 @@ export const ImageCrop = forwardRef<ImageCropRef, ImageCropProps>(({
     onChange?.(pixelCrop, percentCrop);
   };
 
-  // biome-ignore lint/suspicious/useAwait: "onComplete is async"
   const handleComplete = async (
     pixelCrop: PixelCrop,
     percentCrop: PercentCrop
@@ -256,6 +254,8 @@ export const ImageCrop = forwardRef<ImageCropRef, ImageCropProps>(({
     </ImageCropContext.Provider>
   );
 });
+
+ImageCrop.displayName = "ImageCrop";
 
 export type ImageCropContentProps = {
   style?: CSSProperties;
@@ -367,7 +367,6 @@ export const ImageCropReset = ({
   );
 };
 
-// Keep the original Cropper component for backward compatibility
 export type CropperProps = Omit<ReactCropProps, "onChange"> & {
   file: File;
   maxImageSize?: number;

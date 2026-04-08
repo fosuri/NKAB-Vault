@@ -5,7 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cloudinary } from "@/lib/cloudinary";
 import { getSession } from "@/lib/auth/auth-server";
-import { requireAdmin, type SanctionType } from "@/lib/auth/moderation";
+import { getUserModerationState, requireAdmin, type SanctionType } from "@/lib/auth/moderation";
 import { adminActionLog, comments, posts, user, userSanctions } from "@/lib/db/auth-schema";
 import { db } from "@/lib/db/db";
 
@@ -101,6 +101,13 @@ export async function setUserRoleAction(targetUserId: string, role: Role): Promi
       return { error: "Admin role cannot be changed here" };
     }
 
+    if (role === "moderator") {
+      const moderationState = await getUserModerationState(targetUserId);
+      if (moderationState?.activeBan) {
+        return { error: "Banned users cannot be assigned as moderators" };
+      }
+    }
+
     await db.update(user).set({ role }).where(eq(user.id, targetUserId));
 
     await createAdminLog({
@@ -155,7 +162,6 @@ export async function issueSanctionAction(params: {
       return { error: "Invalid expiration date" };
     }
 
-    // Revoke any existing active sanction of the same type before issuing a new one
     const existingSanction = await db.query.userSanctions.findFirst({
       where: and(
         eq(userSanctions.userId, params.targetUserId),
@@ -180,6 +186,17 @@ export async function issueSanctionAction(params: {
       createdByUserId: adminUserId,
       expiresAt: parsedExpiresAt,
     });
+
+    if (params.type === "ban" && targetUser.role === "moderator") {
+      await db.update(user).set({ role: "user" }).where(eq(user.id, params.targetUserId));
+
+      await createAdminLog({
+        actorUserId: adminUserId,
+        actionType: "remove_moderator",
+        targetUserId: params.targetUserId,
+        details: "Removed moderator role due to ban",
+      });
+    }
 
     const purgeResult =
       params.type === "ban" ? await purgeUserContentOnBan(params.targetUserId) : null;
@@ -241,6 +258,20 @@ export async function revokeSanctionAction(sanctionId: string): Promise<AdminAct
     return { success: true };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Failed to revoke sanction" };
+  }
+}
+
+export async function clearMyAdminHistoryAction(): Promise<AdminActionResult> {
+  try {
+    const adminUserId = await getAdminUserId();
+
+    await db.delete(adminActionLog).where(eq(adminActionLog.actorUserId, adminUserId));
+
+    revalidatePath("/admin");
+
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Failed to clear admin history" };
   }
 }
 

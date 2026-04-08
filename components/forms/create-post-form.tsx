@@ -110,10 +110,8 @@ export function CreatePostForm() {
       setCurrent(api.selectedScrollSnap() + 1);
     };
 
-    // run initially
     updateSlideInfo();
 
-    // add event listeners
     api.on("select", updateSlideInfo);
     api.on("reInit", updateSlideInfo);
   }, [api]);
