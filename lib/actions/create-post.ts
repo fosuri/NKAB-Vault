@@ -32,6 +32,7 @@ export type CreatePostPayload = z.infer<typeof createPostSchema>;
 type CreatePostResult = {
   error?: string;
   success?: boolean;
+  postId?: string;
 };
 
 export async function createPost(payload: CreatePostPayload): Promise<CreatePostResult> {
@@ -82,5 +83,5 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
 
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, postId };
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, useTransition, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   CheckIcon,
   CropIcon,
@@ -89,6 +90,7 @@ type FileEntry = {
 
 export function CreatePostForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [entries, setEntries] = useState<FileEntry[]>([]);
@@ -225,6 +227,7 @@ export function CreatePostForm() {
                 entries.forEach((e) => URL.revokeObjectURL(e.previewUrl));
                 setEntries([]);
                 setCropIndex(null);
+                router.push(`/post/${result.postId}`);
               } catch (error) {
                 toast.error(error instanceof Error ? error.message : "Failed to create post");
               }
