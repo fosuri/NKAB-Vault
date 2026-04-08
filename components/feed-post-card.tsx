@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Globe, Lock, BadgeDollarSign } from "lucide-react";
+import { Eye, Globe, Lock, BadgeDollarSign } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { PostMediaPreview } from "@/components/post-media-preview";
@@ -11,6 +11,7 @@ type FeedPost = {
   title: string;
   description: string;
   access: string;
+  viewCount: number;
   createdAt: Date;
   author: {
     name: string;
@@ -67,6 +68,10 @@ export function FeedPostCard({
                 {label}
               </span>
             )}
+            <span className="flex items-center gap-1">
+              <Eye className="size-3" />
+              {post.viewCount.toLocaleString()}
+            </span>
             <span>{getRelativeTime(new Date(post.createdAt))}</span>
           </div>
         </div>

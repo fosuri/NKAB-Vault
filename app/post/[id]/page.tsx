@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Globe, Lock, BadgeDollarSign, ArrowLeft } from "lucide-react";
+import { Globe, Lock, BadgeDollarSign, ArrowLeft, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/lib/auth/auth-server";
 import { getUserModerationState } from "@/lib/auth/moderation";
@@ -10,6 +10,7 @@ import { CommentSection } from "@/components/comment-section";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { redirect } from "next/navigation";
 import { PostMediaCarousel } from "@/components/post-media-carousel";
+import { PostViewTracker } from "@/components/post-view-tracker";
 
 
 const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; className: string }> = {
@@ -47,6 +48,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top,rgba(226,232,240,0.8),transparent_35%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.35),transparent_30%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
+      <PostViewTracker postId={post.id} />
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
         <div className="flex items-center justify-between gap-4">
           <Link
@@ -70,10 +72,16 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                   {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                 </p>
               </div>
-              <span className={`flex items-center gap-1.5 text-xs font-medium ${className}`}>
-                <Icon className="size-3.5" />
-                {label}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Eye className="size-3.5" />
+                  {post.viewCount.toLocaleString()}
+                </span>
+                <span className={`flex items-center gap-1.5 text-xs font-medium ${className}`}>
+                  <Icon className="size-3.5" />
+                  {label}
+                </span>
+              </div>
             </div>
             <h2 className="font-semibold text-lg">{post.title}</h2>
             <p className="text-sm leading-6 text-foreground/90">{post.description}</p>
