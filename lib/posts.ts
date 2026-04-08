@@ -1,6 +1,6 @@
 ﻿import { and, desc, eq, gte, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { comments, postMedia, posts, user } from "@/lib/db/auth-schema";
+import { comments, postMedia, postReactions, posts, user } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
 export type PostTimeFilter = "all" | "24h" | "7d" | "30d" | "365d";
@@ -223,7 +223,7 @@ export async function getPostsByUserId(userId: string) {
   });
 }
 
-export async function getPostById(postId: string) {
+export async function getPostById(postId: string, currentUserId?: string) {
   const lightweightPost = await db.query.posts.findFirst({
     where: eq(posts.id, postId),
     columns: {
@@ -241,8 +241,77 @@ export async function getPostById(postId: string) {
     return null;
   }
 
-  return db.query.posts.findFirst({
-    where: eq(posts.id, postId),
+  const [post, reactions] = await Promise.all([
+    db.query.posts.findFirst({
+      where: eq(posts.id, postId),
+      with: {
+        author: {
+          columns: {
+            id: true,
+            name: true,
+            image: true,
+            email: true,
+          },
+        },
+        media: {
+          orderBy: [postMedia.sortOrder],
+        },
+        comments: {
+          orderBy: [desc(comments.createdAt)],
+          with: {
+            author: {
+              columns: {
+                id: true,
+                name: true,
+                image: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    db
+      .select({ type: postReactions.type, userId: postReactions.userId })
+      .from(postReactions)
+      .where(eq(postReactions.postId, postId)),
+  ]);
+
+  if (!post) return null;
+
+  const likeCount = reactions.filter((r) => r.type === "like").length;
+  const dislikeCount = reactions.filter((r) => r.type === "dislike").length;
+  const userReaction = currentUserId
+    ? (reactions.find((r) => r.userId === currentUserId)?.type as "like" | "dislike" | undefined) ?? null
+    : null;
+
+  return { ...post, likeCount, dislikeCount, userReaction };
+}
+
+export async function getUserById(userId: string) {
+  return db.query.user.findFirst({
+    where: eq(user.id, userId),
+    columns: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+    },
+  });
+}
+
+export async function getLikedPostsByUserId(userId: string) {
+  const liked = await db
+    .select({ postId: postReactions.postId })
+    .from(postReactions)
+    .where(and(eq(postReactions.userId, userId), eq(postReactions.type, "like")));
+
+  const postIds = liked.map((r) => r.postId);
+  if (!postIds.length) return [];
+
+  return db.query.posts.findMany({
+    where: and(inArray(posts.id, postIds), eq(posts.access, "public")),
+    orderBy: [desc(posts.createdAt)],
     with: {
       author: {
         columns: {
@@ -255,31 +324,6 @@ export async function getPostById(postId: string) {
       media: {
         orderBy: [postMedia.sortOrder],
       },
-      comments: {
-        orderBy: [desc(comments.createdAt)],
-        with: {
-          author: {
-            columns: {
-              id: true,
-              name: true,
-              image: true,
-              email: true,
-            },
-          },
-        },
-      },
-    },
-  });
-}
-
-export async function getUserById(userId: string) {
-  return db.query.user.findFirst({
-    where: eq(user.id, userId),
-    columns: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
     },
   });
 }

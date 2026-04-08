@@ -3,17 +3,20 @@
 import { useEffect } from "react";
 import { incrementPostViewsAction } from "@/lib/actions/post-views";
 
-export function PostViewTracker({ postId }: { postId: string }) {
+export function PostViewTracker({
+  postId,
+  currentUserId,
+}: {
+  postId: string;
+  currentUserId?: string;
+}) {
   useEffect(() => {
-    const storageKey = `post-viewed:${postId}`;
-
-    if (sessionStorage.getItem(storageKey)) {
+    if (!currentUserId) {
       return;
     }
 
-    sessionStorage.setItem(storageKey, "1");
     void incrementPostViewsAction(postId);
-  }, [postId]);
+  }, [postId, currentUserId]);
 
   return null;
 }

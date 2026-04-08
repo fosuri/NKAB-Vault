@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, integer, unique } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -146,6 +146,45 @@ export const postMedia = pgTable(
   ]
 );
 
+export const postReactions = pgTable(
+  "post_reactions",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    type: text("type").notNull(), // "like" | "dislike"
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("post_reactions_postId_idx").on(table.postId),
+    index("post_reactions_userId_idx").on(table.userId),
+    unique("post_reactions_user_post_unique").on(table.userId, table.postId),
+  ]
+);
+
+export const postViews = pgTable(
+  "post_views",
+  {
+    id: text("id").primaryKey(),
+    postId: text("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("post_views_postId_idx").on(table.postId),
+    index("post_views_userId_idx").on(table.userId),
+    unique("post_views_user_post_unique").on(table.userId, table.postId),
+  ]
+);
+
 export const userSanctions = pgTable(
   "user_sanctions",
   {
@@ -199,6 +238,7 @@ export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
   posts: many(posts),
+  views: many(postViews),
   sanctions: many(userSanctions),
   adminActions: many(adminActionLog),
   userRole: one(roles, {
@@ -232,6 +272,30 @@ export const postsRelations = relations(posts, ({ many, one }) => ({
   }),
   media: many(postMedia),
   comments: many(comments),
+  reactions: many(postReactions),
+  views: many(postViews),
+}));
+
+export const postReactionsRelations = relations(postReactions, ({ one }) => ({
+  post: one(posts, {
+    fields: [postReactions.postId],
+    references: [posts.id],
+  }),
+  user: one(user, {
+    fields: [postReactions.userId],
+    references: [user.id],
+  }),
+}));
+
+export const postViewsRelations = relations(postViews, ({ one }) => ({
+  post: one(posts, {
+    fields: [postViews.postId],
+    references: [posts.id],
+  }),
+  user: one(user, {
+    fields: [postViews.userId],
+    references: [user.id],
+  }),
 }));
 
 export const postMediaRelations = relations(postMedia, ({ one }) => ({

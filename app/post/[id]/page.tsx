@@ -11,6 +11,7 @@ import { DeletePostButton } from "@/components/delete-post-button";
 import { redirect } from "next/navigation";
 import { PostMediaCarousel } from "@/components/post-media-carousel";
 import { PostViewTracker } from "@/components/post-view-tracker";
+import { PostReactions } from "@/components/post-reactions";
 
 
 const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; className: string }> = {
@@ -21,7 +22,7 @@ const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; clas
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [session, post] = await Promise.all([getSession(), getPostById(id)]);
+  const session = await getSession();
 
   if (session?.user?.id) {
     const moderationState = await getUserModerationState(session.user.id);
@@ -29,6 +30,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       redirect("/banned");
     }
   }
+
+  const post = await getPostById(id, session?.user?.id);
 
   if (!post) {
     notFound();
@@ -48,7 +51,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top,rgba(226,232,240,0.8),transparent_35%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.35),transparent_30%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
-      <PostViewTracker postId={post.id} />
+      <PostViewTracker postId={post.id} currentUserId={currentUserId} />
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
         <div className="flex items-center justify-between gap-4">
           <Link
@@ -89,6 +92,15 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
           <CardContent className="pt-4">
             <PostMediaCarousel media={post.media} />
+            <div className="mt-4 flex items-center">
+              <PostReactions
+                postId={post.id}
+                initialLikeCount={post.likeCount}
+                initialDislikeCount={post.dislikeCount}
+                initialUserReaction={post.userReaction}
+                currentUserId={currentUserId}
+              />
+            </div>
           </CardContent>
         </Card>
 
