@@ -19,6 +19,9 @@ export const auth = betterAuth({
     schema,
   }),
   user: {
+    deleteUser: {
+      enabled: true,
+    },
     additionalFields: {
       setupCompleted: {
         type: "boolean",
