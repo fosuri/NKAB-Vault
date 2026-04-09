@@ -40,7 +40,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const currentUserId = session?.user?.id;
   const moderationState = currentUserId ? await getUserModerationState(currentUserId) : null;
   const isOwner = currentUserId === post.userId;
-  const isAdmin = moderationState?.role === "admin";
+  const canModerateContent = moderationState?.role === "admin" || moderationState?.role === "moderator";
 
   if (post.access !== "public" && !isOwner) {
     notFound();
@@ -61,7 +61,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <ArrowLeft className="size-4" />
             Back to feed
           </Link>
-          {(isOwner || isAdmin) && <DeletePostButton postId={post.id} redirectTo="/" />}
+          {(isOwner || canModerateContent) && <DeletePostButton postId={post.id} redirectTo="/" authorRole={post.author?.role} actorRole={moderationState?.role} />}
         </div>
 
         <Card className="overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur">
@@ -109,7 +109,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             postId={post.id}
             initialComments={post.comments}
             currentUserId={currentUserId}
-            canModerateComments={Boolean(isAdmin)}
+            canModerateComments={Boolean(canModerateContent)}
+            actorRole={moderationState?.role}
           />
         </section>
       </div>

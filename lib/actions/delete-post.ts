@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
-import { postMedia, posts } from "@/lib/db/auth-schema";
-import { getUserModerationState } from "@/lib/auth/moderation";
+import { postMedia, posts, user } from "@/lib/db/auth-schema";
+import { getUserModerationState, type UserRole } from "@/lib/auth/moderation";
 
 type DeletePostResult = { error?: string; success?: boolean };
 
@@ -31,10 +31,27 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     return { error: "Post not found" };
   }
 
-  const isAdmin = moderationState?.role === "admin";
+  const actorRole = moderationState?.role as UserRole | undefined;
+  const isAdmin = actorRole === "admin";
+  const isModerator = actorRole === "moderator";
 
-  if (post.userId !== session.user.id && !isAdmin) {
+  if (post.userId !== session.user.id && !isAdmin && !isModerator) {
     return { error: "Not authorised" };
+  }
+
+  if (isModerator && post.userId !== session.user.id) {
+    const targetUser = await db.query.user.findFirst({
+      where: eq(user.id, post.userId),
+      columns: { role: true },
+    });
+
+    if (!targetUser) {
+      return { error: "Post author not found" };
+    }
+
+    if (targetUser.role === "admin" || targetUser.role === "moderator") {
+      return { error: "Moderators cannot delete posts of admins or moderators" };
+    }
   }
 
   await Promise.allSettled(

@@ -75,6 +75,7 @@ export default async function AdminPage() {
 
           <AdminDashboard
             users={users}
+            actorRole="admin"
             activeSanctions={activeSanctions.map((item) => ({
               id: item.id,
               type: item.type,

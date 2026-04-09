@@ -18,6 +18,7 @@ type Comment = {
     name: string;
     email: string;
     image: string | null;
+    role?: string;
   } | null;
 };
 
@@ -26,11 +27,13 @@ export function CommentSection({
   initialComments,
   currentUserId,
   canModerateComments = false,
+  actorRole,
 }: {
   postId: string;
   initialComments: Comment[];
   currentUserId?: string;
   canModerateComments?: boolean;
+  actorRole?: string;
 }) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [body, setBody] = useState("");
@@ -141,7 +144,7 @@ export function CommentSection({
                       })}
                     </span>
                   </div>
-                  {currentUserId && (comment.author?.id === currentUserId || canModerateComments) && (
+                  {currentUserId && (comment.author?.id === currentUserId || (canModerateComments && (actorRole !== "moderator" || comment.author?.role === "user"))) && (
                     <button
                       type="button"
                       onClick={() => handleDelete(comment.id)}

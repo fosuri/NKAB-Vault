@@ -166,8 +166,7 @@ export async function searchPosts({
           id: true,
           name: true,
           image: true,
-          email: true,
-        },
+          email: true,          role: true,        },
       },
       media: {
         orderBy: [postMedia.sortOrder],
@@ -251,6 +250,7 @@ export async function getPostById(postId: string, currentUserId?: string) {
             name: true,
             image: true,
             email: true,
+            role: true,
           },
         },
         media: {
@@ -265,6 +265,7 @@ export async function getPostById(postId: string, currentUserId?: string) {
                 name: true,
                 image: true,
                 email: true,
+                role: true,
               },
             },
           },
@@ -319,11 +320,11 @@ export async function getLikedPostsByUserId(userId: string) {
           name: true,
           image: true,
           email: true,
+          role: true,
         },
       },
       media: {
         orderBy: [postMedia.sortOrder],
       },
     },
-  });
-}
+  });}

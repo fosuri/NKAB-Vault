@@ -5,7 +5,13 @@ import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cloudinary } from "@/lib/cloudinary";
 import { getSession } from "@/lib/auth/auth-server";
-import { getUserModerationState, requireAdmin, type SanctionType } from "@/lib/auth/moderation";
+import {
+  getUserModerationState,
+  requireAdmin,
+  requireStaff,
+  type SanctionType,
+  type UserRole,
+} from "@/lib/auth/moderation";
 import { adminActionLog, comments, posts, user, userSanctions } from "@/lib/db/auth-schema";
 import { db } from "@/lib/db/db";
 
@@ -42,6 +48,34 @@ async function getAdminUserId() {
   await requireAdmin(session.user.id);
 
   return session.user.id;
+}
+
+async function getStaffActor() {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    throw new Error("Not authenticated");
+  }
+
+  const moderationState = await requireStaff(session.user.id);
+
+  return {
+    id: session.user.id,
+    role: moderationState.role,
+  };
+}
+
+function getStaffTargetPermissionError(actorRole: UserRole, targetRole: UserRole) {
+  if (actorRole === "moderator" && targetRole !== "user") {
+    return "Moderators cannot moderate admins or moderators";
+  }
+
+  return null;
+}
+
+function revalidateModerationDashboards() {
+  revalidatePath("/admin");
+  revalidatePath("/moderator");
 }
 
 async function purgeUserContentOnBan(targetUserId: string) {
@@ -132,9 +166,9 @@ export async function issueSanctionAction(params: {
   expiresAt?: string;
 }): Promise<AdminActionResult> {
   try {
-    const adminUserId = await getAdminUserId();
+    const actor = await getStaffActor();
 
-    if (params.targetUserId === adminUserId) {
+    if (params.targetUserId === actor.id) {
       return { error: "You cannot sanction yourself" };
     }
 
@@ -147,7 +181,12 @@ export async function issueSanctionAction(params: {
       return { error: "Target user not found" };
     }
 
-    if (targetUser.role === "admin") {
+    const permissionError = getStaffTargetPermissionError(actor.role, targetUser.role as UserRole);
+    if (permissionError) {
+      return { error: permissionError };
+    }
+
+    if (actor.role === "admin" && targetUser.role === "admin") {
       return { error: "Cannot sanction another admin" };
     }
 
@@ -174,7 +213,7 @@ export async function issueSanctionAction(params: {
     if (existingSanction) {
       await db
         .update(userSanctions)
-        .set({ revokedAt: new Date(), revokedByUserId: adminUserId })
+        .set({ revokedAt: new Date(), revokedByUserId: actor.id })
         .where(eq(userSanctions.id, existingSanction.id));
     }
 
@@ -183,7 +222,7 @@ export async function issueSanctionAction(params: {
       userId: params.targetUserId,
       type: params.type,
       reason: trimmedReason,
-      createdByUserId: adminUserId,
+      createdByUserId: actor.id,
       expiresAt: parsedExpiresAt,
     });
 
@@ -191,7 +230,7 @@ export async function issueSanctionAction(params: {
       await db.update(user).set({ role: "user" }).where(eq(user.id, params.targetUserId));
 
       await createAdminLog({
-        actorUserId: adminUserId,
+        actorUserId: actor.id,
         actionType: "remove_moderator",
         targetUserId: params.targetUserId,
         details: "Removed moderator role due to ban",
@@ -208,7 +247,7 @@ export async function issueSanctionAction(params: {
     }`;
 
     await createAdminLog({
-      actorUserId: adminUserId,
+      actorUserId: actor.id,
       actionType: params.type === "ban" ? "ban_user" : "mute_user",
       targetUserId: params.targetUserId,
       details,
@@ -220,7 +259,7 @@ export async function issueSanctionAction(params: {
       revalidatePath("/profile");
     }
 
-    revalidatePath("/admin");
+    revalidateModerationDashboards();
 
     return { success: true };
   } catch (error) {
@@ -230,30 +269,44 @@ export async function issueSanctionAction(params: {
 
 export async function revokeSanctionAction(sanctionId: string): Promise<AdminActionResult> {
   try {
-    const adminUserId = await getAdminUserId();
+    const actor = await getStaffActor();
 
     const sanction = await db.query.userSanctions.findFirst({
       where: and(eq(userSanctions.id, sanctionId), isNull(userSanctions.revokedAt)),
       columns: { id: true, userId: true, type: true },
+      with: {
+        targetUser: {
+          columns: { role: true },
+        },
+      },
     });
 
     if (!sanction) {
       return { error: "Sanction not found or already revoked" };
     }
 
+    if (!sanction.targetUser) {
+      return { error: "Target user not found" };
+    }
+
+    const permissionError = getStaffTargetPermissionError(actor.role, sanction.targetUser.role as UserRole);
+    if (permissionError) {
+      return { error: permissionError };
+    }
+
     await db
       .update(userSanctions)
-      .set({ revokedAt: new Date(), revokedByUserId: adminUserId })
+      .set({ revokedAt: new Date(), revokedByUserId: actor.id })
       .where(eq(userSanctions.id, sanctionId));
 
     await createAdminLog({
-      actorUserId: adminUserId,
+      actorUserId: actor.id,
       actionType: "revoke_sanction",
       targetUserId: sanction.userId,
       details: `Revoked ${sanction.type}`,
     });
 
-    revalidatePath("/admin");
+    revalidateModerationDashboards();
 
     return { success: true };
   } catch (error) {
@@ -263,11 +316,11 @@ export async function revokeSanctionAction(sanctionId: string): Promise<AdminAct
 
 export async function clearMyAdminHistoryAction(): Promise<AdminActionResult> {
   try {
-    const adminUserId = await getAdminUserId();
+    const actor = await getStaffActor();
 
-    await db.delete(adminActionLog).where(eq(adminActionLog.actorUserId, adminUserId));
+    await db.delete(adminActionLog).where(eq(adminActionLog.actorUserId, actor.id));
 
-    revalidatePath("/admin");
+    revalidateModerationDashboards();
 
     return { success: true };
   } catch (error) {
@@ -277,7 +330,7 @@ export async function clearMyAdminHistoryAction(): Promise<AdminActionResult> {
 
 export async function adminDeletePostAction(postId: string): Promise<AdminActionResult> {
   try {
-    const adminUserId = await getAdminUserId();
+    const actor = await getStaffActor();
 
     const post = await db.query.posts.findFirst({
       where: eq(posts.id, postId),
@@ -287,6 +340,20 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
 
     if (!post) {
       return { error: "Post not found" };
+    }
+
+    const targetUser = await db.query.user.findFirst({
+      where: eq(user.id, post.userId),
+      columns: { role: true },
+    });
+
+    if (!targetUser) {
+      return { error: "Target user not found" };
+    }
+
+    const permissionError = getStaffTargetPermissionError(actor.role, targetUser.role as UserRole);
+    if (permissionError) {
+      return { error: permissionError };
     }
 
     await Promise.allSettled(
@@ -300,17 +367,17 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
     await db.delete(posts).where(eq(posts.id, postId));
 
     await createAdminLog({
-      actorUserId: adminUserId,
+      actorUserId: actor.id,
       actionType: "delete_post",
       targetUserId: post.userId,
       targetPostId: post.id,
-      details: "Deleted by admin",
+      details: `Deleted by ${actor.role}`,
     });
 
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath("/profile");
-    revalidatePath("/admin");
+    revalidateModerationDashboards();
 
     return { success: true };
   } catch (error) {
@@ -320,7 +387,7 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
 
 export async function adminDeleteCommentAction(commentId: string): Promise<AdminActionResult> {
   try {
-    const adminUserId = await getAdminUserId();
+    const actor = await getStaffActor();
 
     const comment = await db.query.comments.findFirst({
       where: eq(comments.id, commentId),
@@ -331,19 +398,33 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
       return { error: "Comment not found" };
     }
 
+    const targetUser = await db.query.user.findFirst({
+      where: eq(user.id, comment.userId),
+      columns: { role: true },
+    });
+
+    if (!targetUser) {
+      return { error: "Target user not found" };
+    }
+
+    const permissionError = getStaffTargetPermissionError(actor.role, targetUser.role as UserRole);
+    if (permissionError) {
+      return { error: permissionError };
+    }
+
     await db.delete(comments).where(eq(comments.id, commentId));
 
     await createAdminLog({
-      actorUserId: adminUserId,
+      actorUserId: actor.id,
       actionType: "delete_comment",
       targetUserId: comment.userId,
       targetCommentId: comment.id,
       targetPostId: comment.postId,
-      details: "Deleted by admin",
+      details: `Deleted by ${actor.role}`,
     });
 
     revalidatePath(`/post/${comment.postId}`);
-    revalidatePath("/admin");
+    revalidateModerationDashboards();
 
     return { success: true };
   } catch (error) {

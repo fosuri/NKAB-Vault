@@ -38,14 +38,18 @@ type LogRow = {
   targetUserName: string | null;
 };
 
+type ActorRole = "admin" | "moderator";
+
 export function AdminDashboard({
   users,
   activeSanctions,
   myActionHistory,
+  actorRole = "admin",
 }: {
   users: UserRow[];
   activeSanctions: SanctionRow[];
   myActionHistory: LogRow[];
+  actorRole?: ActorRole;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -221,6 +225,12 @@ export function AdminDashboard({
   };
 
   const selectedUserRole = selectedUser?.role ?? "unknown";
+  const canManageRoles = actorRole === "admin";
+  const canSanctionSelectedUser =
+    selectedUserRole !== "unknown" &&
+    (actorRole === "admin"
+      ? selectedUserRole !== "admin"
+      : selectedUserRole === "user");
   const canMakeModerator = selectedUserRole === "user";
   const canRemoveModerator = selectedUserRole === "moderator";
 
@@ -241,7 +251,9 @@ export function AdminDashboard({
       <section className="rounded-2xl border border-border/60 bg-background/80 p-5">
         <h2 className="text-lg font-semibold">User moderation</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Assign moderators, mute or ban users.
+          {canManageRoles
+            ? "Assign moderators, mute or ban users."
+            : "Mute or ban users, and review active sanctions."}
         </p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
@@ -286,27 +298,37 @@ export function AdminDashboard({
               </div>
             ) : null}
           </div>
-          <button
-            type="button"
-            disabled={!selectedUserId || isPending || !canMakeModerator}
-            onClick={() => runAction(() => setUserRoleAction(selectedUserId, "moderator"), "Moderator role assigned")}
-            className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
-          >
-            Make moderator
-          </button>
-          <button
-            type="button"
-            disabled={!selectedUserId || isPending || !canRemoveModerator}
-            onClick={() => runAction(() => setUserRoleAction(selectedUserId, "user"), "Moderator role removed")}
-            className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
-          >
-            Remove moderator
-          </button>
+          {canManageRoles ? (
+            <>
+              <button
+                type="button"
+                disabled={!selectedUserId || isPending || !canMakeModerator}
+                onClick={() => runAction(() => setUserRoleAction(selectedUserId, "moderator"), "Moderator role assigned")}
+                className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Make moderator
+              </button>
+              <button
+                type="button"
+                disabled={!selectedUserId || isPending || !canRemoveModerator}
+                onClick={() => runAction(() => setUserRoleAction(selectedUserId, "user"), "Moderator role removed")}
+                className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
+              >
+                Remove moderator
+              </button>
+            </>
+          ) : null}
         </div>
 
         <p className="mt-2 text-sm text-muted-foreground">
           Selected user role: <span className="font-medium text-foreground">{selectedUserRole}</span>
         </p>
+
+        {!canManageRoles ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Moderators can apply sanctions only to users with role "user".
+          </p>
+        ) : null}
 
         <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_220px_auto]">
           <input
@@ -332,7 +354,7 @@ export function AdminDashboard({
           />
           <button
             type="button"
-            disabled={!selectedUserId || !sanctionReason.trim() || isPending}
+            disabled={!selectedUserId || !sanctionReason.trim() || isPending || !canSanctionSelectedUser}
             onClick={() => {
               runAction(
                 () =>
@@ -460,12 +482,12 @@ export function AdminDashboard({
 
       <section className="rounded-2xl border border-border/60 bg-background/80 p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Your admin history</h2>
+          <h2 className="text-lg font-semibold">Your {actorRole === "admin" ? "admin" : "moderation"} history</h2>
           <button
             type="button"
             disabled={!myActionHistory.length || isPending}
             onClick={() => {
-              if (!window.confirm("Clear your entire admin history?")) {
+              if (!window.confirm("Clear your entire moderation history?")) {
                 return;
               }
 
@@ -530,7 +552,7 @@ export function AdminDashboard({
               ))}
             </tbody>
           </table>
-          {!sortedHistory.length ? <p className="py-2 text-sm text-muted-foreground">No admin actions yet.</p> : null}
+          {!sortedHistory.length ? <p className="py-2 text-sm text-muted-foreground">No moderation actions yet.</p> : null}
           {sortedHistory.length ? (
             <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">
               <p>

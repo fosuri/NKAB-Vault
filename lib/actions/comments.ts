@@ -6,8 +6,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { comments } from "@/lib/db/auth-schema";
-import { ensureCanCreateComment, getUserModerationState } from "@/lib/auth/moderation";
+import { comments, user } from "@/lib/db/auth-schema";
+import { ensureCanCreateComment, getUserModerationState, type UserRole } from "@/lib/auth/moderation";
 
 const bodySchema = z
   .string()
@@ -72,10 +72,27 @@ export async function deleteComment(
     return { error: "Comment not found" };
   }
 
-  const isAdmin = moderationState?.role === "admin";
+  const actorRole = moderationState?.role as UserRole | undefined;
+  const isAdmin = actorRole === "admin";
+  const isModerator = actorRole === "moderator";
 
-  if (comment.userId !== session.user.id && !isAdmin) {
+  if (comment.userId !== session.user.id && !isAdmin && !isModerator) {
     return { error: "Not authorised" };
+  }
+
+  if (isModerator && comment.userId !== session.user.id) {
+    const targetUser = await db.query.user.findFirst({
+      where: eq(user.id, comment.userId),
+      columns: { role: true },
+    });
+
+    if (!targetUser) {
+      return { error: "Comment author not found" };
+    }
+
+    if (targetUser.role === "admin" || targetUser.role === "moderator") {
+      return { error: "Moderators cannot delete comments of admins or moderators" };
+    }
   }
 
   await db.delete(comments).where(eq(comments.id, commentId));

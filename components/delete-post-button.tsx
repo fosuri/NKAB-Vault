@@ -10,13 +10,24 @@ import { Button } from "@/components/ui/button";
 export function DeletePostButton({
   postId,
   redirectTo,
+  authorRole,
+  actorRole,
 }: {
   postId: string;
   redirectTo?: string;
+  authorRole?: string;
+  actorRole?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
+
+  const canDelete =
+    actorRole !== "moderator" || authorRole === "user" || !authorRole;
+
+  if (!canDelete) {
+    return null;
+  }
 
   function handleClick() {
     if (!confirming) {

@@ -92,6 +92,20 @@ export async function requireAdmin(userId: string): Promise<UserModerationState>
   return state;
 }
 
+export async function requireStaff(userId: string): Promise<UserModerationState> {
+  const state = await getUserModerationState(userId);
+
+  if (!state || (state.role !== "admin" && state.role !== "moderator")) {
+    throw new Error("Moderator access required");
+  }
+
+  if (state.activeBan) {
+    throw new Error("Banned users cannot access moderation tools");
+  }
+
+  return state;
+}
+
 export async function ensureCanCreatePost(userId: string) {
   const state = await getUserModerationState(userId);
 
