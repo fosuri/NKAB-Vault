@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import type { PostContentFilter, PostTimeFilter } from "@/lib/posts";
 
 type PostFilterControlsProps = {
@@ -13,28 +14,34 @@ export function PostFilterControls({ actionPath, time, contentType, query }: Pos
     <form action={actionPath} className="rounded-2xl border border-border/60 bg-background/70 p-3 backdrop-blur">
       {query ? <input type="hidden" name="q" value={query} /> : null}
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
-        <select
-          name="time"
-          defaultValue={time}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-        >
-          <option value="all">Any time</option>
-          <option value="24h">Last 24 hours</option>
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="365d">Last year</option>
-        </select>
+        <div className="group relative">
+          <select
+            name="time"
+            defaultValue={time}
+            className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            <option value="all">Any time</option>
+            <option value="24h">Last 24 hours</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="365d">Last year</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-focus-within:rotate-180" />
+        </div>
 
-        <select
-          name="contentType"
-          defaultValue={contentType}
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-        >
-          <option value="all">Any content</option>
-          <option value="image">Image</option>
-          <option value="gif">GIF</option>
-          <option value="video">Video</option>
-        </select>
+        <div className="group relative">
+          <select
+            name="contentType"
+            defaultValue={contentType}
+            className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            <option value="all">Any content</option>
+            <option value="image">Image</option>
+            <option value="gif">GIF</option>
+            <option value="video">Video</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-focus-within:rotate-180" />
+        </div>
 
         <button
           type="submit"

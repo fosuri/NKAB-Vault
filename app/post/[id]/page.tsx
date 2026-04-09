@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Globe, Lock, BadgeDollarSign, ArrowLeft, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getSession } from "@/lib/auth/auth-server";
 import { getUserModerationState } from "@/lib/auth/moderation";
 import { getPostById } from "@/lib/posts";
@@ -67,13 +68,26 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         <Card className="overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur">
           <CardHeader className="gap-2 border-b border-border/50 pb-4">
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar className="shrink-0">
+                  {post.author?.image ? (
+                    <AvatarImage
+                      src={post.author.image}
+                      alt={post.author?.name ?? post.author?.email ?? "User avatar"}
+                    />
+                  ) : null}
+                  <AvatarFallback>
+                    {post.author?.name?.charAt(0) ?? post.author?.email?.charAt(0) ?? "?"}
+                  </AvatarFallback>
+                </Avatar>
                 <CardTitle>
-                  {post.author?.name ?? post.author?.email ?? "Unknown user"}
+                  <div className="truncate">
+                    {post.author?.name ?? post.author?.email ?? "Unknown user"}
+                  </div>
+                  <p className="text-sm font-normal text-muted-foreground">
+                    {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                  </p>
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                </p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">

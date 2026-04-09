@@ -84,7 +84,9 @@ export function ProfileContent({ user, userPosts }: ProfileContentProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 w-full">
                   Account
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
+                  />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="p-1.5 flex flex-col gap-1 w-(--radix-dropdown-menu-trigger-width)">

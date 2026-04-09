@@ -4,6 +4,9 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/auth-server";
+import { cloudinary } from "@/lib/cloudinary";
+
+const DATA_IMAGE_REGEX = /^data:image\/[a-zA-Z0-9.+-]+;base64,/;
 
 const setupSchema = z.object({
   username: z.string()
@@ -11,8 +14,38 @@ const setupSchema = z.object({
     .max(20, "Username must be at most 20 characters")
     .regex(/^[a-zA-Z]+$/, "Username must contain only English letters and be a single word"),
   description: z.string().max(500, "Description is too long").optional(),
-  avatar: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  avatar: z.union([
+    z.string().url("Must be a valid URL"),
+    z.string().regex(DATA_IMAGE_REGEX, "Must be a valid image"),
+    z.literal(""),
+  ]).optional(),
 });
+
+async function resolveAvatarUrl(avatar: string | undefined, userId: string): Promise<string | null | undefined> {
+  if (avatar === undefined) return undefined;
+  if (avatar === "") {
+    try {
+      await cloudinary.uploader.destroy(`nkab-vault/avatars/${userId}/avatar`, {
+        resource_type: "image",
+      });
+    } catch (error) {
+      console.error("Avatar removal from Cloudinary failed:", error);
+    }
+    return null;
+  }
+
+  if (avatar.startsWith("data:image/")) {
+    const uploadResult = await cloudinary.uploader.upload(avatar, {
+      folder: `nkab-vault/avatars/${userId}`,
+      public_id: "avatar",
+      overwrite: true,
+      resource_type: "image",
+    });
+    return uploadResult.secure_url;
+  }
+
+  return avatar;
+}
 
 export async function POST(request: Request) {
   try {
@@ -47,8 +80,9 @@ export async function POST(request: Request) {
       setupCompleted: true,
     };
     
-    if (avatar !== undefined) {
-      updateData.image = avatar === "" ? null : avatar;
+    const resolvedAvatar = await resolveAvatarUrl(avatar, session.user.id);
+    if (resolvedAvatar !== undefined) {
+      updateData.image = resolvedAvatar;
     }
 
     await db.update(user)

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Eye, Globe, Lock, BadgeDollarSign } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { PostMediaPreview } from "@/components/post-media-preview";
 import { getRelativeTime } from "@/lib/utils";
@@ -54,14 +55,27 @@ export function FeedPostCard({
       
       <CardHeader className="gap-2 border-b border-border/50 pb-4">
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="truncate">
-            <Link
-              href={isOwner ? "/profile" : `/profile/${post.author?.name}`}
-              className="relative z-20 hover:underline"
-            >
-              {post.author?.name ?? post.author?.email ?? "Unknown user"}
-            </Link>
-          </CardTitle>
+          <div className="flex min-w-0 items-center gap-2">
+            <Avatar size="sm" className="relative z-20">
+              {post.author?.image ? (
+                <AvatarImage
+                  src={post.author.image}
+                  alt={post.author?.name ?? post.author?.email ?? "User avatar"}
+                />
+              ) : null}
+              <AvatarFallback>
+                {post.author?.name?.charAt(0) ?? post.author?.email?.charAt(0) ?? "?"}
+              </AvatarFallback>
+            </Avatar>
+            <CardTitle className="truncate">
+              <Link
+                href={isOwner ? "/profile" : `/profile/${post.author?.name}`}
+                className="relative z-20 hover:underline"
+              >
+                {post.author?.name ?? post.author?.email ?? "Unknown user"}
+              </Link>
+            </CardTitle>
+          </div>
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
             {post.access !== "public" && (
               <span className={`flex items-center gap-1.5 ${className}`}>
@@ -69,10 +83,6 @@ export function FeedPostCard({
                 {label}
               </span>
             )}
-            <span className="flex items-center gap-1">
-              <Eye className="size-3" />
-              {post.viewCount.toLocaleString()}
-            </span>
             <span>{getRelativeTime(new Date(post.createdAt))}</span>
           </div>
         </div>
@@ -89,6 +99,12 @@ export function FeedPostCard({
             fileCount={post.media.length}
           />
         )}
+        <div className="flex justify-end">
+          <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+            <Eye className="size-3" />
+            {post.viewCount.toLocaleString()}
+          </span>
+        </div>
       </CardContent>
 
       {isOwner && showDeleteButton && (
