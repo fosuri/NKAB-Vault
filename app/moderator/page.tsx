@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { getSession } from "@/lib/auth/auth-server";
 import { getUserModerationState } from "@/lib/auth/moderation";
-import { adminActionLog, user, userSanctions } from "@/lib/db/auth-schema";
+import { adminActionLog, user, userSanctions, ROLES } from "@/lib/db/auth-schema";
 import { db } from "@/lib/db/db";
 
 export default async function ModeratorPage() {
@@ -17,7 +17,7 @@ export default async function ModeratorPage() {
     redirect("/banned");
   }
 
-  if (!moderationState || (moderationState.role !== "moderator" && moderationState.role !== "admin")) {
+  if (!moderationState || (moderationState.roleId !== ROLES.MODERATOR && moderationState.roleId !== ROLES.ADMIN)) {
     redirect("/");
   }
 
@@ -30,7 +30,7 @@ export default async function ModeratorPage() {
         id: true,
         name: true,
         email: true,
-        role: true,
+        roleId: true,
         createdAt: true,
       },
       limit: 200,

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { ROLES, type RoleId } from "@/lib/db/auth-schema";
 
 import { authClient, signOut } from "@/lib/auth/auth-client";
 import Image from "next/image";
@@ -15,10 +16,10 @@ import { HeaderSearch } from "./header/HeaderSearch";
 import type { SearchSuggestion } from "./header/types";
 
 type HeaderProps = {
-  userRole?: string | null;
+  userRoleId?: RoleId | null;
 };
 
-export default function Header({ userRole }: HeaderProps) {
+export default function Header({ userRoleId }: HeaderProps) {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -28,8 +29,8 @@ export default function Header({ userRole }: HeaderProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const user = session?.user;
   const searchQuery = search.trim();
-  const showAdminDashboardLink = userRole === "admin";
-  const showModeratorDashboardLink = userRole === "moderator";
+  const showAdminDashboardLink = userRoleId === ROLES.ADMIN;
+  const showModeratorDashboardLink = userRoleId === ROLES.MODERATOR;
 
   useEffect(() => {
     if (!isSearchOpen) {

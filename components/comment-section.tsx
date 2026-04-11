@@ -5,6 +5,7 @@ import { Loader2, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { createComment, deleteComment } from "@/lib/actions/comments";
+import { ROLES } from "@/lib/db/auth-schema";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +19,7 @@ type Comment = {
     name: string;
     email: string;
     image: string | null;
-    role?: string;
+    roleId?: number;
   } | null;
 };
 
@@ -27,13 +28,13 @@ export function CommentSection({
   initialComments,
   currentUserId,
   canModerateComments = false,
-  actorRole,
+  actorRoleId,
 }: {
   postId: string;
   initialComments: Comment[];
   currentUserId?: string;
   canModerateComments?: boolean;
-  actorRole?: string;
+  actorRoleId?: number;
 }) {
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [body, setBody] = useState("");
@@ -144,7 +145,7 @@ export function CommentSection({
                       })}
                     </span>
                   </div>
-                  {currentUserId && (comment.author?.id === currentUserId || (canModerateComments && (actorRole !== "moderator" || comment.author?.role === "user"))) && (
+                  {currentUserId && (comment.author?.id === currentUserId || (canModerateComments && (actorRoleId !== ROLES.MODERATOR || comment.author?.roleId === ROLES.USER))) && (
                     <button
                       type="button"
                       onClick={() => handleDelete(comment.id)}

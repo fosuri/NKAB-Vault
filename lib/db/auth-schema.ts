@@ -1,5 +1,19 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, integer, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, integer, unique, serial } from "drizzle-orm/pg-core";
+
+export const ROLES = {
+  USER: 1,
+  MODERATOR: 2,
+  ADMIN: 3,
+} as const;
+
+export type RoleId = typeof ROLES[keyof typeof ROLES];
+export type RoleName = Lowercase<keyof typeof ROLES>;
+
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -7,7 +21,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  role: text("role").references(() => roles.name).default("user").notNull(),
+  roleId: integer("role_id").references(() => roles.id).default(ROLES.USER).notNull(),
   setupCompleted: boolean("setup_completed").default(false).notNull(),
   profileDescription: text("profile_description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -76,9 +90,7 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-export const roles = pgTable("roles", {
-  name: text("name").primaryKey().notNull(),
-});
+
 
 export const posts = pgTable(
   "posts",
@@ -242,8 +254,8 @@ export const userRelations = relations(user, ({ many, one }) => ({
   sanctions: many(userSanctions),
   adminActions: many(adminActionLog),
   userRole: one(roles, {
-    fields: [user.role],
-    references: [roles.name],
+    fields: [user.roleId],
+    references: [roles.id],
   }),
 }));
 

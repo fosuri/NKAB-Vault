@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 import { getSession } from "@/lib/auth/auth-server";
 import { ProfileSetupModal } from "@/components/ProfileSetupModal";
 import { db } from "@/lib/db/db";
-import { user } from "@/lib/db/auth-schema";
+import { user, RoleId } from "@/lib/db/auth-schema";
 import { eq } from "drizzle-orm";
 
 export default async function RootLayout({
@@ -32,7 +32,7 @@ export default async function RootLayout({
     ? await db.query.user.findFirst({
         where: eq(user.id, session.user.id),
         columns: {
-          role: true,
+          roleId: true,
         },
       })
     : null;
@@ -48,7 +48,7 @@ export default async function RootLayout({
         >
           <div className="flex min-h-screen flex-col">
             <div className="shrink-0">
-              <Header userRole={dbUser?.role ?? null} />
+              <Header userRoleId={dbUser?.roleId as RoleId ?? null} />
             </div>
             <main className="flex flex-1 flex-col">
               {children}

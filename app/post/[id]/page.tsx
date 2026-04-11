@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 import { PostMediaCarousel } from "@/components/post-media-carousel";
 import { PostViewTracker } from "@/components/post-view-tracker";
 import { PostReactions } from "@/components/post-reactions";
+import { ROLES, type RoleId } from "@/lib/db/auth-schema";
 
 
 const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; className: string }> = {
@@ -41,7 +42,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const currentUserId = session?.user?.id;
   const moderationState = currentUserId ? await getUserModerationState(currentUserId) : null;
   const isOwner = currentUserId === post.userId;
-  const canModerateContent = moderationState?.role === "admin" || moderationState?.role === "moderator";
+  const canModerateContent = moderationState?.roleId === ROLES.ADMIN || moderationState?.roleId === ROLES.MODERATOR;
 
   if (post.access !== "public" && !isOwner) {
     notFound();
@@ -62,7 +63,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <ArrowLeft className="size-4" />
             Back to feed
           </Link>
-          {(isOwner || canModerateContent) && <DeletePostButton postId={post.id} redirectTo="/" authorRole={post.author?.role} actorRole={moderationState?.role} />}
+          {(isOwner || canModerateContent) && <DeletePostButton postId={post.id} redirectTo="/" authorRoleId={post.author?.roleId as RoleId | undefined} actorRoleId={moderationState?.roleId as RoleId | undefined} />}
         </div>
 
         <Card className="overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur">
@@ -124,7 +125,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             initialComments={post.comments}
             currentUserId={currentUserId}
             canModerateComments={Boolean(canModerateContent)}
-            actorRole={moderationState?.role}
+            actorRoleId={moderationState?.roleId as RoleId | undefined}
           />
         </section>
       </div>

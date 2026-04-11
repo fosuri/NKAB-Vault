@@ -1,4 +1,4 @@
-﻿import { and, desc, eq, gte, ilike, inArray, or } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, or } from "drizzle-orm";
 import { db } from "@/lib/db/db";
 import { comments, postMedia, postReactions, posts, user } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
@@ -166,7 +166,9 @@ export async function searchPosts({
           id: true,
           name: true,
           image: true,
-          email: true,          role: true,        },
+          email: true,
+          roleId: true,
+        },
       },
       media: {
         orderBy: [postMedia.sortOrder],
@@ -250,7 +252,7 @@ export async function getPostById(postId: string, currentUserId?: string) {
             name: true,
             image: true,
             email: true,
-            role: true,
+            roleId: true,
           },
         },
         media: {
@@ -265,7 +267,7 @@ export async function getPostById(postId: string, currentUserId?: string) {
                 name: true,
                 image: true,
                 email: true,
-                role: true,
+                roleId: true,
               },
             },
           },
@@ -320,7 +322,7 @@ export async function getLikedPostsByUserId(userId: string) {
           name: true,
           image: true,
           email: true,
-          role: true,
+          roleId: true,
         },
       },
       media: {

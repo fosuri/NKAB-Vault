@@ -5,25 +5,26 @@ import { useRouter } from "next/navigation";
 import { Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { deletePost } from "@/lib/actions/delete-post";
+import { ROLES, type RoleId } from "@/lib/db/auth-schema";
 import { Button } from "@/components/ui/button";
 
 export function DeletePostButton({
   postId,
   redirectTo,
-  authorRole,
-  actorRole,
+  actorRoleId,
+  authorRoleId,
 }: {
   postId: string;
   redirectTo?: string;
-  authorRole?: string;
-  actorRole?: string;
+  actorRoleId?: RoleId;
+  authorRoleId?: RoleId;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
 
   const canDelete =
-    actorRole !== "moderator" || authorRole === "user" || !authorRole;
+    actorRoleId !== ROLES.MODERATOR || authorRoleId === ROLES.USER || !authorRoleId;
 
   if (!canDelete) {
     return null;

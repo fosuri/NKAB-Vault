@@ -10,12 +10,19 @@ import {
   revokeSanctionAction,
   setUserRoleAction,
 } from "@/lib/actions/admin";
+import { ROLES } from "@/lib/db/auth-schema";
+
+const ROLE_NAMES: Record<number, string> = {
+  [ROLES.USER]: "user",
+  [ROLES.MODERATOR]: "moderator",
+  [ROLES.ADMIN]: "admin",
+};
 
 type UserRow = {
   id: string;
   name: string;
   email: string;
-  role: string;
+  roleId: number;
   createdAt: Date;
 };
 
@@ -87,7 +94,8 @@ export function AdminDashboard({
 
     return users
       .filter((item) => {
-        const haystack = `${item.name} ${item.email} ${item.role}`.toLowerCase();
+        const roleStr = ROLE_NAMES[item.roleId] ?? "unknown";
+        const haystack = `${item.name} ${item.email} ${roleStr}`.toLowerCase();
         return haystack.includes(normalizedQuery);
       })
       .slice(0, 8);
@@ -224,15 +232,15 @@ export function AdminDashboard({
     });
   };
 
-  const selectedUserRole = selectedUser?.role ?? "unknown";
+  const selectedUserRoleId = selectedUser?.roleId ?? 0;
   const canManageRoles = actorRole === "admin";
   const canSanctionSelectedUser =
-    selectedUserRole !== "unknown" &&
+    selectedUserRoleId !== 0 &&
     (actorRole === "admin"
-      ? selectedUserRole !== "admin"
-      : selectedUserRole === "user");
-  const canMakeModerator = selectedUserRole === "user";
-  const canRemoveModerator = selectedUserRole === "moderator";
+      ? selectedUserRoleId !== ROLES.ADMIN
+      : selectedUserRoleId === ROLES.USER);
+  const canMakeModerator = selectedUserRoleId === ROLES.USER;
+  const canRemoveModerator = selectedUserRoleId === ROLES.MODERATOR;
 
   const runAction = (callback: () => Promise<{ success?: boolean; error?: string }>, successMessage: string) => {
     startTransition(async () => {
@@ -289,7 +297,7 @@ export function AdminDashboard({
                       className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted"
                     >
                       <span className="truncate">{item.name} ({item.email})</span>
-                      <span className="shrink-0 text-xs uppercase text-muted-foreground">{item.role}</span>
+                      <span className="shrink-0 text-xs uppercase text-muted-foreground">{ROLE_NAMES[item.roleId] ?? "unknown"}</span>
                     </button>
                   ))
                 ) : (
@@ -303,7 +311,7 @@ export function AdminDashboard({
               <button
                 type="button"
                 disabled={!selectedUserId || isPending || !canMakeModerator}
-                onClick={() => runAction(() => setUserRoleAction(selectedUserId, "moderator"), "Moderator role assigned")}
+                onClick={() => runAction(() => setUserRoleAction(selectedUserId, ROLES.MODERATOR), "Moderator role assigned")}
                 className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
                 Make moderator
@@ -311,7 +319,7 @@ export function AdminDashboard({
               <button
                 type="button"
                 disabled={!selectedUserId || isPending || !canRemoveModerator}
-                onClick={() => runAction(() => setUserRoleAction(selectedUserId, "user"), "Moderator role removed")}
+                onClick={() => runAction(() => setUserRoleAction(selectedUserId, ROLES.USER), "Moderator role removed")}
                 className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
                 Remove moderator
@@ -321,12 +329,12 @@ export function AdminDashboard({
         </div>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          Selected user role: <span className="font-medium text-foreground">{selectedUserRole}</span>
+          Selected user role: <span className="font-medium text-foreground">{ROLE_NAMES[selectedUserRoleId] ?? "unknown"}</span>
         </p>
 
         {!canManageRoles ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            Moderators can apply sanctions only to users with role "user".
+            Moderators can apply sanctions only to users with role &quot;user&quot;.
           </p>
         ) : null}
 

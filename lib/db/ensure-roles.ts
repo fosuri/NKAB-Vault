@@ -1,10 +1,10 @@
 import { db } from "@/lib/db/db";
-import { roles } from "@/lib/db/auth-schema";
+import { roles, ROLES } from "@/lib/db/auth-schema";
 
 const defaultRoles = [
-  { name: "user" },
-  { name: "moderator" },
-  { name: "admin" },
+  { id: ROLES.USER, name: "user" },
+  { id: ROLES.MODERATOR, name: "moderator" },
+  { id: ROLES.ADMIN, name: "admin" },
 ];
 
 let rolesEnsuredPromise: Promise<void> | null = null;

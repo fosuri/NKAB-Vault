@@ -1,8 +1,7 @@
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { user, userSanctions } from "@/lib/db/auth-schema";
+import { user, userSanctions, ROLES, type RoleId } from "@/lib/db/auth-schema";
 
-export type UserRole = "user" | "moderator" | "admin";
 export type SanctionType = "mute" | "ban";
 
 export type ActiveSanction = {
@@ -15,7 +14,7 @@ export type ActiveSanction = {
 
 export type UserModerationState = {
   userId: string;
-  role: UserRole;
+  roleId: RoleId;
   activeMute: ActiveSanction | null;
   activeBan: ActiveSanction | null;
 };
@@ -25,7 +24,7 @@ export async function getUserModerationState(userId: string): Promise<UserModera
     where: eq(user.id, userId),
     columns: {
       id: true,
-      role: true,
+      roleId: true,
     },
   });
 
@@ -56,7 +55,7 @@ export async function getUserModerationState(userId: string): Promise<UserModera
 
   return {
     userId: dbUser.id,
-    role: dbUser.role as UserRole,
+    roleId: dbUser.roleId as RoleId,
     activeMute: activeMute
       ? {
         id: activeMute.id,
@@ -81,7 +80,7 @@ export async function getUserModerationState(userId: string): Promise<UserModera
 export async function requireAdmin(userId: string): Promise<UserModerationState> {
   const state = await getUserModerationState(userId);
 
-  if (!state || state.role !== "admin") {
+  if (!state || state.roleId !== ROLES.ADMIN) {
     throw new Error("Admin access required");
   }
 
@@ -95,7 +94,7 @@ export async function requireAdmin(userId: string): Promise<UserModerationState>
 export async function requireStaff(userId: string): Promise<UserModerationState> {
   const state = await getUserModerationState(userId);
 
-  if (!state || (state.role !== "admin" && state.role !== "moderator")) {
+  if (!state || (state.roleId !== ROLES.ADMIN && state.roleId !== ROLES.MODERATOR)) {
     throw new Error("Moderator access required");
   }
 

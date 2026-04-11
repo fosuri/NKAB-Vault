@@ -2,7 +2,7 @@ import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db/db";
-import { adminActionLog, user, userSanctions } from "@/lib/db/auth-schema";
+import { adminActionLog, user, userSanctions, ROLES } from "@/lib/db/auth-schema";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
@@ -17,7 +17,7 @@ export default async function AdminPage() {
     redirect("/banned");
   }
 
-  if (!moderationState || moderationState.role !== "admin") {
+  if (!moderationState || moderationState.roleId !== ROLES.ADMIN) {
     redirect("/");
   }
 
@@ -30,7 +30,7 @@ export default async function AdminPage() {
         id: true,
         name: true,
         email: true,
-        role: true,
+        roleId: true,
         createdAt: true,
       },
       limit: 200,

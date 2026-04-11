@@ -1,7 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
 import { ensureDefaultRoles } from "./ensure-roles";
-import { user } from "./auth-schema";
+import { user, ROLES } from "./auth-schema";
 
 type Input = {
   email?: string;
@@ -27,7 +27,7 @@ async function printUsers() {
       id: true,
       name: true,
       email: true,
-      role: true,
+      roleId: true,
       createdAt: true,
     },
     orderBy: [desc(user.createdAt)],
@@ -41,7 +41,7 @@ async function printUsers() {
 
   console.log("Available users (latest 30):");
   for (const item of users) {
-    console.log(`- ${item.email} | ${item.name} | role=${item.role}`);
+    console.log(`- ${item.email} | ${item.name} | roleId=${item.roleId}`);
   }
 }
 
@@ -66,7 +66,7 @@ async function main() {
     process.exit(1);
   }
 
-  await db.update(user).set({ role: "admin" }).where(eq(user.id, target.id));
+  await db.update(user).set({ roleId: ROLES.ADMIN }).where(eq(user.id, target.id));
 
   const updated = await db.query.user.findFirst({
     where: eq(user.id, target.id),
@@ -74,7 +74,7 @@ async function main() {
       id: true,
       name: true,
       email: true,
-      role: true,
+      roleId: true,
     },
   });
 
