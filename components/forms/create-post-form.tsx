@@ -4,6 +4,8 @@ import { useCallback, useRef, useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Check,
+  ChevronDown,
   CheckIcon,
   CropIcon,
   FileArchive,
@@ -56,6 +58,8 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { POST_ACCESS_OPTIONS } from "@/lib/config/post-access";
 
 const ACCEPTED_MEDIA_TYPES = {
   "image/jpeg": [".jpg", ".jpeg"],
@@ -99,6 +103,9 @@ export function CreatePostForm() {
   const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
   const [count, setCount] = useState(0)
+  const [access, setAccess] = useState<"public" | "private" | "paid">("public");
+
+  const selectedAccess = POST_ACCESS_OPTIONS.find((a) => a.value === access) || POST_ACCESS_OPTIONS[0];
 
   useEffect(() => {
     if (!api) {
@@ -427,22 +434,33 @@ export function CreatePostForm() {
 
             <Field>
               <FieldLabel htmlFor="access">Access type</FieldLabel>
-              <select
-                id="access"
-                name="access"
-                defaultValue="public"
-                className="h-10 w-full rounded-lg border border-input bg-background px-2.5 py-1 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
-              >
-                <option className="bg-background text-foreground" value="public">
-                  Public - visible to everyone
-                </option>
-                <option className="bg-background text-foreground" value="private">
-                  Private - only you
-                </option>
-                <option className="bg-background text-foreground" value="paid">
-                  Paid - for subscribers
-                </option>
-              </select>
+              <input type="hidden" name="access" value={access} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between font-normal h-10 border-input bg-background hover:bg-background/90 px-3" disabled={isPending}>
+                    <span className="flex items-center gap-2">
+                      <selectedAccess.icon className="size-4" />
+                      {selectedAccess.label} - {selectedAccess.description}
+                    </span>
+                    <ChevronDown className="size-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {POST_ACCESS_OPTIONS.map((option) => (
+                    <DropdownMenuItem 
+                      key={option.value}
+                      onClick={() => setAccess(option.value)}
+                      className="flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <option.icon className="size-4" />
+                        {option.label}
+                      </span>
+                      {access === option.value && <Check className="size-4 text-emerald-500" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <FieldDescription>
                 Controls who can see this post in the feed.
               </FieldDescription>
@@ -456,7 +474,7 @@ export function CreatePostForm() {
 
             <Button
               type="submit"
-              className="mt-2 h-10 w-full"
+              className="mt-2 h-10 w-full hover:bg-primary/80"
               disabled={isPending || entries.length === 0}
             >
               {isPending ? (
