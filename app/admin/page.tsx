@@ -6,7 +6,10 @@ import { adminActionLog, user, userSanctions, ROLES } from "@/lib/db/auth-schema
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
-export default async function AdminPage() {
+type SearchParams = { [key: string]: string | string[] | undefined };
+
+export default async function AdminPage(props: { searchParams: Promise<SearchParams> }) {
+  const searchParams = await props.searchParams;
   const session = await getSession();
   if (!session) {
     redirect("/");
@@ -22,6 +25,7 @@ export default async function AdminPage() {
   }
 
   const now = new Date();
+  const logUserId = typeof searchParams.logUserId === "string" ? searchParams.logUserId : session.user.id;
 
   const [users, activeSanctions, myActionHistory] = await Promise.all([
     db.query.user.findMany({
@@ -52,7 +56,7 @@ export default async function AdminPage() {
       limit: 100,
     }),
     db.query.adminActionLog.findMany({
-      where: eq(adminActionLog.actorUserId, session.user.id),
+      where: eq(adminActionLog.actorUserId, logUserId),
       orderBy: [desc(adminActionLog.createdAt)],
       with: {
         targetUser: {
@@ -76,6 +80,8 @@ export default async function AdminPage() {
           <AdminDashboard
             users={users}
             actorRole="admin"
+            logUserId={logUserId}
+            currentUserId={session.user.id}
             activeSanctions={activeSanctions.map((item) => ({
               id: item.id,
               type: item.type,

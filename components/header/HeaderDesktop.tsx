@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 import type { HeaderUser } from "./types";
@@ -49,16 +50,17 @@ export function HeaderDesktop({
     <div className="hidden h-8 w-8 lg:block">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="rounded-full outline-none ring-ring/50 focus-visible:ring-3"
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full h-8 w-8 outline-none ring-ring/50 focus-visible:ring-3"
             aria-label="Open profile menu"
           >
             <Avatar>
               {user.image ? <AvatarImage src={user.image} alt={user.name || ""} /> : null}
               <AvatarFallback>{user.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
             </Avatar>
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="flex w-48 flex-col gap-0.5 p-1.5">
           <DropdownMenuItem asChild>

@@ -65,14 +65,16 @@ export function PostPasswordGate({ postId, onUnlocked }: PostPasswordGateProps) 
                 autoFocus
                 className="pr-10"
               />
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </button>
+              </Button>
             </div>
             {error && (
               <p className="text-xs font-medium text-destructive">{error}</p>

@@ -192,33 +192,33 @@ export function CreatePostForm() {
             const title = formData.get("title") as string;
             const description = formData.get("description") as string;
             const access = formData.get("access") as "public" | "private" | "paid";
-            
+
             const effectivePassword = access === "private" && addPassword && password.trim() ? password.trim() : null;
 
             startTransition(async () => {
               try {
                 const sig = await getCloudinarySignature();
-                
+
                 const uploadedMedia = [];
                 for (const entry of entries) {
                   const file = entry.croppedDataUrl ? dataUrlToFile(entry.croppedDataUrl, entry.original) : entry.original;
-                  
+
                   const uploadData = new FormData();
                   uploadData.append("file", file);
                   uploadData.append("api_key", sig.apiKey);
                   uploadData.append("timestamp", sig.timestamp.toString());
                   uploadData.append("signature", sig.signature);
                   uploadData.append("folder", sig.folder);
-                  
+
                   const uploadRes = await fetch(
                     `https://api.cloudinary.com/v1_1/${sig.cloudName}/auto/upload`,
                     { method: "POST", body: uploadData }
                   );
-                  
+
                   if (!uploadRes.ok) {
                     throw new Error(`Failed to upload ${file.name}`);
                   }
-                  
+
                   const data = await uploadRes.json();
                   uploadedMedia.push({
                     publicId: data.public_id,
@@ -419,7 +419,7 @@ export function CreatePostForm() {
             )}
           </div>
 
-          
+
           <FieldGroup className="gap-4 p-0">
             <Field>
               <FieldLabel htmlFor="title">Title</FieldLabel>
@@ -466,7 +466,7 @@ export function CreatePostForm() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   {POST_ACCESS_OPTIONS.map((option) => (
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       key={option.value}
                       onClick={() => handleAccessChange(option.value)}
                       className="flex items-center justify-between cursor-pointer"
@@ -516,14 +516,16 @@ export function CreatePostForm() {
                       className="pr-10"
                       required={addPassword}
                     />
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       type="button"
                       tabIndex={-1}
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
                     >
                       {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
+                    </Button>
                   </div>
                 )}
                 <FieldDescription>

@@ -2,8 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   clearMyAdminHistoryAction,
   issueSanctionAction,
@@ -52,11 +55,15 @@ export function AdminDashboard({
   activeSanctions,
   myActionHistory,
   actorRole = "admin",
+  logUserId,
+  currentUserId,
 }: {
   users: UserRow[];
   activeSanctions: SanctionRow[];
   myActionHistory: LogRow[];
   actorRole?: ActorRole;
+  logUserId?: string;
+  currentUserId?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -266,7 +273,7 @@ export function AdminDashboard({
 
         <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
           <div className="relative">
-            <input
+            <Input
               type="text"
               value={userSearchQuery}
               onChange={(event) => {
@@ -278,27 +285,26 @@ export function AdminDashboard({
                 setTimeout(() => setIsUserResultsOpen(false), 100);
               }}
               placeholder="Search by username or email"
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             />
 
             {isUserResultsOpen ? (
               <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-input bg-background p-1 shadow-md">
                 {filteredUsers.length ? (
                   filteredUsers.map((item) => (
-                    <button
+                    <Button
                       key={item.id}
-                      type="button"
+                      variant="ghost"
                       onMouseDown={(event) => {
                         event.preventDefault();
                         setSelectedUserId(item.id);
                         setUserSearchQuery(`${item.name} (${item.email})`);
                         setIsUserResultsOpen(false);
                       }}
-                      className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted"
+                      className="flex h-10 w-full items-center justify-between gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-muted font-normal"
                     >
                       <span className="truncate">{item.name} ({item.email})</span>
                       <span className="shrink-0 text-xs uppercase text-muted-foreground">{ROLE_NAMES[item.roleId] ?? "unknown"}</span>
-                    </button>
+                    </Button>
                   ))
                 ) : (
                   <p className="px-2 py-2 text-sm text-muted-foreground">No users found.</p>
@@ -308,22 +314,19 @@ export function AdminDashboard({
           </div>
           {canManageRoles ? (
             <>
-              <button
-                type="button"
+              <Button
                 disabled={!selectedUserId || isPending || !canMakeModerator}
                 onClick={() => runAction(() => setUserRoleAction(selectedUserId, ROLES.MODERATOR), "Moderator role assigned")}
-                className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
                 Make moderator
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="outline"
                 disabled={!selectedUserId || isPending || !canRemoveModerator}
                 onClick={() => runAction(() => setUserRoleAction(selectedUserId, ROLES.USER), "Moderator role removed")}
-                className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
                 Remove moderator
-              </button>
+              </Button>
             </>
           ) : null}
         </div>
@@ -339,29 +342,31 @@ export function AdminDashboard({
         ) : null}
 
         <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_220px_auto]">
-          <input
+          <Input
             type="text"
             value={sanctionReason}
             onChange={(event) => setSanctionReason(event.target.value)}
             placeholder="Reason for mute/ban"
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
           />
-          <select
-            value={sanctionType}
-            onChange={(event) => setSanctionType(event.target.value as "mute" | "ban")}
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-          >
-            <option value="mute">Mute</option>
-            <option value="ban">Ban</option>
-          </select>
-          <input
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="justify-between font-normal">
+                {sanctionType === "mute" ? "Mute" : "Ban"}
+                <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+              <DropdownMenuItem onClick={() => setSanctionType("mute")}>Mute</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSanctionType("ban")}>Ban</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Input
             type="datetime-local"
             value={sanctionExpiresAt}
             onChange={(event) => setSanctionExpiresAt(event.target.value)}
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
           />
-          <button
-            type="button"
+          <Button
+            variant="destructive"
             disabled={!selectedUserId || !sanctionReason.trim() || isPending || !canSanctionSelectedUser}
             onClick={() => {
               runAction(
@@ -375,10 +380,9 @@ export function AdminDashboard({
                 sanctionType === "ban" ? "User banned" : "User muted"
               );
             }}
-            className="h-10 rounded-md border border-destructive/40 bg-destructive/5 px-4 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
           >
             Apply sanction
-          </button>
+          </Button>
         </div>
 
         {isPending ? <Loader2 className="mt-3 size-4 animate-spin text-muted-foreground" /> : null}
@@ -387,7 +391,7 @@ export function AdminDashboard({
       <section className="rounded-2xl border border-border/60 bg-background/80 p-5">
         <h2 className="text-lg font-semibold">Active sanctions</h2>
         <div className="mt-3">
-          <input
+          <Input
             type="text"
             value={sanctionSearchQuery}
             onChange={(event) => {
@@ -395,7 +399,6 @@ export function AdminDashboard({
               setSanctionsPage(1);
             }}
             placeholder="Search sanctions"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
           />
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -403,29 +406,29 @@ export function AdminDashboard({
             <thead>
               <tr className="text-left text-muted-foreground">
                 <th className="w-24 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleSanctionSort("type")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSanctionSort("type")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     Type {sanctionSort.key === "type" ? (sanctionSort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="w-56 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleSanctionSort("targetUserName")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSanctionSort("targetUserName")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     User {sanctionSort.key === "targetUserName" ? (sanctionSort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="w-64 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleSanctionSort("reason")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSanctionSort("reason")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     Reason {sanctionSort.key === "reason" ? (sanctionSort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="w-48 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleSanctionSort("createdByName")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSanctionSort("createdByName")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     By {sanctionSort.key === "createdByName" ? (sanctionSort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="w-56 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleSanctionSort("expiresAt")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleSanctionSort("expiresAt")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     Expires {sanctionSort.key === "expiresAt" ? (sanctionSort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="w-28 pb-2 pr-4">Action</th>
               </tr>
@@ -439,13 +442,13 @@ export function AdminDashboard({
                   <td className="py-2 pr-4 truncate" title={item.createdByName}>{item.createdByName}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">{item.expiresAt ? item.expiresAt.toLocaleString() : "Never"}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">
-                    <button
-                      type="button"
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => runAction(() => revokeSanctionAction(item.id), "Sanction revoked")}
-                      className="rounded-md border border-input px-3 py-1 hover:bg-muted"
                     >
                       Revoke
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -463,25 +466,25 @@ export function AdminDashboard({
                 Showing {(safeSanctionsPage - 1) * pageSize + 1}-{Math.min(safeSanctionsPage * pageSize, sortedSanctions.length)} of {sortedSanctions.length}
               </p>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={safeSanctionsPage <= 1}
                   onClick={() => setSanctionsPage((prev) => Math.max(1, prev - 1))}
-                  className="rounded-md border border-input px-3 py-1 hover:bg-muted disabled:opacity-50"
                 >
                   Prev
-                </button>
+                </Button>
                 <span>
                   Page {safeSanctionsPage} / {sanctionsTotalPages}
                 </span>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={safeSanctionsPage >= sanctionsTotalPages}
                   onClick={() => setSanctionsPage((prev) => Math.min(sanctionsTotalPages, prev + 1))}
-                  className="rounded-md border border-input px-3 py-1 hover:bg-muted disabled:opacity-50"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
@@ -489,25 +492,65 @@ export function AdminDashboard({
       </section>
 
       <section className="rounded-2xl border border-border/60 bg-background/80 p-5">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Your {actorRole === "admin" ? "admin" : "moderation"} history</h2>
-          <button
-            type="button"
-            disabled={!myActionHistory.length || isPending}
-            onClick={() => {
-              if (!window.confirm("Clear your entire moderation history?")) {
-                return;
-              }
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">
+            {actorRole === "admin" && logUserId && currentUserId && logUserId !== currentUserId
+              ? `Moderation history: ${users.find((u) => u.id === logUserId)?.name || "User"}`
+              : `Your ${actorRole === "admin" ? "admin" : "moderation"} history`}
+          </h2>
+          <div className="flex flex-wrap items-center gap-3">
+            {actorRole === "admin" && currentUserId ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="font-normal w-auto justify-between min-w-[200px]">
+                    {logUserId === currentUserId || !logUserId
+                      ? "My History"
+                      : `${users.find((u) => u.id === logUserId)?.name} (${ROLE_NAMES[users.find((u) => u.id === logUserId)?.roleId ?? 0]})`}
+                    <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                  <DropdownMenuItem onClick={() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("logUserId");
+                    router.push(url.pathname + url.search);
+                  }}>
+                    My History
+                  </DropdownMenuItem>
+                  {users
+                    .filter((u) => (u.roleId === ROLES.ADMIN || u.roleId === ROLES.MODERATOR) && u.id !== currentUserId)
+                    .map((u) => (
+                      <DropdownMenuItem key={u.id} onClick={() => {
+                        const url = new URL(window.location.href);
+                        url.searchParams.set("logUserId", u.id);
+                        router.push(url.pathname + url.search);
+                      }}>
+                        {u.name} ({ROLE_NAMES[u.roleId]})
+                      </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
 
-              runAction(() => clearMyAdminHistoryAction(), "History cleared");
-            }}
-            className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
-          >
-            Clear history
-          </button>
+            {(!logUserId || logUserId === currentUserId) ? (
+              <Button
+                variant="outline"
+                disabled={!myActionHistory.length || isPending}
+                onClick={() => {
+                  if (!window.confirm("Clear your entire moderation history?")) {
+                    return;
+                  }
+
+                  runAction(() => clearMyAdminHistoryAction(), "History cleared");
+                }}
+              >
+                Clear my history
+              </Button>
+            ) : null}
+          </div>
         </div>
         <div className="mt-3">
-          <input
+          <Input
             type="text"
             value={historySearchQuery}
             onChange={(event) => {
@@ -515,7 +558,6 @@ export function AdminDashboard({
               setHistoryPage(1);
             }}
             placeholder="Search history"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
           />
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -523,24 +565,24 @@ export function AdminDashboard({
             <thead>
               <tr className="text-left text-muted-foreground">
                 <th className="w-52 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleHistorySort("createdAt")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("createdAt")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     When {historySort.key === "createdAt" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="w-44 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleHistorySort("actionType")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("actionType")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     Action {historySort.key === "actionType" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="w-40 pb-2 pr-4">
-                  <button type="button" onClick={() => toggleHistorySort("targetUserName")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("targetUserName")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     Target {historySort.key === "targetUserName" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
                 <th className="pb-2 pr-4">
-                  <button type="button" onClick={() => toggleHistorySort("details")} className="hover:text-foreground">
+                  <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("details")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
                     Details {historySort.key === "details" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
-                  </button>
+                  </Button>
                 </th>
               </tr>
             </thead>
@@ -567,25 +609,25 @@ export function AdminDashboard({
                 Showing {(safeHistoryPage - 1) * pageSize + 1}-{Math.min(safeHistoryPage * pageSize, sortedHistory.length)} of {sortedHistory.length}
               </p>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={safeHistoryPage <= 1}
                   onClick={() => setHistoryPage((prev) => Math.max(1, prev - 1))}
-                  className="rounded-md border border-input px-3 py-1 hover:bg-muted disabled:opacity-50"
                 >
                   Prev
-                </button>
+                </Button>
                 <span>
                   Page {safeHistoryPage} / {historyTotalPages}
                 </span>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={safeHistoryPage >= historyTotalPages}
                   onClick={() => setHistoryPage((prev) => Math.min(historyTotalPages, prev + 1))}
-                  className="rounded-md border border-input px-3 py-1 hover:bg-muted disabled:opacity-50"
                 >
                   Next
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}

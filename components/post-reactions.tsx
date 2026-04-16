@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import { toggleReactionAction } from "@/lib/actions/reactions";
+import { Button } from "./ui/button";
 
 type ReactionType = "like" | "dislike";
 
@@ -63,32 +64,30 @@ export function PostReactions({
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
+      <Button
+        variant="outline"
         disabled={isPending}
         onClick={() => handleReaction("like")}
-        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
-          userReaction === "like"
-            ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-            : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-        }`}
+        className={`flex h-8 items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${userReaction === "like"
+          ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-500"
+          : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
       >
         <ThumbsUp className="size-4" />
         {likeCount}
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button
+        variant="outline"
         disabled={isPending}
         onClick={() => handleReaction("dislike")}
-        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${
-          userReaction === "dislike"
-            ? "border-rose-500/50 bg-rose-500/10 text-rose-600 dark:text-rose-400"
-            : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-        }`}
+        className={`flex h-8 items-center gap-1.5 px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 ${userReaction === "dislike"
+          ? "border-rose-500/50 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 hover:text-rose-500"
+          : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
+          }`}
       >
         <ThumbsDown className="size-4" />
         {dislikeCount}
-      </button>
+      </Button>
     </div>
   );
 }

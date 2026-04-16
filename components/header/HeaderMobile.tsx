@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-
+import { Button } from "@/components/ui/button";
 import type { HeaderUser } from "./types";
 
 type HeaderMobileProps = {
@@ -30,14 +30,15 @@ export function HeaderMobile({
   return (
     <div className="lg:hidden">
       {!isPending ? (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setIsSidebarOpen(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-md outline-none ring-ring/50 focus-visible:ring-3 hover:bg-accent hover:text-accent-foreground"
+          className="flex h-8 w-8 items-center justify-center rounded-md outline-none ring-ring/50 focus-visible:ring-3"
           aria-label="Open sidebar"
         >
           <Menu className="size-5" />
-        </button>
+        </Button>
       ) : null}
 
       {isSidebarOpen ? (
@@ -60,12 +61,14 @@ export function HeaderMobile({
             ) : null}
             <span className="text-lg font-bold">Menu</span>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setIsSidebarOpen(false)}
-            className="rounded-md p-2 hover:bg-accent hover:text-accent-foreground"
+            className="rounded-md"
           >
             <X className="size-5" />
-          </button>
+          </Button>
         </div>
 
         <nav className="flex flex-col">
@@ -121,15 +124,16 @@ export function HeaderMobile({
                 </Link>
               ) : null}
               <Separator className="my-1" />
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => {
                   setIsSidebarOpen(false);
                   onSignOut();
                 }}
-                className="rounded-sm px-2 py-1 text-left text-base font-medium transition-colors hover:bg-muted hover:text-destructive"
+                className="w-full justify-start rounded-sm px-2 py-1 text-base font-medium transition-colors hover:bg-muted hover:text-destructive"
               >
                 Sign out
-              </button>
+              </Button>
             </>
           )}
         </nav>

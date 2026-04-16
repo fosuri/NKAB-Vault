@@ -146,11 +146,12 @@ export function CommentSection({
                     </span>
                   </div>
                   {currentUserId && (comment.author?.id === currentUserId || (canModerateComments && (actorRoleId !== ROLES.MODERATOR || comment.author?.roleId === ROLES.USER))) && (
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleDelete(comment.id)}
                       disabled={pendingDelete === comment.id}
-                      className="ml-auto text-muted-foreground hover:text-destructive transition-colors"
+                      className="ml-auto size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                       aria-label="Delete comment"
                     >
                       {pendingDelete === comment.id ? (
@@ -158,7 +159,7 @@ export function CommentSection({
                       ) : (
                         <Trash2 className="size-3.5" />
                       )}
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">

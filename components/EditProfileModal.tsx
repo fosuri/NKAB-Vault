@@ -41,7 +41,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
     setSelectedFile(null);
     setCroppedImage(null);
   };
-  
+
   const [usernameStatus, setUsernameStatus] = useState<"idle" | "loading" | "valid" | "invalid">("idle");
   const [usernameError, setUsernameError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,7 +59,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
       setUsernameStatus("idle");
       return;
     }
-    
+
     const timer = setTimeout(async () => {
       setUsernameStatus("loading");
       setUsernameError("");
@@ -85,7 +85,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
       toast.error("Please choose a valid username");
       return;
     }
-    
+
     setIsSubmitting(true);
     let finalAvatar = avatar;
 
@@ -143,53 +143,18 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
             <h2 className="text-2xl font-semibold text-foreground">Edit Profile</h2>
             <p className="text-sm text-muted-foreground mt-1">Update your profile information</p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             className="p-1 hover:bg-muted rounded-lg transition-colors"
             disabled={isSubmitting}
           >
             <X className="w-5 h-5 text-muted-foreground" />
-          </button>
+          </Button>
         </div>
 
         <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="edit-username">Username</FieldLabel>
-            <Input 
-              id="edit-username"
-              placeholder="Enter username" 
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              maxLength={20}
-              disabled={isSubmitting}
-            />
-            <div className="text-sm h-5 mt-1">
-              {!isUsernameUnchanged && usernameStatus === "loading" && (
-                <span className="text-muted-foreground animate-pulse">Checking availability...</span>
-              )}
-              {!isUsernameUnchanged && usernameStatus === "valid" && (
-                <span className="text-green-500">Username is available!</span>
-              )}
-              {!isUsernameUnchanged && usernameStatus === "invalid" && (
-                <span className="text-red-500">{usernameError}</span>
-              )}
-            </div>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="edit-description">Bio</FieldLabel>
-            <Textarea 
-              id="edit-description"
-              placeholder="Tell us a little bit about yourself..." 
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={isSubmitting}
-              className="flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
-              maxLength={500}
-              showCount
-            />
-          </Field>
-
           <Field>
             <FieldLabel>Profile Avatar</FieldLabel>
             <div className="flex flex-col items-center gap-4 mt-2">
@@ -218,9 +183,9 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
               ) : (
                 <>
                   {croppedImage || avatar ? (
-                    <img 
-                      src={croppedImage || avatar} 
-                      alt="Avatar preview" 
+                    <img
+                      src={croppedImage || avatar}
+                      alt="Avatar preview"
                       className="w-24 h-24 shrink-0 object-cover rounded-full border border-border shadow-sm"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
@@ -234,9 +199,9 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
 
                   <div className="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full">
                     {(croppedImage || avatar) && (
-                      <Button 
-                        onClick={() => { setAvatar(""); setCroppedImage(null); }} 
-                        variant="destructive" 
+                      <Button
+                        onClick={() => { setAvatar(""); setCroppedImage(null); }}
+                        variant="destructive"
                         className="w-full sm:flex-1"
                         type="button"
                         disabled={isSubmitting}
@@ -247,7 +212,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
                     <Button asChild variant="outline" className="w-full sm:flex-1 relative cursor-pointer" disabled={isSubmitting}>
                       <label>
                         Choose New Avatar
-                        <input 
+                        <input
                           accept="image/*"
                           onChange={handleFileChange}
                           type="file"
@@ -260,6 +225,43 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
                 </>
               )}
             </div>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="edit-username">Username</FieldLabel>
+            <Input
+              id="edit-username"
+              placeholder="Enter username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              maxLength={20}
+              disabled={isSubmitting}
+            />
+            <div className={`text-sm ${!isUsernameUnchanged ? "min-h-5 mt-1" : ""}`}>
+              {!isUsernameUnchanged && usernameStatus === "loading" && (
+                <span className="text-muted-foreground animate-pulse">Checking availability...</span>
+              )}
+              {!isUsernameUnchanged && usernameStatus === "valid" && (
+                <span className="text-green-500">Username is available!</span>
+              )}
+              {!isUsernameUnchanged && usernameStatus === "invalid" && (
+                <span className="text-red-500">{usernameError}</span>
+              )}
+            </div>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="edit-description">Bio</FieldLabel>
+            <Textarea
+              id="edit-description"
+              placeholder="Tell us a little bit about yourself..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={isSubmitting}
+              className="flex min-h-20 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40"
+              maxLength={500}
+              showCount
+            />
           </Field>
         </FieldGroup>
 

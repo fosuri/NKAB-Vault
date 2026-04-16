@@ -185,14 +185,16 @@ export function PostSideMenu({
                   className="h-9 pr-10"
                   required={addPassword}
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
+                </Button>
               </div>
             )}
           </Field>
@@ -212,15 +214,16 @@ export function PostSideMenu({
       <div className="flex flex-col gap-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post tools</h3>
         <div className="flex flex-col">
-          <button
-            className="flex items-center gap-3 py-2 text-muted-foreground hover:text-destructive transition-colors text-sm font-medium w-fit disabled:opacity-50"
+          <Button
+            variant="ghost"
+            className="flex px-0 items-center gap-3 py-2 text-muted-foreground hover:bg-transparent hover:text-destructive transition-colors text-sm font-medium w-fit disabled:opacity-50"
             disabled={isPending}
             onClick={handleDeletePost}
             onBlur={() => setConfirmDelete(false)}
           >
             <Trash2 className="size-4" />
             {confirmDelete ? "Confirm delete" : "Delete post"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

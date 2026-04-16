@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Loader2, Search } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import type { SearchSuggestion } from "./types";
@@ -34,12 +35,13 @@ export function HeaderSearch({
   return (
     <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
       <DialogTrigger asChild>
-        <button
-          className="group flex h-8 w-44 items-center gap-2 rounded-md border border-input bg-transparent px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-64 lg:w-80"
+        <Button
+          variant="outline"
+          className="group flex h-8 w-44 items-center justify-start gap-2 rounded-md border-input bg-transparent px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-64 lg:w-80"
         >
           <Search className="mx-1 size-4 shrink-0" />
           <span className="flex-1 text-left">Search...</span>
-        </button>
+        </Button>
       </DialogTrigger>
       <DialogContent className="top-4 w-full max-w-2xl translate-y-0 border-none bg-transparent p-0 px-4 ring-0 shadow-none sm:max-w-2xl lg:max-w-3xl md:px-0 [&>button]:hidden">
         <div className="rounded-xl border border-input bg-card shadow-lg">
@@ -67,13 +69,13 @@ export function HeaderSearch({
             ) : suggestions.length ? (
               <div className="space-y-1.5">
                 {suggestions.map((item) => (
-                  <button
+                  <Button
                     key={item.id}
-                    type="button"
+                    variant="ghost"
                     onClick={() => openPostFromSuggestion(item.id)}
-                    className="grid min-h-16 w-full grid-cols-[3rem,minmax(0,1fr)] items-start gap-3 overflow-hidden rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/60"
+                    className="grid min-h-16 h-auto w-full grid-cols-[3rem,minmax(0,1fr)] items-start gap-3 overflow-hidden rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/60 font-normal whitespace-normal"
                   >
-                    <div className="relative mt-0.5 size-12 overflow-hidden rounded-md border border-border/70 bg-muted">
+                    <div className="relative mt-0.5 size-12 overflow-hidden rounded-md border border-border/70 bg-muted shrink-0">
                       {item.previewUrl ? (
                         <Image
                           src={item.previewUrl}
@@ -88,12 +90,12 @@ export function HeaderSearch({
                         </div>
                       )}
                     </div>
-                    <div className="min-w-0 space-y-0.5 pt-0.5">
+                    <div className="min-w-0 space-y-0.5 pt-0.5 flex flex-col justify-start">
                       <p className="truncate text-sm font-semibold leading-tight text-foreground">{item.title}</p>
                       <p className="truncate text-xs leading-tight text-muted-foreground">{item.description}</p>
                       <p className="truncate text-[11px] leading-tight text-muted-foreground/80">by {item.authorName}</p>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             ) : (
@@ -103,14 +105,14 @@ export function HeaderSearch({
 
           <div className="flex items-center justify-between gap-2 border-t border-border/60 p-2">
             <p className="text-xs text-muted-foreground">Press Enter to open all results.</p>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={submitSearch}
               disabled={!searchQuery}
-              className="h-8 rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
             >
               Show all results
-            </button>
+            </Button>
           </div>
         </div>
       </DialogContent>

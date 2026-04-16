@@ -1,6 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { PostContentFilter, PostTimeFilter } from "@/lib/posts";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 type PostFilterControlsProps = {
   actionPath: string;
@@ -9,53 +14,73 @@ type PostFilterControlsProps = {
   query?: string;
 };
 
+const TIME_LABELS: Record<string, string> = {
+  "all": "Any time",
+  "24h": "Last 24 hours",
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+  "365d": "Last year",
+};
+
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  "all": "Any content",
+  "image": "Image",
+  "gif": "GIF",
+  "video": "Video",
+};
+
 export function PostFilterControls({ actionPath, time, contentType, query }: PostFilterControlsProps) {
+  const [selectedTime, setSelectedTime] = useState<PostTimeFilter>(time);
+  const [selectedContentType, setSelectedContentType] = useState<PostContentFilter>(contentType);
+
   return (
     <form action={actionPath} className="rounded-2xl border border-border/60 bg-background/70 p-3 backdrop-blur">
       {query ? <input type="hidden" name="q" value={query} /> : null}
+      <input type="hidden" name="time" value={selectedTime} />
+      <input type="hidden" name="contentType" value={selectedContentType} />
+      
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
-        <div className="group relative">
-          <select
-            name="time"
-            defaultValue={time}
-            className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          >
-            <option value="all">Any time</option>
-            <option value="24h">Last 24 hours</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="365d">Last year</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-focus-within:rotate-180" />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full justify-between font-normal text-foreground">
+              {TIME_LABELS[selectedTime as string] ?? "Any time"}
+              <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+            {Object.entries(TIME_LABELS).map(([value, label]) => (
+              <DropdownMenuItem key={value} onClick={() => setSelectedTime(value as PostTimeFilter)}>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <div className="group relative">
-          <select
-            name="contentType"
-            defaultValue={contentType}
-            className="h-10 w-full appearance-none rounded-md border border-input bg-background px-3 pr-9 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
-          >
-            <option value="all">Any content</option>
-            <option value="image">Image</option>
-            <option value="gif">GIF</option>
-            <option value="video">Video</option>
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform duration-200 group-focus-within:rotate-180" />
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full justify-between font-normal text-foreground">
+              {CONTENT_TYPE_LABELS[selectedContentType as string] ?? "Any content"}
+              <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+            {Object.entries(CONTENT_TYPE_LABELS).map(([value, label]) => (
+              <DropdownMenuItem key={value} onClick={() => setSelectedContentType(value as PostContentFilter)}>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <button
-          type="submit"
-          className="h-10 rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-        >
+        <Button variant="outline" type="submit" className="font-medium text-foreground">
           Apply
-        </button>
+        </Button>
 
-        <Link
-          href={query ? `${actionPath}?q=${encodeURIComponent(query)}` : actionPath}
-          className="inline-flex h-10 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-        >
-          Reset
-        </Link>
+        <Button variant="outline" asChild className="font-medium text-foreground">
+          <Link href={query ? `${actionPath}?q=${encodeURIComponent(query)}` : actionPath}>
+            Reset
+          </Link>
+        </Button>
       </div>
     </form>
   );
