@@ -68,9 +68,7 @@ export async function getFeedPosts(
   }
 
   const feedWhere = and(
-    viewerUserId
-      ? or(eq(posts.access, "public"), eq(posts.userId, viewerUserId))
-      : eq(posts.access, "public"),
+    eq(posts.access, "public"),
     createdAfter ? gte(posts.createdAt, createdAfter) : undefined,
     postIdsByType ? inArray(posts.id, postIdsByType) : undefined,
   );
@@ -132,9 +130,7 @@ export async function searchPosts({
   }
 
   const whereClause = and(
-    viewerUserId
-      ? or(eq(posts.access, "public"), eq(posts.userId, viewerUserId))
-      : eq(posts.access, "public"),
+    eq(posts.access, "public"),
     or(
       ilike(posts.title, `%${trimmedQuery}%`),
       ilike(posts.description, `%${trimmedQuery}%`),

@@ -8,8 +8,11 @@ import {
   ChevronDown,
   CheckIcon,
   CropIcon,
+  Eye,
+  EyeOff,
   FileArchive,
   ImagePlus,
+  KeyRound,
   Loader2,
   RotateCcwIcon,
   Video,
@@ -19,6 +22,7 @@ import { toast } from "sonner";
 import { createPost } from "@/lib/actions/create-post";
 import { getCloudinarySignature } from "@/lib/actions/cloudinary";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -104,8 +108,19 @@ export function CreatePostForm() {
   const [current, setCurrent] = useState(0)
   const [count, setCount] = useState(0)
   const [access, setAccess] = useState<"public" | "private" | "paid">("public");
+  const [addPassword, setAddPassword] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const selectedAccess = POST_ACCESS_OPTIONS.find((a) => a.value === access) || POST_ACCESS_OPTIONS[0];
+
+  const handleAccessChange = (newAccess: "public" | "private" | "paid") => {
+    setAccess(newAccess);
+    if (newAccess !== "private") {
+      setAddPassword(false);
+      setPassword("");
+    }
+  };
 
   useEffect(() => {
     if (!api) {
@@ -177,6 +192,8 @@ export function CreatePostForm() {
             const title = formData.get("title") as string;
             const description = formData.get("description") as string;
             const access = formData.get("access") as "public" | "private" | "paid";
+            
+            const effectivePassword = access === "private" && addPassword && password.trim() ? password.trim() : null;
 
             startTransition(async () => {
               try {
@@ -219,6 +236,7 @@ export function CreatePostForm() {
                   title,
                   description,
                   access,
+                  password: effectivePassword,
                   media: uploadedMedia,
                 });
 
@@ -232,6 +250,8 @@ export function CreatePostForm() {
                 entries.forEach((e) => URL.revokeObjectURL(e.previewUrl));
                 setEntries([]);
                 setCropIndex(null);
+                setAddPassword(false);
+                setPassword("");
                 router.push(`/post/${result.postId}`);
               } catch (error) {
                 toast.error(error instanceof Error ? error.message : "Failed to create post");
@@ -403,13 +423,12 @@ export function CreatePostForm() {
           <FieldGroup className="gap-4 p-0">
             <Field>
               <FieldLabel htmlFor="title">Title</FieldLabel>
-              <input
+              <Input
                 id="title"
                 name="title"
                 maxLength={120}
                 required
                 placeholder="Give your post a short title"
-                className="h-10 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
               <FieldDescription>
                 A title helps users quickly understand your post.
@@ -434,7 +453,7 @@ export function CreatePostForm() {
 
             <Field>
               <FieldLabel htmlFor="access">Access type</FieldLabel>
-              <input type="hidden" name="access" value={access} />
+              <Input type="hidden" name="access" value={access} />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="w-full justify-between font-normal h-10 border-input bg-background hover:bg-background/90 px-3" disabled={isPending}>
@@ -449,7 +468,7 @@ export function CreatePostForm() {
                   {POST_ACCESS_OPTIONS.map((option) => (
                     <DropdownMenuItem 
                       key={option.value}
-                      onClick={() => setAccess(option.value)}
+                      onClick={() => handleAccessChange(option.value)}
                       className="flex items-center justify-between cursor-pointer"
                     >
                       <span className="flex items-center gap-2">
@@ -465,6 +484,53 @@ export function CreatePostForm() {
                 Controls who can see this post in the feed.
               </FieldDescription>
             </Field>
+
+            {access === "private" && (
+              <Field>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="add-password"
+                    type="checkbox"
+                    checked={addPassword}
+                    onChange={(e) => {
+                      setAddPassword(e.target.checked);
+                      if (!e.target.checked) setPassword("");
+                    }}
+                    className="size-4 rounded border-input accent-primary cursor-pointer w-auto h-auto min-w-0"
+                  />
+                  <FieldLabel htmlFor="add-password" className="text-sm font-medium cursor-pointer select-none flex items-center gap-1.5 font-normal">
+                    <KeyRound className="size-3.5 text-muted-foreground" />
+                    Add password?
+                  </FieldLabel>
+                </div>
+
+                {addPassword && (
+                  <div className="relative mt-2">
+                    <Input
+                      id="post-password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      maxLength={100}
+                      placeholder="Enter a password for this post"
+                      className="pr-10"
+                      required={addPassword}
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
+                )}
+                <FieldDescription>
+                  Visitors with the direct link will need this password to view the post.
+                </FieldDescription>
+              </Field>
+            )}
 
             {entries.length === 0 && (
               <p className="rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">

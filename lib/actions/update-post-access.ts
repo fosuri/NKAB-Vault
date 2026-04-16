@@ -6,8 +6,13 @@ import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { posts } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
+import { protectPassword } from "@/lib/post-password";
 
-export async function updatePostAccess(postId: string, newAccess: string) {
+export async function updatePostAccess(
+  postId: string,
+  newAccess: string,
+  newPassword?: string | null,
+) {
   const session = await getSession();
 
   if (!session?.user?.id) {
@@ -36,8 +41,11 @@ export async function updatePostAccess(postId: string, newAccess: string) {
     return { error: "Invalid access type" };
   }
 
+  const effectivePassword =
+    newAccess === "private" && newPassword?.trim() ? await protectPassword(newPassword.trim()) : null;
+
   await db.update(posts)
-    .set({ access: newAccess })
+    .set({ access: newAccess, password: effectivePassword })
     .where(eq(posts.id, postId));
 
   revalidatePath(`/post/${postId}`);

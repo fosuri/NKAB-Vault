@@ -7,6 +7,7 @@ import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { postMedia, posts } from "@/lib/db/auth-schema";
 import { ensureCanCreatePost } from "@/lib/auth/moderation";
+import { protectPassword } from "@/lib/post-password";
 const ACCESS_VALUES = ["public", "private", "paid"] as const;
 
 const uploadedMediaSchema = z.object({
@@ -24,6 +25,7 @@ const createPostSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(120, "Title is too long"),
   description: z.string().trim().min(1, "Description is required").max(500, "Description is too long"),
   access: z.enum(ACCESS_VALUES).default("public"),
+  password: z.string().max(255, "Password is too long").optional().nullable(),
   media: z.array(uploadedMediaSchema).min(1, "Add at least one file").max(3, "Too many files selected"),
 });
 
@@ -55,13 +57,20 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
 
   const postId = randomUUID();
 
+  const effectivePassword =
+    parsed.data.access === "private" && parsed.data.password?.trim()
+      ? await protectPassword(parsed.data.password.trim())
+      : null;
+
   await db.transaction(async (tx) => {
+
     await tx.insert(posts).values({
       id: postId,
       userId: session.user.id,
       title: parsed.data.title,
       description: parsed.data.description,
       access: parsed.data.access,
+      password: effectivePassword,
     });
 
     await tx.insert(postMedia).values(
