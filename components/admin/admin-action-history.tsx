@@ -1,0 +1,259 @@
+"use client";
+
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { clearMyAdminHistoryAction } from "@/lib/actions/admin";
+import { ROLES } from "@/lib/db/auth-schema";
+import { ROLE_NAMES, UserRow, LogRow, ActorRole } from "./types";
+
+export function AdminActionHistory({
+  users,
+  myActionHistory,
+  actorRole = "admin",
+  logUserId,
+  currentUserId,
+}: {
+  users: UserRow[];
+  myActionHistory: LogRow[];
+  actorRole?: ActorRole;
+  logUserId?: string;
+  currentUserId?: string;
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [historySearchQuery, setHistorySearchQuery] = useState("");
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historySort, setHistorySort] = useState<{
+    key: "createdAt" | "actionType" | "targetUserName" | "details";
+    direction: "asc" | "desc";
+  }>({ key: "createdAt", direction: "desc" });
+
+  const pageSize = 8;
+
+  const filteredHistory = useMemo(() => {
+    const normalizedQuery = historySearchQuery.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return myActionHistory;
+    }
+
+    return myActionHistory.filter((item) => {
+      const haystack = `${item.createdAt.toLocaleString()} ${item.actionType} ${item.targetUserName ?? ""} ${item.details ?? ""}`.toLowerCase();
+      return haystack.includes(normalizedQuery);
+    });
+  }, [historySearchQuery, myActionHistory]);
+
+  const sortedHistory = useMemo(() => {
+    const sorted = [...filteredHistory];
+
+    sorted.sort((a, b) => {
+      const aValue = a[historySort.key];
+      const bValue = b[historySort.key];
+
+      if (aValue === bValue) {
+        return 0;
+      }
+
+      if (aValue === null) {
+        return historySort.direction === "asc" ? -1 : 1;
+      }
+
+      if (bValue === null) {
+        return historySort.direction === "asc" ? 1 : -1;
+      }
+
+      let comparison = 0;
+
+      if (aValue instanceof Date && bValue instanceof Date) {
+        comparison = aValue.getTime() - bValue.getTime();
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue), undefined, {
+          sensitivity: "base",
+        });
+      }
+
+      return historySort.direction === "asc" ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [filteredHistory, historySort]);
+
+  const historyTotalPages = Math.max(1, Math.ceil(sortedHistory.length / pageSize));
+  const safeHistoryPage = Math.min(historyPage, historyTotalPages);
+  const pagedHistory = useMemo(() => {
+    const start = (safeHistoryPage - 1) * pageSize;
+    return sortedHistory.slice(start, start + pageSize);
+  }, [safeHistoryPage, sortedHistory]);
+  const emptyHistoryRows = Math.max(0, pageSize - pagedHistory.length);
+
+  const toggleHistorySort = (key: "createdAt" | "actionType" | "targetUserName" | "details") => {
+    setHistorySort((current) => {
+      if (current.key === key) {
+        return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
+  const runAction = (callback: () => Promise<{ success?: boolean; error?: string }>, successMessage: string) => {
+    startTransition(async () => {
+      const result = await callback();
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(successMessage);
+      router.refresh();
+    });
+  };
+
+  return (
+    <section className="rounded-2xl border border-border/60 bg-background/80 p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">
+          {actorRole === "admin" && logUserId && currentUserId && logUserId !== currentUserId
+            ? `Moderation history: ${users.find((u) => u.id === logUserId)?.name || "User"}`
+            : `Your ${actorRole === "admin" ? "admin" : "moderation"} history`}
+        </h2>
+        <div className="flex flex-wrap items-center gap-3">
+          {actorRole === "admin" && currentUserId ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="font-normal w-auto justify-between min-w-[200px]">
+                  {logUserId === currentUserId || !logUserId
+                    ? "My History"
+                    : `${users.find((u) => u.id === logUserId)?.name} (${ROLE_NAMES[users.find((u) => u.id === logUserId)?.roleId ?? 0]})`}
+                  <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                <DropdownMenuItem onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.delete("logUserId");
+                  router.push(url.pathname + url.search);
+                }}>
+                  My History
+                </DropdownMenuItem>
+                {users
+                  .filter((u) => (u.roleId === ROLES.ADMIN || u.roleId === ROLES.MODERATOR) && u.id !== currentUserId)
+                  .map((u) => (
+                    <DropdownMenuItem key={u.id} onClick={() => {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set("logUserId", u.id);
+                      router.push(url.pathname + url.search);
+                    }}>
+                      {u.name} ({ROLE_NAMES[u.roleId]})
+                    </DropdownMenuItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+
+          {(!logUserId || logUserId === currentUserId) ? (
+            <Button
+              variant="outline"
+              disabled={!myActionHistory.length || isPending}
+              onClick={() => {
+                if (!window.confirm("Clear your entire moderation history?")) {
+                  return;
+                }
+
+                runAction(() => clearMyAdminHistoryAction(), "History cleared");
+              }}
+            >
+              Clear my history
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      <div className="mt-3">
+        <Input
+          type="text"
+          value={historySearchQuery}
+          onChange={(event) => {
+            setHistorySearchQuery(event.target.value);
+            setHistoryPage(1);
+          }}
+          placeholder="Search history"
+        />
+      </div>
+      <div className="mt-3 overflow-x-auto">
+        <table className="min-w-full table-fixed text-sm">
+          <thead>
+            <tr className="text-left text-muted-foreground">
+              <th className="w-52 pb-2 pr-4">
+                <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("createdAt")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
+                  When {historySort.key === "createdAt" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
+                </Button>
+              </th>
+              <th className="w-44 pb-2 pr-4">
+                <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("actionType")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
+                  Action {historySort.key === "actionType" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
+                </Button>
+              </th>
+              <th className="w-40 pb-2 pr-4">
+                <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("targetUserName")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
+                  Target {historySort.key === "targetUserName" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
+                </Button>
+              </th>
+              <th className="pb-2 pr-4">
+                <Button variant="ghost" size="sm" onClick={() => toggleHistorySort("details")} className="-ml-3 h-8 px-3 font-semibold text-muted-foreground hover:bg-transparent hover:text-foreground">
+                  Details {historySort.key === "details" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
+                </Button>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {pagedHistory.map((item) => (
+              <tr key={item.id} className="border-t border-border/40">
+                <td className="py-2 pr-4 whitespace-nowrap">{item.createdAt.toLocaleString()}</td>
+                <td className="py-2 pr-4 whitespace-nowrap">{item.actionType}</td>
+                <td className="py-2 pr-4 truncate" title={item.targetUserName ?? "-"}>{item.targetUserName ?? "-"}</td>
+                <td className="py-2 pr-4 truncate" title={item.details ?? "-"}>{item.details ?? "-"}</td>
+              </tr>
+            ))}
+            {Array.from({ length: emptyHistoryRows }).map((_, index) => (
+              <tr key={`empty-history-${index}`} className="border-t border-border/40">
+                <td className="py-2 pr-4" colSpan={4}>&nbsp;</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!sortedHistory.length ? <p className="py-2 text-sm text-muted-foreground">No moderation actions yet.</p> : null}
+        {sortedHistory.length ? (
+          <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">
+            <p>
+              Showing {(safeHistoryPage - 1) * pageSize + 1}-{Math.min(safeHistoryPage * pageSize, sortedHistory.length)} of {sortedHistory.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safeHistoryPage <= 1}
+                onClick={() => setHistoryPage((prev) => Math.max(1, prev - 1))}
+              >
+                Prev
+              </Button>
+              <span>
+                Page {safeHistoryPage} / {historyTotalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safeHistoryPage >= historyTotalPages}
+                onClick={() => setHistoryPage((prev) => Math.min(historyTotalPages, prev + 1))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
