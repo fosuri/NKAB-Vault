@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { comments, user, ROLES } from "@/lib/db/auth-schema";
+import { comments, user, ROLES, adminActionLog } from "@/lib/db/auth-schema";
 import { ensureCanCreateComment, getUserModerationState } from "@/lib/auth/moderation";
 
 const bodySchema = z
@@ -96,6 +96,18 @@ export async function deleteComment(
   }
 
   await db.delete(comments).where(eq(comments.id, commentId));
+
+  if (comment.userId !== session.user.id && (isAdmin || isModerator)) {
+    await db.insert(adminActionLog).values({
+      id: randomUUID(),
+      actorUserId: session.user.id,
+      actionType: "delete_comment",
+      targetUserId: comment.userId,
+      targetPostId: postId,
+      targetCommentId: comment.id,
+      details: `Deleted by staff (${isAdmin ? "admin" : "moderator"})`,
+    });
+  }
 
   revalidatePath(`/post/${postId}`);
 

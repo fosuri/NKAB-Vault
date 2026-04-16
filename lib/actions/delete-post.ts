@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
-import { postMedia, posts, user, ROLES } from "@/lib/db/auth-schema";
+import { postMedia, posts, user, ROLES, adminActionLog } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
+import { randomUUID } from "node:crypto";
 
 type DeletePostResult = { error?: string; success?: boolean };
 
@@ -63,6 +64,17 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
   );
 
   await db.delete(posts).where(eq(posts.id, postId));
+
+  if (post.userId !== session.user.id && (isAdmin || isModerator)) {
+    await db.insert(adminActionLog).values({
+      id: randomUUID(),
+      actorUserId: session.user.id,
+      actionType: "delete_post",
+      targetUserId: post.userId,
+      targetPostId: post.id,
+      details: `Deleted by (${isAdmin ? "admin" : "moderator"})`,
+    });
+  }
 
   revalidatePath("/");
   revalidatePath("/profile");
