@@ -33,10 +33,9 @@ interface Post {
 
 interface ProfileContentProps {
   user: User & { profileDescription?: string | null };
-  userPosts: Post[];
 }
 
-export function ProfileContent({ user, userPosts }: ProfileContentProps) {
+export function ProfileContent({ user }: ProfileContentProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -76,10 +75,6 @@ export function ProfileContent({ user, userPosts }: ProfileContentProps) {
           </div>
 
           <div className="flex flex-col gap-3 sm:items-end sm:w-44">
-            <div className="grid gap-1 rounded-2xl border border-border/50 bg-muted/40 px-4 py-3 text-sm w-full">
-              <span className="text-muted-foreground">Posts published</span>
-              <span className="text-2xl font-semibold text-foreground">{userPosts.length}</span>
-            </div>
             <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 w-full">

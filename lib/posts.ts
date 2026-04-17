@@ -1,6 +1,6 @@
-import { and, desc, eq, gte, ilike, inArray, or } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, or, count, ne } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { comments, postMedia, postReactions, posts, user } from "@/lib/db/auth-schema";
+import { comments, postMedia, postReactions, posts, postViews, user } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
 export type PostTimeFilter = "all" | "24h" | "7d" | "30d" | "365d";
@@ -325,4 +325,27 @@ export async function getLikedPostsByUserId(userId: string) {
         orderBy: [postMedia.sortOrder],
       },
     },
-  });}
+  });
+}
+
+export async function getUserAccountStatistics(userId: string) {
+  const userPosts = await db.select({ id: posts.id }).from(posts).where(eq(posts.userId, userId));
+  const postIds = userPosts.map(p => p.id);
+
+  if (postIds.length === 0) {
+    return { views: 0, likes: 0, dislikes: 0, comments: 0 };
+  }
+
+  const [viewsResult, reactionsResult, commentsResult] = await Promise.all([
+    db.select({ count: count() }).from(postViews).where(and(inArray(postViews.postId, postIds), ne(postViews.userId, userId))),
+    db.select({ type: postReactions.type, count: count() }).from(postReactions).where(and(inArray(postReactions.postId, postIds), ne(postReactions.userId, userId))).groupBy(postReactions.type),
+    db.select({ count: count() }).from(comments).where(and(inArray(comments.postId, postIds), ne(comments.userId, userId)))
+  ]);
+
+  const views = Number(viewsResult[0]?.count ?? 0);
+  const likes = Number(reactionsResult.find(r => r.type === "like")?.count ?? 0);
+  const dislikes = Number(reactionsResult.find(r => r.type === "dislike")?.count ?? 0);
+  const commentsCount = Number(commentsResult[0]?.count ?? 0);
+
+  return { views, likes, dislikes, comments: commentsCount };
+}
