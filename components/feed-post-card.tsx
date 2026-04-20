@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DeletePostButton } from "@/components/delete-post-button";
 import { PostMediaPreview } from "@/components/post-media-preview";
-import { getRelativeTime } from "@/lib/utils";
+import { getRelativeTime } from "@/utils/getRelativeTime";
 
 type FeedPost = {
   id: string;
