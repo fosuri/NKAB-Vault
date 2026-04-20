@@ -6,6 +6,7 @@ import { Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { HeaderUser } from "./types";
 
 type HeaderMobileProps = {
@@ -54,7 +55,7 @@ export function HeaderMobile({
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {user ? (
-              <Avatar size="lg" className="size-16">
+              <Avatar size="lg" className={cn("size-16", user.isPro && "ring-1 ring-pro-bg ring-offset-2 border-none")}>
                 {user.image ? <AvatarImage src={user.image} alt={user.name || ""} /> : null}
                 <AvatarFallback>{user.name?.charAt(0) ?? user.email?.charAt(0) ?? "U"}</AvatarFallback>
               </Avatar>

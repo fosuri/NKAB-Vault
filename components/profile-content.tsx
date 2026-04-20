@@ -20,8 +20,9 @@ import {
 import { EditProfileModal } from "@/components/EditProfileModal";
 import { authClient } from "@/lib/auth/auth-client";
 import { User } from "better-auth";
-import { ChevronDown, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Pencil, Trash2, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 interface Post {
   id: string;
@@ -32,7 +33,7 @@ interface Post {
 }
 
 interface ProfileContentProps {
-  user: User & { profileDescription?: string | null };
+  user: User & { profileDescription?: string | null; isPro?: boolean };
 }
 
 export function ProfileContent({ user }: ProfileContentProps) {
@@ -56,7 +57,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
 
   return (
     <>
-      <section className="rounded-[32px] border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
+      <section className="rounded-xl border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <Avatar size="lg" className="size-16">
@@ -67,8 +68,14 @@ export function ProfileContent({ user }: ProfileContentProps) {
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                 Profile
               </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground flex items-center gap-2">
                 {user.name || "User profile"}
+                {user.isPro && (
+                  <Badge variant="secondary" className="bg-pro-bg text-black gap-1 rounded-full px-2 py-0.5">
+                    <BadgeCheck className="size-4 fill-black text-pro-bg" />
+                    Pro
+                  </Badge>
+                )}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
             </div>

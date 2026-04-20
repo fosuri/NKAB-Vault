@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
+import { cn } from "@/lib/utils";
 import type { HeaderUser } from "./types";
 
 type HeaderDesktopProps = {
@@ -56,7 +57,7 @@ export function HeaderDesktop({
             className="rounded-full h-8 w-8 outline-none ring-ring/50 focus-visible:ring-3"
             aria-label="Open profile menu"
           >
-            <Avatar>
+            <Avatar className={cn(user.isPro && "ring-1 ring-pro-bg ring-offset-2 border-none")}>
               {user.image ? <AvatarImage src={user.image} alt={user.name || ""} /> : null}
               <AvatarFallback>{user.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
             </Avatar>

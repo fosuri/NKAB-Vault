@@ -1,6 +1,11 @@
 import { PricingCard } from "@/components/pricing-card"
+import { getSession } from "@/lib/auth/auth-server"
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const session = await getSession();
+  const userEmail = session?.user?.email;
+  const isPro = !!session?.user?.isPro;
+
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top,rgba(226,232,240,0.8),transparent_35%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-16 dark:bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.35),transparent_30%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)] flex flex-col justify-center">
       <div className="mx-auto w-full max-w-6xl">
@@ -10,7 +15,7 @@ export default function PricingPage() {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-4 lg:gap-8 items-stretch max-w-5xl mx-auto pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-stretch max-w-4xl mx-auto pt-4">
           <PricingCard
             title="Free"
             price="0€"
@@ -19,8 +24,8 @@ export default function PricingPage() {
               "Standard image sharing",
               "Up to 10MB per file"
             ]}
-            buttonText="Current Plan"
-            buttonVariant="outline"
+            buttonText={isPro ? "Back to Free" : "Current Plan"}
+            buttonVariant={isPro ? "default" : "outline"}
           />
           <PricingCard
             title="Pro"
@@ -30,19 +35,10 @@ export default function PricingPage() {
               "Upload files up to 20MB",
               "Highlight your posts in the feed (or make them Pro-only)"
             ]}
-            buttonText="Upgrade to Pro"
-            popular={true}
-          />
-          <PricingCard
-            title="Pro Supporter"
-            price="10€"
-            description="Same as Pro, but you buy me a coffee!"
-            features={[
-              "Same as Pro",
-              "Extra support for the project"
-            ]}
-            buttonText="Become a Supporter"
-            buttonVariant="secondary"
+            buttonText={isPro ? "Current Plan" : "Upgrade to Pro"}
+            buttonVariant={isPro ? "outline" : "default"}
+            paymentLink={isPro ? undefined : "https://buy.stripe.com/test_00wcN45eg7TP2oQglFbEA01"} 
+            userEmail={userEmail}
           />
         </div>
       </div>

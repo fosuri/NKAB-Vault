@@ -7,6 +7,7 @@ import {
   CardContent,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link";
 
 interface PricingCardProps {
   title: string;
@@ -15,7 +16,8 @@ interface PricingCardProps {
   features: string[];
   buttonText?: string;
   buttonVariant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
-  popular?: boolean;
+  paymentLink?: string;
+  userEmail?: string;
 }
 
 export function PricingCard({ 
@@ -25,16 +27,16 @@ export function PricingCard({
   features, 
   buttonText = "Select plan", 
   buttonVariant = "default",
-  popular = false
+  paymentLink,
+  userEmail,
 }: PricingCardProps) {
+  const finalHref = paymentLink 
+    ? (userEmail ? `${paymentLink}?prefilled_email=${encodeURIComponent(userEmail)}` : paymentLink)
+    : "#";
+
   return (
-    <div className={`relative flex flex-col h-full transition-all ${popular ? "md:scale-105 z-10" : ""}`}>
-      {popular && (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-sm z-20">
-          Most Popular
-        </div>
-      )}
-      <Card className={`flex flex-col flex-1 bg-background/50 backdrop-blur hover:shadow-md ${popular ? "border-primary shadow-lg ring-1 ring-primary/20" : "border-border/60"}`}>
+    <div className={`relative flex flex-col h-full transition-all`}>
+      <Card className={`flex flex-col flex-1 bg-background/50 backdrop-blur hover:shadow-md border-border/60`}>
         <CardHeader className="text-center pb-2">
         <CardTitle className="text-2xl font-bold">{title}</CardTitle>
         <CardDescription className="mt-2">{description}</CardDescription>
@@ -67,7 +69,15 @@ export function PricingCard({
         </ul>
       </CardContent>
         <CardFooter>
-          <Button className="w-full font-semibold" variant={buttonVariant} size="lg">{buttonText}</Button>
+          {paymentLink ? (
+            <Button asChild className="w-full font-semibold" variant={buttonVariant} size="lg">
+              <Link href={finalHref}>
+                {buttonText}
+              </Link>
+            </Button>
+          ) : (
+            <Button className="w-full font-semibold" variant={buttonVariant} size="lg">{buttonText}</Button>
+          )}
         </CardFooter>
       </Card>
     </div>

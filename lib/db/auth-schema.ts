@@ -21,9 +21,15 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  roleId: integer("role_id").references(() => roles.id).default(ROLES.USER).notNull(),
+  roleId: integer("role_id")
+    .references(() => roles.id)
+    .default(ROLES.USER)
+    .notNull(),
   setupCompleted: boolean("setup_completed").default(false).notNull(),
   profileDescription: text("profile_description"),
+  customerId: text("customer_id").unique(),
+  priceId: text("price_id"),
+  isPro: boolean("is_pro").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
