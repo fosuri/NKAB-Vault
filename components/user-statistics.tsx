@@ -85,7 +85,7 @@ export function UserStatistics({ userId }: UserStatisticsProps) {
           size="sm" 
           onClick={() => loadData(true)} 
           disabled={refreshing}
-          className="h-8 gap-1.5 rounded-full px-4 border-border/50 bg-background hover:bg-muted/50 transition-colors"
+          className="h-8 gap-1.5 px-4 border-border/50 bg-background hover:bg-muted/50 transition-colors"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-primary" : "text-muted-foreground"}`} />
           <span className="text-xs font-medium">Update</span>
