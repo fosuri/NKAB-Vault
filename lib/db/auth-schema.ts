@@ -258,8 +258,12 @@ export const userRelations = relations(user, ({ many, one }) => ({
   accounts: many(account),
   posts: many(posts),
   views: many(postViews),
-  sanctions: many(userSanctions),
-  adminActions: many(adminActionLog),
+  comments: many(comments),
+  sanctions: many(userSanctions, { relationName: "targetSanctions" }),
+  createdSanctions: many(userSanctions, { relationName: "createdSanctions" }),
+  revokedSanctions: many(userSanctions, { relationName: "revokedSanctions" }),
+  performedAdminActions: many(adminActionLog, { relationName: "performedActions" }),
+  receivedAdminActions: many(adminActionLog, { relationName: "receivedActions" }),
   userRole: one(roles, {
     fields: [user.roleId],
     references: [roles.id],
@@ -335,22 +339,23 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   }),
 }));
 
-export const userRelations2 = relations(user, ({ many }) => ({
-  comments: many(comments),
-}));
+
 
 export const userSanctionsRelations = relations(userSanctions, ({ one }) => ({
   targetUser: one(user, {
     fields: [userSanctions.userId],
     references: [user.id],
+    relationName: "targetSanctions",
   }),
   actorUser: one(user, {
     fields: [userSanctions.createdByUserId],
     references: [user.id],
+    relationName: "createdSanctions",
   }),
   revokedByUser: one(user, {
     fields: [userSanctions.revokedByUserId],
     references: [user.id],
+    relationName: "revokedSanctions",
   }),
 }));
 
@@ -358,9 +363,11 @@ export const adminActionLogRelations = relations(adminActionLog, ({ one }) => ({
   actorUser: one(user, {
     fields: [adminActionLog.actorUserId],
     references: [user.id],
+    relationName: "performedActions",
   }),
   targetUser: one(user, {
     fields: [adminActionLog.targetUserId],
     references: [user.id],
+    relationName: "receivedActions",
   }),
 }));

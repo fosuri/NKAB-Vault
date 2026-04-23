@@ -57,7 +57,7 @@ export function HeaderDesktop({
             className="rounded-full h-8 w-8 outline-none ring-ring/50 focus-visible:ring-3"
             aria-label="Open profile menu"
           >
-            <Avatar className={cn(user.isPro && "ring-1 ring-pro-bg ring-offset-2 border-none")}>
+            <Avatar className={cn(user.isPro && "outline-1 outline-pro-bg outline-offset-2 border-none")}>
               {user.image ? <AvatarImage src={user.image} alt={user.name || ""} /> : null}
               <AvatarFallback>{user.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
             </Avatar>
@@ -103,6 +103,17 @@ export function HeaderDesktop({
               </Link>
             </DropdownMenuItem>
           ) : null}
+
+          <Separator className="my-1" />
+
+          <DropdownMenuItem asChild>
+            <Link
+              href="/subscription"
+              className="w-full cursor-pointer rounded-sm px-2 py-1.5 text-base font-medium transition-colors hover:bg-muted hover:text-primary"
+            >
+              Subscription
+            </Link>
+          </DropdownMenuItem>
 
           <Separator className="my-1" />
 

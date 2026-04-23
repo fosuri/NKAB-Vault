@@ -55,7 +55,7 @@ export function HeaderMobile({
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {user ? (
-              <Avatar size="lg" className={cn("size-16", user.isPro && "ring-1 ring-pro-bg ring-offset-2 border-none")}>
+              <Avatar size="lg" className={cn("size-16", user.isPro && "outline-1 outline-pro-bg outline-offset-2 border-none")}>
                 {user.image ? <AvatarImage src={user.image} alt={user.name || ""} /> : null}
                 <AvatarFallback>{user.name?.charAt(0) ?? user.email?.charAt(0) ?? "U"}</AvatarFallback>
               </Avatar>

@@ -26,6 +26,7 @@ export default async function PricingPage() {
             ]}
             buttonText={isPro ? "Back to Free" : "Current Plan"}
             buttonVariant={isPro ? "default" : "outline"}
+            isCancel={isPro}
           />
           <PricingCard
             title="Pro"
@@ -37,7 +38,7 @@ export default async function PricingPage() {
             ]}
             buttonText={isPro ? "Current Plan" : "Upgrade to Pro"}
             buttonVariant={isPro ? "outline" : "default"}
-            paymentLink={isPro ? undefined : "https://buy.stripe.com/test_00wcN45eg7TP2oQglFbEA01"} 
+            isUpgrade={!isPro}
             userEmail={userEmail}
           />
         </div>

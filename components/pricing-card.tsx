@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link";
+import { CancelSubscriptionButton } from "./cancel-subscription-button";
+import { UpgradeSubscriptionButton } from "./upgrade-subscription-button";
 
 interface PricingCardProps {
   title: string;
@@ -18,6 +20,8 @@ interface PricingCardProps {
   buttonVariant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
   paymentLink?: string;
   userEmail?: string;
+  isCancel?: boolean;
+  isUpgrade?: boolean;
 }
 
 export function PricingCard({ 
@@ -29,6 +33,8 @@ export function PricingCard({
   buttonVariant = "default",
   paymentLink,
   userEmail,
+  isCancel,
+  isUpgrade,
 }: PricingCardProps) {
   const finalHref = paymentLink 
     ? (userEmail ? `${paymentLink}?prefilled_email=${encodeURIComponent(userEmail)}` : paymentLink)
@@ -69,12 +75,16 @@ export function PricingCard({
         </ul>
       </CardContent>
         <CardFooter>
-          {paymentLink ? (
+          {isUpgrade ? (
+            <UpgradeSubscriptionButton buttonText={buttonText} buttonVariant={buttonVariant} />
+          ) : paymentLink ? (
             <Button asChild className="w-full font-semibold" variant={buttonVariant} size="lg">
               <Link href={finalHref}>
                 {buttonText}
               </Link>
             </Button>
+          ) : isCancel ? (
+            <CancelSubscriptionButton buttonText={buttonText} buttonVariant={buttonVariant} />
           ) : (
             <Button className="w-full font-semibold" variant={buttonVariant} size="lg">{buttonText}</Button>
           )}

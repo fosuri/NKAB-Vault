@@ -23,6 +23,7 @@ import { User } from "better-auth";
 import { ChevronDown, Pencil, Trash2, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface Post {
   id: string;
@@ -60,7 +61,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
       <section className="rounded-xl border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <Avatar size="lg" className="size-16">
+            <Avatar size="lg" className={cn("size-16", user.isPro && "outline-1 outline-pro-bg outline-offset-2 border-none")}>
               {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
               <AvatarFallback>{user.name?.charAt(0) ?? user.email?.charAt(0) ?? "U"}</AvatarFallback>
             </Avatar>

@@ -32,22 +32,30 @@ export async function POST(req: Request) {
         const session = await stripe.checkout.sessions.retrieve((event.data.object as Stripe.Checkout.Session).id, { expand: ["line_items"] });
 
         const customerId = session.customer as string;
-        const customer = (await stripe.customers.retrieve(customerId)) as Stripe.Customer;
         const priceId = session.line_items?.data[0]?.price?.id;
+        
+        let targetUserId = session.client_reference_id;
 
-        if (!customer.email) {
-          throw new Error("No customer email found");
+        if (!targetUserId) {
+          const customer = (await stripe.customers.retrieve(customerId)) as Stripe.Customer;
+          if (customer.email) {
+            const existing = await db.query.user.findFirst({
+              where: eq(user.email, customer.email),
+            });
+            if (existing) {
+              targetUserId = existing.id;
+            }
+          }
         }
 
-        const existing = await db.query.user.findFirst({
-          where: eq(user.email, customer.email),
-        });
-
-        if (!existing) {
-          throw new Error(`No user found for email: ${customer.email}`);
+        if (!targetUserId) {
+          throw new Error(`No user found for checkout session: ${session.id}`);
         }
 
-        await db.update(user).set({ customerId, priceId, isPro: true }).where(eq(user.email, customer.email));
+        await db
+          .update(user)
+          .set({ customerId, priceId, isPro: true })
+          .where(eq(user.id, targetUserId));
 
         break;
       }
