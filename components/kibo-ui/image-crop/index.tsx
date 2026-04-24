@@ -293,7 +293,7 @@ export const ImageCropContent = ({
       {imgSrc && (
         <img
           alt="crop"
-          className="block max-w-full"
+          className="block max-w-full max-h-[50vh] w-auto object-contain"
           onLoad={onImageLoad}
           ref={imgRef}
           src={imgSrc}

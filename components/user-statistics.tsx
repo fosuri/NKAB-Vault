@@ -37,7 +37,7 @@ export function UserStatistics({ userId }: UserStatisticsProps) {
     loadData();
     const interval = setInterval(() => {
       loadData();
-    }, 15000); // Automatically update every 15 seconds
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [loadData]);

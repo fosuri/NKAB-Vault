@@ -205,10 +205,25 @@ function SlideTransition({ children, direction, onHeightReady }: SlideTransition
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
-    if (containerRef.current) {
-      onHeightReady(containerRef.current.offsetHeight);
-    }
-  }, [children, onHeightReady]);
+    if (!containerRef.current) return;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.borderBoxSize && entry.borderBoxSize.length > 0) {
+          onHeightReady(entry.borderBoxSize[0].blockSize);
+        } else {
+          onHeightReady(entry.contentRect.height);
+        }
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    
+
+    onHeightReady(containerRef.current.offsetHeight);
+
+    return () => resizeObserver.disconnect();
+  }, [onHeightReady]);
 
   return (
     <motion.div

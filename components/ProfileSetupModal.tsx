@@ -33,7 +33,6 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
   const [avatar, setAvatar] = useState(user?.image || "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [croppedImage, setCroppedImage] = useState<string | null>(null);
-  const [fileAspect, setFileAspect] = useState<number | null>(null);
   const [hasRemovedAvatar, setHasRemovedAvatar] = useState(false);
   const cropRef = useRef<ImageCropRef>(null);
 
@@ -45,18 +44,7 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
 
   useEffect(() => {
     if (selectedFile) {
-      const url = URL.createObjectURL(selectedFile);
-      const img = new window.Image();
-      img.onload = () => {
-        setFileAspect(img.width / img.height);
-      };
-      img.src = url;
-      return () => {
-        URL.revokeObjectURL(url);
-        setFileAspect(null);
-      };
-    } else {
-      setFileAspect(null);
+      setCroppedImage(null);
     }
   }, [selectedFile]);
 
@@ -219,7 +207,6 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
                 {selectedFile ? (
                   <div 
                     className="space-y-4 w-full flex flex-col items-center"
-                    style={{ minHeight: fileAspect ? `${384 / fileAspect}px` : 'auto' }}
                   >
                     <ImageCrop
                       ref={cropRef}
@@ -228,7 +215,7 @@ export function ProfileSetupModal({ user }: { user: User & { setupCompleted?: bo
                       file={selectedFile}
                       maxImageSize={1024 * 1024 * 5}
                     >
-                      <ImageCropContent className="max-w-md w-full" />
+                      <ImageCropContent className="max-w-md" />
                     </ImageCrop>
                     <Button
                       onClick={handleResetCrop}

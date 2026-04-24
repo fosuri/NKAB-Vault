@@ -167,7 +167,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
                     file={selectedFile}
                     maxImageSize={1024 * 1024 * 5}
                   >
-                    <ImageCropContent className="max-w-md w-full" />
+                    <ImageCropContent className="max-w-md" />
                   </ImageCrop>
                   <Button
                     onClick={handleResetCrop}
