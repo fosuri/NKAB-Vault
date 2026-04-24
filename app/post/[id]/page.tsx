@@ -126,6 +126,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                   postId={post.id}
                   initialComments={post.comments}
                   currentUserId={currentUserId}
+                  currentUserImage={session?.user?.image ?? null}
                   canModerateComments={Boolean(canModerateContent)}
                   actorRoleId={moderationState?.roleId as RoleId | undefined}
                 />

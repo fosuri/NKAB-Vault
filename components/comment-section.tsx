@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { createComment, deleteComment } from "@/lib/actions/comments";
 import { ROLES } from "@/lib/db/auth-schema";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -27,12 +27,14 @@ export function CommentSection({
   postId,
   initialComments,
   currentUserId,
+  currentUserImage,
   canModerateComments = false,
   actorRoleId,
 }: {
   postId: string;
   initialComments: Comment[];
   currentUserId?: string;
+  currentUserImage?: string | null;
   canModerateComments?: boolean;
   actorRoleId?: number;
 }) {
@@ -55,11 +57,11 @@ export function CommentSection({
       }
       setBody("");
       const optimistic: Comment = {
-        id: crypto.randomUUID(),
+        id: result.commentId || crypto.randomUUID(),
         body: trimmed,
         createdAt: new Date(),
         author: currentUserId
-          ? { id: currentUserId, name: "You", email: "", image: null }
+          ? { id: currentUserId, name: "You", email: "", image: currentUserImage ?? null }
           : null,
       };
       setComments((prev) => [optimistic, ...prev]);
@@ -125,6 +127,12 @@ export function CommentSection({
               className="flex gap-3 rounded-2xl border border-border/50 bg-muted/30 p-4"
             >
               <Avatar className="mt-0.5 shrink-0">
+                {comment.author?.image ? (
+                  <AvatarImage
+                    src={comment.author.image}
+                    alt={comment.author?.name ?? comment.author?.email ?? "User avatar"}
+                  />
+                ) : null}
                 <AvatarFallback>
                   {comment.author?.name?.charAt(0) ??
                     comment.author?.email?.charAt(0) ??

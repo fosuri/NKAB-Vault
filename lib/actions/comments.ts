@@ -15,7 +15,7 @@ const bodySchema = z
   .min(1, "Comment cannot be empty")
   .max(1000, "Comment is too long");
 
-type ActionResult = { error?: string; success?: boolean };
+type ActionResult = { error?: string; success?: boolean; commentId?: string };
 
 export async function createComment(
   postId: string,
@@ -37,8 +37,9 @@ export async function createComment(
     return { error: parsed.error.issues[0]?.message ?? "Invalid comment" };
   }
 
+  const newCommentId = randomUUID();
   await db.insert(comments).values({
-    id: randomUUID(),
+    id: newCommentId,
     postId,
     userId: session.user.id,
     body: parsed.data,
@@ -46,7 +47,7 @@ export async function createComment(
 
   revalidatePath(`/post/${postId}`);
 
-  return { success: true };
+  return { success: true, commentId: newCommentId };
 }
 
 export async function deleteComment(
