@@ -12,6 +12,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { HeaderDesktop } from "./header/HeaderDesktop";
 import { HeaderMobile } from "./header/HeaderMobile";
 import { HeaderSearch } from "./header/HeaderSearch";
+import { NotificationsMenu } from "./NotificationsMenu";
 
 import type { SearchSuggestion } from "./header/types";
 
@@ -136,6 +137,7 @@ export default function Header({ userRoleId }: HeaderProps) {
             submitSearch={submitSearch}
             openPostFromSuggestion={openPostFromSuggestion}
           />
+          {session?.user && <NotificationsMenu />}
           <ThemeToggle />
           <HeaderDesktop
             isPending={isPending}

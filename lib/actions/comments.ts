@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { comments, user, ROLES, adminActionLog } from "@/lib/db/auth-schema";
+import { comments, user, ROLES, adminActionLog, posts, notifications } from "@/lib/db/auth-schema";
 import { ensureCanCreateComment, getUserModerationState } from "@/lib/auth/moderation";
 
 const bodySchema = z
@@ -44,6 +44,22 @@ export async function createComment(
     userId: session.user.id,
     body: parsed.data,
   });
+
+  const post = await db.query.posts.findFirst({
+    where: eq(posts.id, postId),
+    columns: { userId: true },
+  });
+
+  if (post && post.userId !== session.user.id) {
+    await db.insert(notifications).values({
+      id: randomUUID(),
+      userId: post.userId,
+      actorId: session.user.id,
+      type: "COMMENT",
+      postId,
+      commentId: newCommentId,
+    });
+  }
 
   revalidatePath(`/post/${postId}`);
 
@@ -107,6 +123,15 @@ export async function deleteComment(
       targetPostId: postId,
       targetCommentId: comment.id,
       details: `Deleted by staff (${isAdmin ? "admin" : "moderator"})`,
+    });
+
+    await db.insert(notifications).values({
+      id: randomUUID(),
+      userId: comment.userId,
+      actorId: session.user.id,
+      type: "DELETE_COMMENT",
+      postId,
+      message: "Deleted for community guidelines violation",
     });
   }
 

@@ -147,7 +147,7 @@ export function CommentSection({
                         comment.author?.email ??
                         "Unknown"}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground ">
                       {formatDistanceToNow(new Date(comment.createdAt), {
                         addSuffix: true,
                       })}
@@ -170,7 +170,7 @@ export function CommentSection({
                     </Button>
                   )}
                 </div>
-                <p className="whitespace-pre-wrap text-sm leading-6 text-foreground/90">
+                <p className="whitespace-pre-wrap wrap-break-word break-all text-sm leading-6 text-foreground/90">
                   {comment.body}
                 </p>
               </div>

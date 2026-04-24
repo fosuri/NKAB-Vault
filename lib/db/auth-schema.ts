@@ -253,6 +253,33 @@ export const adminActionLog = pgTable(
   ]
 );
 
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    actorId: text("actor_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    type: text("type").notNull(),
+    postId: text("post_id").references(() => posts.id, {
+      onDelete: "cascade",
+    }),
+    commentId: text("comment_id").references(() => comments.id, {
+      onDelete: "cascade",
+    }),
+    message: text("message"),
+    isRead: boolean("is_read").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("notifications_userId_idx").on(table.userId),
+    index("notifications_isRead_idx").on(table.isRead),
+  ]
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
@@ -264,6 +291,8 @@ export const userRelations = relations(user, ({ many, one }) => ({
   revokedSanctions: many(userSanctions, { relationName: "revokedSanctions" }),
   performedAdminActions: many(adminActionLog, { relationName: "performedActions" }),
   receivedAdminActions: many(adminActionLog, { relationName: "receivedActions" }),
+  notifications: many(notifications, { relationName: "userNotifications" }),
+  triggeredNotifications: many(notifications, { relationName: "triggeredNotifications" }),
   userRole: one(roles, {
     fields: [user.roleId],
     references: [roles.id],
@@ -369,5 +398,26 @@ export const adminActionLogRelations = relations(adminActionLog, ({ one }) => ({
     fields: [adminActionLog.targetUserId],
     references: [user.id],
     relationName: "receivedActions",
+  }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(user, {
+    fields: [notifications.userId],
+    references: [user.id],
+    relationName: "userNotifications",
+  }),
+  actor: one(user, {
+    fields: [notifications.actorId],
+    references: [user.id],
+    relationName: "triggeredNotifications",
+  }),
+  post: one(posts, {
+    fields: [notifications.postId],
+    references: [posts.id],
+  }),
+  comment: one(comments, {
+    fields: [notifications.commentId],
+    references: [comments.id],
   }),
 }));
