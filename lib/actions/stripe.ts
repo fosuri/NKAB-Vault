@@ -32,15 +32,18 @@ export async function cancelSubscription() {
     });
 
     if (subscriptions.data.length > 0) {
+      //  immediate cancellation
       await stripe.subscriptions.cancel(subscriptions.data[0].id);
-      
-      await db
-        .update(user)
-        .set({ isPro: false })
-        .where(eq(user.id, currentUser.id));
+
+      // TODO: keep active until end of billing period
+      // await stripe.subscriptions.update(subscriptions.data[0].id, {
+      //   cancel_at_period_end: true,
+      // });
+
+
 
       revalidatePath("/subscription");
-      
+
       return { success: true };
     } else {
       return { error: "No active subscription found in Stripe" };

@@ -37,6 +37,18 @@ export default async function RootLayout({
       })
     : null;
 
+  let isPro = false;
+  if (session?.user?.id) {
+    const activeSub = await db.query.subscriptions.findFirst({
+      where: (subs, { eq, and, gt }) => and(
+        eq(subs.userId, session.user.id),
+        eq(subs.status, 'active'),
+        gt(subs.currentPeriodEnd, new Date())
+      )
+    });
+    isPro = !!activeSub;
+  }
+
   return (
     <html lang="en" className={`${geistMono.className} h-full`} suppressHydrationWarning>
       <body className="h-full">
@@ -48,7 +60,7 @@ export default async function RootLayout({
         >
           <div className="flex min-h-screen flex-col">
             <div className="shrink-0">
-              <Header userRoleId={dbUser?.roleId as RoleId ?? null} />
+              <Header userRoleId={dbUser?.roleId as RoleId ?? null} isPro={isPro} />
             </div>
             <main className="flex flex-1 flex-col">
               {children}

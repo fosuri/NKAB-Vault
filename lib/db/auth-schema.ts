@@ -28,11 +28,24 @@ export const user = pgTable("user", {
   setupCompleted: boolean("setup_completed").default(false).notNull(),
   profileDescription: text("profile_description"),
   customerId: text("customer_id").unique(),
-  priceId: text("price_id"),
-  isPro: boolean("is_pro").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
+
+export const subscriptions = pgTable("subscriptions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .references(() => user.id)
+    .notNull(),
+  stripePriceId: text("stripe_price_id").notNull(),
+  status: text("status").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
     .$onUpdate(() => new Date())
     .notNull(),
 });

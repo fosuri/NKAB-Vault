@@ -5,6 +5,7 @@ import { getUserModerationState } from "@/lib/auth/moderation";
 import { getPostsByUserId, getLikedPostsByUserId } from "@/lib/posts";
 import { ProfileContent } from "@/components/profile-content";
 import { UserStatistics } from "@/components/user-statistics";
+import { db } from "@/lib/db/db";
 
 export default async function ProfilePage() {
   const session = await getSession();
@@ -21,11 +22,21 @@ export default async function ProfilePage() {
   const userPosts = await getPostsByUserId(session.user.id);
   const likedPosts = await getLikedPostsByUserId(session.user.id);
 
+  const activeSub = await db.query.subscriptions.findFirst({
+    where: (subs, { eq, and, gt }) => and(
+      eq(subs.userId, session.user.id),
+      eq(subs.status, 'active'),
+      gt(subs.currentPeriodEnd, new Date())
+    )
+  });
+
+  const userWithPro = { ...session.user, isPro: !!activeSub };
+
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top,rgba(226,232,240,0.8),transparent_35%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.35),transparent_30%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <div className="flex flex-col gap-6">
-          <ProfileContent user={session.user} />
+          <ProfileContent user={userWithPro} />
           <UserStatistics userId={session.user.id} />
         </div>
 

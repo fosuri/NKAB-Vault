@@ -32,11 +32,6 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
-      isPro: {
-        type: "boolean",
-        required: true,
-        defaultValue: false,
-      },
     },
   },
   databaseHooks: {

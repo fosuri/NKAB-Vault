@@ -56,4 +56,7 @@ bun ./lib/db/seed-admin.ts --email=
 
 #push schema to db
 bunx drizzle-kit push
+
+#stipe listener (stripe login before requiered!!!)
+stripe listen --forward-to localhost:3000/api/webhook/stripe
 ```

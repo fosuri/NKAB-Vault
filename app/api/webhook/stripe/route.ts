@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { user } from "@/lib/db/auth-schema";
+import { user, subscriptions } from "@/lib/db/auth-schema";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -29,11 +29,9 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = await stripe.checkout.sessions.retrieve((event.data.object as Stripe.Checkout.Session).id, { expand: ["line_items"] });
+        const session = await stripe.checkout.sessions.retrieve((event.data.object as Stripe.Checkout.Session).id);
 
         const customerId = session.customer as string;
-        const priceId = session.line_items?.data[0]?.price?.id;
-        
         let targetUserId = session.client_reference_id;
 
         if (!targetUserId) {
@@ -54,27 +52,66 @@ export async function POST(req: Request) {
 
         await db
           .update(user)
-          .set({ customerId, priceId, isPro: true })
+          .set({ customerId })
           .where(eq(user.id, targetUserId));
+
+        if (session.subscription) {
+          const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+          const item = sub.items.data[0];
+
+          const subscriptionData = {
+            id: sub.id,
+            userId: targetUserId,
+            stripePriceId: item.price.id,
+            status: sub.status,
+            currentPeriodEnd: new Date(item.current_period_end * 1000),
+            cancelAtPeriodEnd: sub.cancel_at_period_end,
+          };
+
+          await db
+            .insert(subscriptions)
+            .values(subscriptionData)
+            .onConflictDoUpdate({
+              target: subscriptions.id,
+              set: subscriptionData,
+            });
+        }
 
         break;
       }
 
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
       case "customer.subscription.deleted": {
-        const subscription = await stripe.subscriptions.retrieve((event.data.object as Stripe.Subscription).id);
+        const subscription = event.data.object as Stripe.Subscription;
 
-        const existing = await db.query.user.findFirst({
+        const existingUser = await db.query.user.findFirst({
           where: eq(user.customerId, subscription.customer as string),
         });
 
-        if (!existing) {
-          throw new Error(`No user found for customerId: ${subscription.customer}`);
+        if (!existingUser) {
+          console.warn(`No user found for customerId: ${subscription.customer}`);
+          break;
         }
 
+        const item = subscription.items.data[0];
+
+        const subscriptionData = {
+          id: subscription.id,
+          userId: existingUser.id,
+          stripePriceId: item.price.id,
+          status: subscription.status,
+          currentPeriodEnd: new Date(item.current_period_end * 1000),
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        };
+
         await db
-          .update(user)
-          .set({ isPro: false })
-          .where(eq(user.customerId, subscription.customer as string));
+          .insert(subscriptions)
+          .values(subscriptionData)
+          .onConflictDoUpdate({
+            target: subscriptions.id,
+            set: subscriptionData,
+          });
 
         break;
       }

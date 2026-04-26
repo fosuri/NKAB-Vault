@@ -18,9 +18,10 @@ import type { SearchSuggestion } from "./header/types";
 
 type HeaderProps = {
   userRoleId?: RoleId | null;
+  isPro?: boolean;
 };
 
-export default function Header({ userRoleId }: HeaderProps) {
+export default function Header({ userRoleId, isPro }: HeaderProps) {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -28,7 +29,10 @@ export default function Header({ userRoleId }: HeaderProps) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const user = session?.user;
+  
+  // Merge the server-fetched isPro into the client session user
+  const user = session?.user ? { ...session.user, isPro } : null;
+  
   const searchQuery = search.trim();
   const showAdminDashboardLink = userRoleId === ROLES.ADMIN;
   const showModeratorDashboardLink = userRoleId === ROLES.MODERATOR;
