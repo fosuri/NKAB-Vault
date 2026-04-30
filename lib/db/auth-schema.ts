@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, integer, unique, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, integer, unique, serial, uuid } from "drizzle-orm/pg-core";
 
 export const ROLES = {
   USER: 1,
@@ -36,7 +36,7 @@ export const user = pgTable("user", {
 });
 
 export const subscriptions = pgTable("subscriptions", {
-  id: text("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id")
     .references(() => user.id)
     .notNull(),
@@ -114,7 +114,7 @@ export const verification = pgTable(
 export const posts = pgTable(
   "posts",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -138,8 +138,8 @@ export const posts = pgTable(
 export const comments = pgTable(
   "comments",
   {
-    id: text("id").primaryKey(),
-    postId: text("post_id")
+    id: uuid("id").defaultRandom().primaryKey(),
+    postId: uuid("post_id")
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
     userId: text("user_id")
@@ -157,8 +157,8 @@ export const comments = pgTable(
 export const postMedia = pgTable(
   "post_media",
   {
-    id: text("id").primaryKey(),
-    postId: text("post_id")
+    id: uuid("id").defaultRandom().primaryKey(),
+    postId: uuid("post_id")
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
     publicId: text("public_id").notNull().unique(),
@@ -181,8 +181,8 @@ export const postMedia = pgTable(
 export const postReactions = pgTable(
   "post_reactions",
   {
-    id: text("id").primaryKey(),
-    postId: text("post_id")
+    id: uuid("id").defaultRandom().primaryKey(),
+    postId: uuid("post_id")
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
     userId: text("user_id")
@@ -201,8 +201,8 @@ export const postReactions = pgTable(
 export const postViews = pgTable(
   "post_views",
   {
-    id: text("id").primaryKey(),
-    postId: text("post_id")
+    id: uuid("id").defaultRandom().primaryKey(),
+    postId: uuid("post_id")
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
     userId: text("user_id")
@@ -220,7 +220,7 @@ export const postViews = pgTable(
 export const userSanctions = pgTable(
   "user_sanctions",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -246,7 +246,7 @@ export const userSanctions = pgTable(
 export const adminActionLog = pgTable(
   "admin_action_log",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     actorUserId: text("actor_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -254,8 +254,8 @@ export const adminActionLog = pgTable(
     targetUserId: text("target_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
-    targetPostId: text("target_post_id"),
-    targetCommentId: text("target_comment_id"),
+    targetPostId: uuid("target_post_id"),
+    targetCommentId: uuid("target_comment_id"),
     details: text("details"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
@@ -269,7 +269,7 @@ export const adminActionLog = pgTable(
 export const notifications = pgTable(
   "notifications",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").defaultRandom().primaryKey(),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -277,10 +277,10 @@ export const notifications = pgTable(
       onDelete: "set null",
     }),
     type: text("type").notNull(),
-    postId: text("post_id").references(() => posts.id, {
+    postId: uuid("post_id").references(() => posts.id, {
       onDelete: "cascade",
     }),
-    commentId: text("comment_id").references(() => comments.id, {
+    commentId: uuid("comment_id").references(() => comments.id, {
       onDelete: "cascade",
     }),
     message: text("message"),

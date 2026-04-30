@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -37,13 +36,12 @@ export async function createComment(
     return { error: parsed.error.issues[0]?.message ?? "Invalid comment" };
   }
 
-  const newCommentId = randomUUID();
-  await db.insert(comments).values({
-    id: newCommentId,
+  const [newComment] = await db.insert(comments).values({
     postId,
     userId: session.user.id,
     body: parsed.data,
-  });
+  }).returning({ id: comments.id });
+  const newCommentId = newComment.id;
 
   const post = await db.query.posts.findFirst({
     where: eq(posts.id, postId),
@@ -52,7 +50,6 @@ export async function createComment(
 
   if (post && post.userId !== session.user.id) {
     await db.insert(notifications).values({
-      id: randomUUID(),
       userId: post.userId,
       actorId: session.user.id,
       type: "COMMENT",
@@ -116,7 +113,6 @@ export async function deleteComment(
 
   if (comment.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
-      id: randomUUID(),
       actorUserId: session.user.id,
       actionType: "delete_comment",
       targetUserId: comment.userId,
@@ -126,7 +122,6 @@ export async function deleteComment(
     });
 
     await db.insert(notifications).values({
-      id: randomUUID(),
       userId: comment.userId,
       actorId: session.user.id,
       type: "DELETE_COMMENT",

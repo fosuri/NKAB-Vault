@@ -7,7 +7,6 @@ import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
 import { postMedia, posts, user, ROLES, adminActionLog, notifications } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
-import { randomUUID } from "node:crypto";
 
 type DeletePostResult = { error?: string; success?: boolean };
 
@@ -67,7 +66,6 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
 
   if (post.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
-      id: randomUUID(),
       actorUserId: session.user.id,
       actionType: "delete_post",
       targetUserId: post.userId,
@@ -76,7 +74,6 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     });
 
     await db.insert(notifications).values({
-      id: randomUUID(),
       userId: post.userId,
       actorId: session.user.id,
       type: "DELETE_POST",

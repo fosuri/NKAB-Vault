@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
@@ -55,27 +54,25 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
     return { error: parsed.error.issues[0]?.message ?? "Invalid form data" };
   }
 
-  const postId = randomUUID();
-
   const effectivePassword =
     parsed.data.access === "private" && parsed.data.password?.trim()
       ? await protectPassword(parsed.data.password.trim())
       : null;
 
-  await db.transaction(async (tx) => {
+  const newPost = await db.transaction(async (tx) => {
 
-    await tx.insert(posts).values({
-      id: postId,
+    const [insertedPost] = await tx.insert(posts).values({
       userId: session.user.id,
       title: parsed.data.title,
       description: parsed.data.description,
       access: parsed.data.access,
       password: effectivePassword,
-    });
+    }).returning({ id: posts.id });
+
+    const postId = insertedPost.id;
 
     await tx.insert(postMedia).values(
       parsed.data.media.map((item, index) => ({
-        id: randomUUID(),
         postId,
         publicId: item.publicId,
         resourceType: item.resourceType,
@@ -88,7 +85,11 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
         sortOrder: index,
       }))
     );
+
+    return insertedPost;
   });
+
+  const postId = newPost.id;
 
   revalidatePath("/");
 

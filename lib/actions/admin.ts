@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cloudinary } from "@/lib/cloudinary";
@@ -27,7 +26,6 @@ async function createAdminLog(params: {
   details?: string;
 }) {
   await db.insert(adminActionLog).values({
-    id: randomUUID(),
     actorUserId: params.actorUserId,
     actionType: params.actionType,
     targetUserId: params.targetUserId ?? null,
@@ -217,7 +215,6 @@ export async function issueSanctionAction(params: {
     }
 
     await db.insert(userSanctions).values({
-      id: randomUUID(),
       userId: params.targetUserId,
       type: params.type,
       reason: trimmedReason,
