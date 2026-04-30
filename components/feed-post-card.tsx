@@ -69,7 +69,7 @@ export function FeedPostCard({
             </Avatar>
             <CardTitle className="truncate">
               <Link
-                href={isOwner ? "/profile" : `/profile/${post.author?.name}`}
+                href={isOwner ? "/profile" : `/@${post.author?.name}`}
                 className="relative z-20 hover:underline"
               >
                 {post.author?.name ?? post.author?.email ?? "Unknown user"}

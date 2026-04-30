@@ -35,9 +35,10 @@ interface Post {
 
 interface ProfileContentProps {
   user: User & { profileDescription?: string | null; isPro?: boolean };
+  isOwner?: boolean;
 }
 
-export function ProfileContent({ user }: ProfileContentProps) {
+export function ProfileContent({ user, isOwner = true }: ProfileContentProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -82,38 +83,40 @@ export function ProfileContent({ user }: ProfileContentProps) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 sm:items-end sm:w-44">
-            <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 w-full">
-                  Account
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
-                  />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="p-1.5 flex flex-col gap-1 w-(--radix-dropdown-menu-trigger-width)">
-                <Button
-                  onClick={() => { setDropdownOpen(false); setEditModalOpen(true); }}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2"
-                >
-                  <Pencil className="w-4 h-4" />
-                  Edit Profile
-                </Button>
-                <Button
-                  onClick={() => { setDropdownOpen(false); setDeleteDialogOpen(true); }}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete Account
-                </Button>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          {isOwner && (
+            <div className="flex flex-col gap-3 sm:items-end sm:w-44">
+              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 w-full">
+                    Account
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
+                    />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="p-1.5 flex flex-col gap-1 w-(--radix-dropdown-menu-trigger-width)">
+                  <Button
+                    onClick={() => { setDropdownOpen(false); setEditModalOpen(true); }}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Edit Profile
+                  </Button>
+                  <Button
+                    onClick={() => { setDropdownOpen(false); setDeleteDialogOpen(true); }}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Account
+                  </Button>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
         </div>
       </section>
 

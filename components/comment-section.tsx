@@ -9,6 +9,7 @@ import { ROLES } from "@/lib/db/auth-schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import Link from "next/link";
 
 type Comment = {
   id: string;
@@ -142,11 +143,14 @@ export function CommentSection({
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-foreground">
+                    <Link 
+                      href={comment.author?.id === currentUserId ? "/profile" : `/@${comment.author?.name}`}
+                      className="text-sm font-medium text-foreground hover:underline"
+                    >
                       {comment.author?.name ??
                         comment.author?.email ??
                         "Unknown"}
-                    </span>
+                    </Link>
                     <span className="text-xs text-muted-foreground ">
                       {formatDistanceToNow(new Date(comment.createdAt), {
                         addSuffix: true,

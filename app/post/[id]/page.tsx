@@ -84,9 +84,12 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                         </AvatarFallback>
                       </Avatar>
                       <CardTitle>
-                        <div className="truncate">
+                        <Link 
+                          href={isOwner ? "/profile" : `/@${post.author?.name}`}
+                          className="truncate hover:underline"
+                        >
                           {post.author?.name ?? post.author?.email ?? "Unknown user"}
-                        </div>
+                        </Link>
                         <p className="text-sm font-normal text-muted-foreground">
                           {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                         </p>
