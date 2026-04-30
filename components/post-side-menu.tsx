@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Check, ChevronDown, Eye, EyeOff, KeyRound, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -16,10 +16,12 @@ export function PostSideMenu({
   postId,
   initialAccess,
   initialPassword,
+  isOwner = true,
 }: {
   postId: string;
   initialAccess: string;
   initialPassword: string | null;
+  isOwner?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -34,7 +36,11 @@ export function PostSideMenu({
 
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const postUrl = typeof window !== "undefined" ? window.location.href : "";
+  const [postUrl, setPostUrl] = useState("");
+
+  useEffect(() => {
+    setPostUrl(`${window.location.origin}/post/${postId}`);
+  }, [postId]);
 
   const isDirty =
     draftAccess !== savedAccess ||
@@ -118,8 +124,10 @@ export function PostSideMenu({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post settings</h3>
+      {isOwner && (
+        <>
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post settings</h3>
 
         <div className="flex flex-col gap-2">
           <span className="text-xs text-muted-foreground">Access Type</span>
@@ -226,6 +234,8 @@ export function PostSideMenu({
           </Button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

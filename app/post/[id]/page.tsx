@@ -134,9 +134,12 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             </div>
           </PostContentWrapper>
 
-          {isOwner && (
-            <PostSideMenu postId={post.id} initialAccess={post.access} initialPassword={getActualPassword(post.password) ?? null} />
-          )}
+          <PostSideMenu 
+            postId={post.id} 
+            initialAccess={post.access} 
+            initialPassword={getActualPassword(post.password) ?? null} 
+            isOwner={isOwner} 
+          />
         </div>
       </div>
     </div>
