@@ -168,7 +168,7 @@ export function DetailsSection({
       </Button>
 
       <p className="text-center text-xs text-muted-foreground">
-        Upload content according to <Link href="/" className="underline underline-offset-2">site rules</Link>
+        Upload content according to <Link href="/rules" className="underline underline-offset-2">site rules</Link>
       </p>
     </FieldGroup>
   );
