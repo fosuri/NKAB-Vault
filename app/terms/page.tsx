@@ -1,8 +1,12 @@
+"use client";
+
 import { Scale, ScrollText, BookOpen, ShieldCheck, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export default function TermsOfServicePage() {
+  const router = useRouter();
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12 md:py-20">
       <div className="mb-12 text-center space-y-4">
@@ -87,11 +91,9 @@ export default function TermsOfServicePage() {
       </div>
 
       <div className="mt-12 flex justify-center gap-4">
-        <Link href="/sign-up">
-          <Button variant="outline" size="lg">
-            Return to Sign Up
-          </Button>
-        </Link>
+        <Button variant="outline" size="lg" onClick={() => router.back()}>
+          Go Back
+        </Button>
         <Link href="/">
           <Button variant="default" size="lg">
             Back to Home

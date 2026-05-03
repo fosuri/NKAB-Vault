@@ -212,7 +212,7 @@ export function SignUpForm({
       </Card>
       <FieldDescription className="px-6 text-center">
         By clicking Sign Up, you agree to our <Link href="/terms" className="underline underline-offset-4 hover:text-primary">Terms of Service</Link>{" "}
-        and <a href="#">Privacy Policy</a>.
+        and <Link href="/privacy" className="underline underline-offset-4 hover:text-primary">Privacy Policy</Link>.
       </FieldDescription>
     </div>
   )
