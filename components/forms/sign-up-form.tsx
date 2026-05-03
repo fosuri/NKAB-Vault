@@ -32,7 +32,11 @@ import Link from "next/link"
 
 const formSchema = z.object({
   email: z.email(),
-  password: z.string().min(8),
+  password: z.string()
+    .min(8, "Must be at least 8 characters long")
+    .regex(/[a-z]/, "Must contain a lowercase letter")
+    .regex(/[A-Z]/, "Must contain an uppercase letter")
+    .regex(/[^a-zA-Z0-9]/, "Must contain a special character"),
   confirmPassword: z.string().min(8),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -159,7 +163,7 @@ export function SignUpForm({
                       <FieldError errors={[fieldState.error]} />
                     )}
                     <FieldDescription>
-                      Must be at least 8 characters long.
+                      Must be at least 8 characters, and contain at least one lowercase letter, one uppercase letter, and one special character.
                     </FieldDescription>
                   </Field>
                 )}
@@ -207,7 +211,7 @@ export function SignUpForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
+        By clicking Sign Up, you agree to our <a href="#">Terms of Service</a>{" "}
         and <a href="#">Privacy Policy</a>.
       </FieldDescription>
     </div>

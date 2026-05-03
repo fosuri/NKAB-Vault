@@ -28,7 +28,11 @@ import { authClient } from "@/lib/auth/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const formSchema = z.object({
-  password: z.string().min(8),
+  password: z.string()
+    .min(8, "Must be at least 8 characters long")
+    .regex(/[a-z]/, "Must contain a lowercase letter")
+    .regex(/[A-Z]/, "Must contain an uppercase letter")
+    .regex(/[^a-zA-Z0-9]/, "Must contain a special character"),
   confirmPassword: z.string().min(8),
 });
 
