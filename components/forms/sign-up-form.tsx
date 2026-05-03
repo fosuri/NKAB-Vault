@@ -211,7 +211,7 @@ export function SignUpForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        By clicking Sign Up, you agree to our <a href="#">Terms of Service</a>{" "}
+        By clicking Sign Up, you agree to our <Link href="/terms" className="underline underline-offset-4 hover:text-primary">Terms of Service</Link>{" "}
         and <a href="#">Privacy Policy</a>.
       </FieldDescription>
     </div>
