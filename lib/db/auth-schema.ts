@@ -28,6 +28,8 @@ export const user = pgTable("user", {
   setupCompleted: boolean("setup_completed").default(false).notNull(),
   profileDescription: text("profile_description"),
   customerId: text("customer_id").unique(),
+  failedLoginAttempts: integer("failed_login_attempts").default(0).notNull(),
+  lockedUntil: timestamp("locked_until"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

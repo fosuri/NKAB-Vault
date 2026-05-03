@@ -7,6 +7,8 @@ import { nextCookies } from "better-auth/next-js";
 import { Resend } from "resend";
 import ForgotPasswordEmail from "@/components/emails/reset-password";
 import { ensureDefaultRoles } from "@/lib/db/ensure-roles";
+import { createAuthMiddleware, APIError } from "better-auth/api";
+import { eq } from "drizzle-orm";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const resendFrom = process.env.RESEND_FROM || "nkab@resend.dev";
@@ -32,6 +34,15 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
+      failedLoginAttempts: {
+        type: "number",
+        required: false,
+        defaultValue: 0,
+      },
+      lockedUntil: {
+        type: "date",
+        required: false,
+      },
     },
   },
   databaseHooks: {
@@ -47,6 +58,59 @@ export const auth = betterAuth({
         },
       },
     },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-in/email") {
+        const body = ctx.body as { email?: string };
+        if (body?.email) {
+          const userRecord = await db.query.user.findFirst({
+            where: eq(schema.user.email, body.email),
+          });
+          if (userRecord && userRecord.lockedUntil && userRecord.lockedUntil > new Date()) {
+            const timeRemaining = Math.ceil((userRecord.lockedUntil.getTime() - Date.now()) / 60000);
+            throw new APIError("UNAUTHORIZED", { 
+              message: `Account is temporarily locked. Try again in ${timeRemaining} minutes.` 
+            });
+          }
+        }
+      }
+    }),
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-in/email") {
+        const body = ctx.body as { email?: string };
+        if (body?.email) {
+          const userRecord = await db.query.user.findFirst({
+            where: eq(schema.user.email, body.email),
+          });
+          
+          if (userRecord) {
+            // @ts-ignore
+            const returned = ctx.context.returned || ctx.returned;
+            const isError = returned instanceof APIError || (returned && returned.status && returned.status !== 200) || (returned && returned.error);
+            
+            if (isError) {
+              const newAttempts = (userRecord.failedLoginAttempts || 0) + 1;
+              let newLockedUntil = userRecord.lockedUntil;
+              
+              if (newAttempts >= 5) {
+                newLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+              }
+              
+              await db.update(schema.user)
+                .set({ failedLoginAttempts: newAttempts, lockedUntil: newLockedUntil })
+                .where(eq(schema.user.id, userRecord.id));
+            } else {
+              if ((userRecord.failedLoginAttempts || 0) > 0 || userRecord.lockedUntil) {
+                await db.update(schema.user)
+                  .set({ failedLoginAttempts: 0, lockedUntil: null })
+                  .where(eq(schema.user.id, userRecord.id));
+              }
+            }
+          }
+        }
+      }
+    }),
   },
   socialProviders: {
     google: {
