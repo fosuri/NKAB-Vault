@@ -4,6 +4,7 @@ import { CreatePostForm } from "@/components/forms/create-post-form";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth/auth-server";
 import { getUserModerationState } from "@/lib/auth/moderation";
+import { db } from "@/lib/db/db";
 
 export default async function NewPostPage() {
   const session = await getSession();
@@ -48,6 +49,16 @@ export default async function NewPostPage() {
     );
   }
 
+  const activeSub = await db.query.subscriptions.findFirst({
+    where: (subs, { eq, and, gt }) => and(
+      eq(subs.userId, session.user.id),
+      eq(subs.status, 'active'),
+      gt(subs.currentPeriodEnd, new Date())
+    )
+  });
+  
+  const isPro = !!activeSub;
+
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top_left,rgba(243,244,246,0.95),transparent_40%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top_left,rgba(55,65,81,0.35),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
       <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -61,7 +72,7 @@ export default async function NewPostPage() {
           </Button>
         </div>
 
-        <CreatePostForm />
+        <CreatePostForm isPro={isPro} />
       </div>
     </div>
   );
