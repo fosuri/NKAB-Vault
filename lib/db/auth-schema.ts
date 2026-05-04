@@ -42,6 +42,7 @@ export const subscriptions = pgTable("subscriptions", {
   userId: text("user_id")
     .references(() => user.id)
     .notNull(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
   stripePriceId: text("stripe_price_id").notNull(),
   status: text("status").notNull(),
   currentPeriodEnd: timestamp("current_period_end").notNull(),
