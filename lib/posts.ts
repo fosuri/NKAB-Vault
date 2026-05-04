@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, ilike, inArray, or, count, ne } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { comments, postMedia, postReactions, posts, postViews, user } from "@/lib/db/auth-schema";
+import { comments, postMedia, postReactions, posts, postViews, user, subscriptions } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
 export type PostTimeFilter = "all" | "24h" | "7d" | "30d" | "365d";
@@ -51,10 +51,23 @@ export async function getFeedPosts(
   viewerUserId?: string,
   options: PostFilterOptions = {}
 ) {
+  let accessFilter = eq(posts.access, "public");
+
   if (viewerUserId) {
     const moderationState = await getUserModerationState(viewerUserId);
     if (moderationState?.activeBan) {
       return [];
+    }
+
+    const sub = await db.query.subscriptions.findFirst({
+      where: and(
+        eq(subscriptions.userId, viewerUserId),
+        inArray(subscriptions.status, ["active", "trialing"])
+      ),
+    });
+
+    if (sub) {
+      accessFilter = inArray(posts.access, ["public", "paid"]);
     }
   }
 
@@ -68,7 +81,7 @@ export async function getFeedPosts(
   }
 
   const feedWhere = and(
-    eq(posts.access, "public"),
+    accessFilter,
     createdAfter ? gte(posts.createdAt, createdAfter) : undefined,
     postIdsByType ? inArray(posts.id, postIdsByType) : undefined,
   );
@@ -109,10 +122,23 @@ export async function searchPosts({
   contentType = "all",
   limit = 24,
 }: PostSearchOptions) {
+  let accessFilter = eq(posts.access, "public");
+
   if (viewerUserId) {
     const moderationState = await getUserModerationState(viewerUserId);
     if (moderationState?.activeBan) {
       return [];
+    }
+
+    const sub = await db.query.subscriptions.findFirst({
+      where: and(
+        eq(subscriptions.userId, viewerUserId),
+        inArray(subscriptions.status, ["active", "trialing"])
+      ),
+    });
+
+    if (sub) {
+      accessFilter = inArray(posts.access, ["public", "paid"]);
     }
   }
 
@@ -130,7 +156,7 @@ export async function searchPosts({
   }
 
   const whereClause = and(
-    eq(posts.access, "public"),
+    accessFilter,
     or(
       ilike(posts.title, `%${trimmedQuery}%`),
       ilike(posts.description, `%${trimmedQuery}%`),
@@ -308,8 +334,21 @@ export async function getLikedPostsByUserId(userId: string) {
   const postIds = liked.map((r) => r.postId);
   if (!postIds.length) return [];
 
+  let accessFilter = eq(posts.access, "public");
+
+  const sub = await db.query.subscriptions.findFirst({
+    where: and(
+      eq(subscriptions.userId, userId),
+      inArray(subscriptions.status, ["active", "trialing"])
+    ),
+  });
+
+  if (sub) {
+    accessFilter = inArray(posts.access, ["public", "paid"]);
+  }
+
   return db.query.posts.findMany({
-    where: and(inArray(posts.id, postIds), eq(posts.access, "public")),
+    where: and(inArray(posts.id, postIds), accessFilter),
     orderBy: [desc(posts.createdAt)],
     with: {
       author: {
