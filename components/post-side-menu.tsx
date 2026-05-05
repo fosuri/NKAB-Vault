@@ -193,16 +193,18 @@ export function PostSideMenu({
                   className="h-9 pr-10"
                   required={addPassword}
                 />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </Button>
+                {draftPassword && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </Button>
+                )}
               </div>
             )}
           </Field>

@@ -24,7 +24,7 @@ import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 
-import { Loader2 } from "lucide-react"
+import { Loader2, Check, X, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { signInWithGoogle, signUpWithEmail } from "@/lib/auth/auth-client"
 import { checkEmailAvailable } from "@/lib/actions/check-signup"
@@ -53,6 +53,8 @@ export function SignUpForm({
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -145,28 +147,61 @@ export function SignUpForm({
               <Controller
                 name="password"
                 control={form.control}
-                render={({ field, fieldState }) => (
+                render={({ field, fieldState }) => {
+                  const password = field.value || "";
+                  const hasStartedTyping = password.length > 0;
+                  const hasMinLength = password.length >= 8;
+                  const hasLower = /[a-z]/.test(password);
+                  const hasUpper = /[A-Z]/.test(password);
+                  const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+
+                  const renderRequirement = (isValid: boolean, text: string) => {
+                    const colorClass = !hasStartedTyping 
+                      ? "text-muted-foreground" 
+                      : isValid ? "text-green-500" : "text-destructive";
+                    return (
+                      <span className={cn("flex items-center gap-2", colorClass)}>
+                        {isValid ? <Check className="size-3" /> : <X className="size-3" />}
+                        {text}
+                      </span>
+                    )
+                  }
+
+                  return (
                   <Field data-invalid={fieldState.invalid}>
                     <div className="flex items-center">
                       <FieldLabel htmlFor="password">Password</FieldLabel>
 
                     </div>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="password"
-                      type="password"
-                      placeholder=""
-                      required
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                    <FieldDescription>
-                      Must be at least 8 characters, and contain at least one lowercase letter, one uppercase letter, and one special character.
-                    </FieldDescription>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder=""
+                        required
+                      />
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                          onClick={() => setShowPassword((v) => !v)}
+                        >
+                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1 mt-1 text-xs font-medium">
+                      {renderRequirement(hasMinLength, "At least 8 characters")}
+                      {renderRequirement(hasLower, "At least one lowercase letter")}
+                      {renderRequirement(hasUpper, "At least one uppercase letter")}
+                      {renderRequirement(hasSpecial, "At least one special character")}
+                    </div>
                   </Field>
-                )}
+                )}}
               />
 
               <Controller
@@ -178,14 +213,27 @@ export function SignUpForm({
                       <FieldLabel htmlFor="password">Confirm Password</FieldLabel>
 
                     </div>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="confirm-password"
-                      type="password"
-                      placeholder=""
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        id="confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder=""
+                        required
+                      />
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </Button>
+                      )}
+                    </div>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}

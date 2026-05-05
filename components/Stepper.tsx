@@ -177,16 +177,20 @@ function StepContentWrapper({
 }: StepContentWrapperProps) {
   const [parentHeight, setParentHeight] = useState<number>(0);
 
+  const handleHeightReady = React.useCallback((h: number) => {
+    setParentHeight(h);
+  }, []);
+
   return (
     <motion.div
       style={{ position: 'relative', overflow: 'hidden' }}
       animate={{ height: isCompleted ? 0 : parentHeight }}
-      transition={{ type: 'spring', duration: 0.4 }}
+      transition={{ type: 'tween', ease: 'easeInOut', duration: 0.25 }}
       className={className}
     >
       <AnimatePresence initial={false} mode="sync" custom={direction}>
         {!isCompleted && (
-          <SlideTransition key={currentStep} direction={direction} onHeightReady={h => setParentHeight(h)}>
+          <SlideTransition key={currentStep} direction={direction} onHeightReady={handleHeightReady}>
             {children}
           </SlideTransition>
         )}
@@ -233,7 +237,7 @@ function SlideTransition({ children, direction, onHeightReady }: SlideTransition
       initial="enter"
       animate="center"
       exit="exit"
-      transition={{ duration: 0.4 }}
+      transition={{ type: 'tween', ease: 'easeInOut', duration: 0.25 }}
       style={{ position: 'absolute', left: 0, right: 0, top: 0 }}
     >
       {children}

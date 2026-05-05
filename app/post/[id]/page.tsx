@@ -65,8 +65,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           {(!isOwner && canModerateContent) && <DeletePostButton postId={post.id} redirectTo="/" authorRoleId={post.author?.roleId as RoleId | undefined} actorRoleId={moderationState?.roleId as RoleId | undefined} />}
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <PostContentWrapper postId={post.id} hasPassword={hasPassword} isOwner={isOwner}>
+        <PostContentWrapper postId={post.id} hasPassword={hasPassword} isOwner={isOwner}>
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
             <div className="flex-1 flex w-full flex-col gap-8 min-w-0">
               <Card className="overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur">
                 <CardHeader className="gap-2 border-b border-border/50 pb-4">
@@ -135,15 +135,15 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 />
               </section>
             </div>
-          </PostContentWrapper>
 
-          <PostSideMenu 
-            postId={post.id} 
-            initialAccess={post.access} 
-            initialPassword={getActualPassword(post.password) ?? null} 
-            isOwner={isOwner} 
-          />
-        </div>
+            <PostSideMenu 
+              postId={post.id} 
+              initialAccess={post.access} 
+              initialPassword={getActualPassword(post.password) ?? null} 
+              isOwner={isOwner} 
+            />
+          </div>
+        </PostContentWrapper>
       </div>
     </div>
   );
