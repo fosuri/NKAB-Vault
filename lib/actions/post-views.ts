@@ -1,6 +1,4 @@
 "use server";
-
-import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db/db";
 import { posts, postViews } from "@/lib/db/auth-schema";
@@ -17,7 +15,6 @@ export async function incrementPostViewsAction(postId: string) {
     const inserted = await tx
       .insert(postViews)
       .values({
-        id: randomUUID(),
         postId,
         userId: session.user.id,
       })

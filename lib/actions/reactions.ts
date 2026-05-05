@@ -1,6 +1,4 @@
 "use server";
-
-import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
@@ -33,7 +31,6 @@ export async function toggleReactionAction(postId: string, type: "like" | "disli
     }
   } else {
     await db.insert(postReactions).values({
-      id: randomUUID(),
       postId,
       userId,
       type,
@@ -41,7 +38,6 @@ export async function toggleReactionAction(postId: string, type: "like" | "disli
 
     if (type === "like" && post && post.userId !== userId) {
       await db.insert(notifications).values({
-        id: randomUUID(),
         userId: post.userId,
         actorId: userId,
         type: "LIKE",
