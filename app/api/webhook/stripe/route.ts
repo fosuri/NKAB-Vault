@@ -60,7 +60,7 @@ export async function POST(req: Request) {
           const item = sub.items.data[0];
 
           const subscriptionData = {
-            id: sub.id,
+            stripeSubscriptionId: sub.id,
             userId: targetUserId,
             stripePriceId: item.price.id,
             status: sub.status,
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
             .insert(subscriptions)
             .values(subscriptionData)
             .onConflictDoUpdate({
-              target: subscriptions.id,
+              target: subscriptions.stripeSubscriptionId,
               set: subscriptionData,
             });
         }
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
         const item = subscription.items.data[0];
 
         const subscriptionData = {
-          id: subscription.id,
+          stripeSubscriptionId: subscription.id,
           userId: existingUser.id,
           stripePriceId: item.price.id,
           status: subscription.status,
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
           .insert(subscriptions)
           .values(subscriptionData)
           .onConflictDoUpdate({
-            target: subscriptions.id,
+            target: subscriptions.stripeSubscriptionId,
             set: subscriptionData,
           });
 

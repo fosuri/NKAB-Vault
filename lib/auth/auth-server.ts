@@ -20,6 +20,11 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
+  session: {
+    expiresIn: 60 * 60 * 24 * 30, // 30 days
+    updateAge: 60 * 60 * 24, // 1 day
+    // disableSessionRefresh: true,
+  },
   user: {
     deleteUser: {
       enabled: true,
@@ -69,8 +74,8 @@ export const auth = betterAuth({
           });
           if (userRecord && userRecord.lockedUntil && userRecord.lockedUntil > new Date()) {
             const timeRemaining = Math.ceil((userRecord.lockedUntil.getTime() - Date.now()) / 60000);
-            throw new APIError("UNAUTHORIZED", { 
-              message: `Account is temporarily locked. Try again in ${timeRemaining} minutes.` 
+            throw new APIError("UNAUTHORIZED", {
+              message: `Account is temporarily locked. Try again in ${timeRemaining} minutes.`,
             });
           }
         }
@@ -83,28 +88,24 @@ export const auth = betterAuth({
           const userRecord = await db.query.user.findFirst({
             where: eq(schema.user.email, body.email),
           });
-          
+
           if (userRecord) {
             // @ts-ignore
             const returned = ctx.context.returned || ctx.returned;
             const isError = returned instanceof APIError || (returned && returned.status && returned.status !== 200) || (returned && returned.error);
-            
+
             if (isError) {
               const newAttempts = (userRecord.failedLoginAttempts || 0) + 1;
               let newLockedUntil = userRecord.lockedUntil;
-              
+
               if (newAttempts >= 5) {
                 newLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
               }
-              
-              await db.update(schema.user)
-                .set({ failedLoginAttempts: newAttempts, lockedUntil: newLockedUntil })
-                .where(eq(schema.user.id, userRecord.id));
+
+              await db.update(schema.user).set({ failedLoginAttempts: newAttempts, lockedUntil: newLockedUntil }).where(eq(schema.user.id, userRecord.id));
             } else {
               if ((userRecord.failedLoginAttempts || 0) > 0 || userRecord.lockedUntil) {
-                await db.update(schema.user)
-                  .set({ failedLoginAttempts: 0, lockedUntil: null })
-                  .where(eq(schema.user.id, userRecord.id));
+                await db.update(schema.user).set({ failedLoginAttempts: 0, lockedUntil: null }).where(eq(schema.user.id, userRecord.id));
               }
             }
           }

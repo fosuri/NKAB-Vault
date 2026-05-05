@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { POST_ACCESS_OPTIONS } from "@/lib/config/post-access";
+import { cn } from "@/lib/utils";
 
 interface DetailsSectionProps {
   entriesLength: number;
@@ -18,6 +19,7 @@ interface DetailsSectionProps {
   isPending: boolean;
   showPassword: boolean;
   setShowPassword: (val: boolean) => void;
+  isPro?: boolean;
 }
 
 export function DetailsSection({
@@ -31,6 +33,7 @@ export function DetailsSection({
   isPending,
   showPassword,
   setShowPassword,
+  isPro,
 }: DetailsSectionProps) {
   const selectedAccess = POST_ACCESS_OPTIONS.find((a) => a.value === access) || POST_ACCESS_OPTIONS[0];
 
@@ -80,19 +83,43 @@ export function DetailsSection({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {POST_ACCESS_OPTIONS.map((option) => (
-              <DropdownMenuItem
-                key={option.value}
-                onClick={() => handleAccessChange(option.value as "public" | "private" | "paid")}
-                className="flex items-center justify-between cursor-pointer"
-              >
-                <span className="flex items-center gap-2">
-                  <option.icon className="size-4" />
-                  {option.label}
-                </span>
-                {access === option.value && <Check className="size-4 text-emerald-500" />}
-              </DropdownMenuItem>
-            ))}
+            {POST_ACCESS_OPTIONS.map((option) => {
+              const isDisabledPaid = option.value === "paid" && !isPro;
+
+              return (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={(e) => {
+                    if (isDisabledPaid) {
+                      e.preventDefault();
+                      return;
+                    }
+                    handleAccessChange(option.value as "public" | "private" | "paid");
+                  }}
+                  className={cn(
+                    "flex items-center justify-between",
+                    isDisabledPaid ? "cursor-default hover:bg-transparent focus:bg-transparent" : "cursor-pointer"
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className={cn("flex items-center gap-2", isDisabledPaid && "opacity-50")}>
+                      <option.icon className="size-4" />
+                      {option.label}
+                    </span>
+                    {isDisabledPaid && (
+                      <Button asChild variant="link" className="h-auto p-0 text-xs text-primary">
+                        <Link href="/subscription" onClick={(e) => e.stopPropagation()}>
+                          Upgrade to Pro
+                        </Link>
+                      </Button>
+                    )}
+                  </span>
+                  {!isDisabledPaid && access === option.value && (
+                    <Check className="size-4 text-emerald-500" />
+                  )}
+                </DropdownMenuItem>
+              );
+            })}
           </DropdownMenuContent>
         </DropdownMenu>
         <FieldDescription>
@@ -131,16 +158,18 @@ export function DetailsSection({
                 className="pr-10"
                 required={addPassword}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                type="button"
-                tabIndex={-1}
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
-              >
-                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-              </Button>
+              {passwordValue && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </Button>
+              )}
             </div>
           )}
           <FieldDescription>

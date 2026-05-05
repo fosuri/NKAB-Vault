@@ -24,7 +24,7 @@ import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 
-import { Loader2 } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { signInWithGoogle, signInWithEmail } from "@/lib/auth/auth-client"
 import { checkIsGoogleOnlyAccount } from "@/lib/actions/check-signup"
@@ -41,6 +41,7 @@ export function SignInForm({
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -130,13 +131,26 @@ export function SignInForm({
                       <FieldLabel htmlFor="password">Password</FieldLabel>
 
                     </div>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="password"
-                      type="password"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                      />
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                          onClick={() => setShowPassword((v) => !v)}
+                        >
+                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </Button>
+                      )}
+                    </div>
                     <a
                       href="/forgot-password"
                       className="text-right text-sm underline-offset-4 hover:underline"

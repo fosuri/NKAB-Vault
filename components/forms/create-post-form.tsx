@@ -7,11 +7,12 @@ import { MediaSection } from "./create-post/media-section";
 import { DetailsSection } from "./create-post/details-section";
 import { CropModal } from "./create-post/crop-modal";
 
-export function CreatePostForm() {
+export function CreatePostForm({ isPro }: { isPro?: boolean }) {
   const { state, actions, handlers } = useCreatePost();
+  const { entries, cropIndex, current, count, access, addPassword, password, isPending, formRef } = state;
   const [showPassword, setShowPassword] = useState(false);
 
-  const entryToCrop = state.cropIndex !== null ? state.entries[state.cropIndex] : null;
+  const entryToCrop = cropIndex !== null ? entries[cropIndex] : null;
 
   return (
     <Card className="px-2 py-6 shadow-[0_0_400px] shadow-card-foreground/10">
@@ -23,36 +24,37 @@ export function CreatePostForm() {
       </CardHeader>
       <CardContent>
         <form
-          ref={state.formRef}
+          ref={formRef}
           className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
           onSubmit={handlers.handleSubmit}
         >
           <MediaSection
-            entries={state.entries}
-            current={state.current}
-            count={state.count}
+            entries={entries}
+            current={current}
+            count={count}
             setApi={actions.setApi}
             handleDrop={handlers.handleDrop}
             handleRemove={handlers.handleRemove}
             setCropIndex={actions.setCropIndex}
           />
           <DetailsSection
-            entriesLength={state.entries.length}
-            access={state.access}
+            entriesLength={entries.length}
+            access={access}
             handleAccessChange={actions.handleAccessChange}
-            addPassword={state.addPassword}
+            addPassword={addPassword}
             setAddPassword={actions.setAddPassword}
-            passwordValue={state.password}
+            passwordValue={password}
             setPasswordValue={actions.setPassword}
-            isPending={state.isPending}
+            isPending={isPending}
             showPassword={showPassword}
             setShowPassword={setShowPassword}
+            isPro={isPro}
           />
         </form>
       </CardContent>
 
       <CropModal
-        cropIndex={state.cropIndex}
+        cropIndex={cropIndex}
         setCropIndex={actions.setCropIndex}
         entryToCrop={entryToCrop}
         handleCropApplied={handlers.handleCropApplied}
