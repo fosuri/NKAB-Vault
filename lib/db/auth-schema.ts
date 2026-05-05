@@ -295,12 +295,69 @@ export const notifications = pgTable(
   ]
 );
 
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }
+);
+
+export const conversationParticipants = pgTable(
+  "conversation_participants",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("conversation_participants_conversationId_idx").on(table.conversationId),
+    index("conversation_participants_userId_idx").on(table.userId),
+    unique("conversation_participants_user_conversation_unique").on(table.userId, table.conversationId),
+  ]
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    senderId: text("sender_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    isRead: boolean("is_read").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("messages_conversationId_idx").on(table.conversationId),
+    index("messages_senderId_idx").on(table.senderId),
+  ]
+);
+
 export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
   accounts: many(account),
   posts: many(posts),
   views: many(postViews),
   comments: many(comments),
+  conversationParticipants: many(conversationParticipants),
+  messages: many(messages),
   sanctions: many(userSanctions, { relationName: "targetSanctions" }),
   createdSanctions: many(userSanctions, { relationName: "createdSanctions" }),
   revokedSanctions: many(userSanctions, { relationName: "revokedSanctions" }),
@@ -434,5 +491,32 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
   comment: one(comments, {
     fields: [notifications.commentId],
     references: [comments.id],
+  }),
+}));
+
+export const conversationsRelations = relations(conversations, ({ many }) => ({
+  participants: many(conversationParticipants),
+  messages: many(messages),
+}));
+
+export const conversationParticipantsRelations = relations(conversationParticipants, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [conversationParticipants.conversationId],
+    references: [conversations.id],
+  }),
+  user: one(user, {
+    fields: [conversationParticipants.userId],
+    references: [user.id],
+  }),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
+  }),
+  sender: one(user, {
+    fields: [messages.senderId],
+    references: [user.id],
   }),
 }));
