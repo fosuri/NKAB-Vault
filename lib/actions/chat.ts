@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne, isNotNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import {
@@ -10,6 +10,7 @@ import {
   user,
 } from "@/lib/db/auth-schema";
 import { getSession } from "@/lib/auth/auth-server";
+import { cloudinary } from "@/lib/cloudinary";
 
 export async function getOrCreateConversationAction(targetUserId: string) {
   const session = await getSession();
@@ -160,14 +161,20 @@ export async function getConversationMessagesAction(conversationId: string) {
   return { success: true, messages: conversationMessages };
 }
 
-export async function sendMessageAction(conversationId: string, content: string) {
+export async function sendMessageAction(
+  conversationId: string, 
+  content: string, 
+  mediaUrl?: string, 
+  mediaType?: string, 
+  mediaPublicId?: string
+) {
   const session = await getSession();
 
   if (!session?.user?.id) {
     return { error: "You must be signed in" };
   }
 
-  if (!content.trim()) {
+  if (!content.trim() && !mediaUrl) {
     return { error: "Message cannot be empty" };
   }
 
@@ -191,6 +198,9 @@ export async function sendMessageAction(conversationId: string, content: string)
       conversationId,
       senderId: userId,
       content,
+      mediaUrl,
+      mediaType,
+      mediaPublicId,
     }).returning({ id: messages.id });
     
     newMessageId = newMessage.id;
@@ -204,4 +214,160 @@ export async function sendMessageAction(conversationId: string, content: string)
   revalidatePath(`/chat/${conversationId}`);
   
   return { success: true, messageId: newMessageId! };
+}
+
+export async function deleteMessageAction(messageId: string) {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return { error: "You must be signed in" };
+  }
+
+  const userId = session.user.id;
+
+  const msg = await db.query.messages.findFirst({
+    where: eq(messages.id, messageId),
+  });
+
+  if (!msg) {
+    return { error: "Message not found" };
+  }
+
+  if (msg.senderId !== userId) {
+    return { error: "You can only delete your own messages" };
+  }
+
+  // If the message has media, delete from Cloudinary
+  if (msg.mediaPublicId) {
+    try {
+      const resourceType = msg.mediaType === "video" ? "video" : "image";
+      await cloudinary.uploader.destroy(msg.mediaPublicId, { resource_type: resourceType });
+    } catch (error) {
+      console.error("Failed to delete media from Cloudinary:", error);
+    }
+  }
+
+  await db.delete(messages).where(eq(messages.id, messageId));
+
+  revalidatePath("/chat");
+  revalidatePath(`/chat/${msg.conversationId}`);
+
+  return { success: true };
+}
+
+export async function deleteConversationAction(conversationId: string) {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return { error: "You must be signed in" };
+  }
+
+  const userId = session.user.id;
+
+  const participant = await db.query.conversationParticipants.findFirst({
+    where: (cp, { and, eq }) => and(
+      eq(cp.conversationId, conversationId),
+      eq(cp.userId, userId)
+    ),
+  });
+
+  if (!participant) {
+    return { error: "You do not have access to this conversation" };
+  }
+
+  // Find all messages in this conversation with media to delete from Cloudinary
+  const msgsWithMedia = await db.query.messages.findMany({
+    where: (m, { and, eq, isNotNull }) => and(
+      eq(m.conversationId, conversationId),
+      isNotNull(m.mediaPublicId)
+    ),
+  });
+
+  for (const msg of msgsWithMedia) {
+    if (msg.mediaPublicId) {
+      try {
+        const resourceType = msg.mediaType === "video" ? "video" : "image";
+        await cloudinary.uploader.destroy(msg.mediaPublicId, { resource_type: resourceType });
+      } catch (error) {
+        console.error("Failed to delete media from Cloudinary:", error);
+      }
+    }
+  }
+
+  // Delete conversation (cascades to messages and participants)
+  await db.delete(conversations).where(eq(conversations.id, conversationId));
+
+  revalidatePath("/chat");
+
+  return { success: true };
+}
+
+export async function getUnreadMessageCountAction() {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return { error: "You must be signed in", count: 0 };
+  }
+
+  const userId = session.user.id;
+
+  const participantRecords = await db.query.conversationParticipants.findMany({
+    where: eq(conversationParticipants.userId, userId),
+    columns: { conversationId: true },
+  });
+
+  const conversationIds = participantRecords.map((p) => p.conversationId);
+
+  if (conversationIds.length === 0) {
+    return { success: true, count: 0 };
+  }
+
+
+
+  const unreadMessages = await db.query.messages.findMany({
+    where: (messages, { and, ne, inArray, eq }) => and(
+      inArray(messages.conversationId, conversationIds),
+      eq(messages.isRead, false),
+      ne(messages.senderId, userId)
+    ),
+    columns: { id: true },
+  });
+
+  return { success: true, count: unreadMessages.length };
+}
+
+export async function markConversationMessagesAsReadAction(conversationId: string) {
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return { error: "You must be signed in" };
+  }
+
+  const userId = session.user.id;
+
+  const participant = await db.query.conversationParticipants.findFirst({
+    where: (cp, { and, eq }) => and(
+      eq(cp.conversationId, conversationId),
+      eq(cp.userId, userId)
+    ),
+  });
+
+  if (!participant) {
+    return { error: "You do not have access to this conversation" };
+  }
+
+  await db.update(messages)
+    .set({ isRead: true })
+    .where(
+      and(
+        eq(messages.conversationId, conversationId),
+        ne(messages.senderId, userId),
+        eq(messages.isRead, false)
+      )
+    );
+
+  revalidatePath("/chat");
+  revalidatePath(`/chat/${conversationId}`);
+  
+  return { success: true };
 }

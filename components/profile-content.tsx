@@ -20,10 +20,11 @@ import {
 import { EditProfileModal } from "@/components/EditProfileModal";
 import { authClient } from "@/lib/auth/auth-client";
 import { User } from "better-auth";
-import { ChevronDown, Pencil, Trash2, BadgeCheck } from "lucide-react";
+import { ChevronDown, Pencil, Trash2, BadgeCheck, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getOrCreateConversationAction } from "@/lib/actions/chat";
 
 interface Post {
   id: string;
@@ -36,13 +37,15 @@ interface Post {
 interface ProfileContentProps {
   user: User & { profileDescription?: string | null; isPro?: boolean };
   isOwner?: boolean;
+  currentUserId?: string | null;
 }
 
-export function ProfileContent({ user, isOwner = true }: ProfileContentProps) {
+export function ProfileContent({ user, isOwner = true, currentUserId }: ProfileContentProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [startingChat, setStartingChat] = useState(false);
   const router = useRouter();
 
   const handleDeleteAccount = async () => {
@@ -55,6 +58,27 @@ export function ProfileContent({ user, isOwner = true }: ProfileContentProps) {
     }
     toast.success("Account deleted successfully");
     router.push("/");
+  };
+
+  const handleStartChat = async () => {
+    if (!currentUserId) {
+      router.push("/sign-in");
+      return;
+    }
+    
+    setStartingChat(true);
+    try {
+      const result = await getOrCreateConversationAction(user.id);
+      if (result.success && result.conversationId) {
+        router.push(`/chat/${result.conversationId}`);
+      } else {
+        toast.error(result.error || "Failed to start chat");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+    } finally {
+      setStartingChat(false);
+    }
   };
 
   return (
@@ -115,6 +139,18 @@ export function ProfileContent({ user, isOwner = true }: ProfileContentProps) {
                   </Button>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </div>
+          )}
+          {!isOwner && currentUserId && (
+            <div className="flex flex-col gap-3 sm:items-end sm:w-44">
+              <Button 
+                onClick={handleStartChat} 
+                disabled={startingChat}
+                className="gap-2 w-full"
+              >
+                <MessageCircle className="w-4 h-4" />
+                {startingChat ? "Starting..." : "Start Chat"}
+              </Button>
             </div>
           )}
         </div>

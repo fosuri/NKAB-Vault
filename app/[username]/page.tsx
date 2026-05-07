@@ -54,7 +54,7 @@ export default async function UserProfilePage({ params }: PageProps) {
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top,rgba(226,232,240,0.8),transparent_35%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.35),transparent_30%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <div className="flex flex-col gap-6">
-          <ProfileContent user={userWithPro} isOwner={false} />
+          <ProfileContent user={userWithPro} isOwner={false} currentUserId={session?.user?.id} />
           <UserStatistics userId={targetUser.id} />
         </div>
 

@@ -337,7 +337,10 @@ export const messages = pgTable(
     senderId: text("sender_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    content: text("content").notNull(),
+    content: text("content"),
+    mediaUrl: text("media_url"),
+    mediaType: text("media_type"),
+    mediaPublicId: text("media_public_id"),
     isRead: boolean("is_read").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")

@@ -37,10 +37,10 @@ export function HeaderSearch({
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="group flex h-8 w-44 items-center justify-start gap-2 rounded-md border-input bg-transparent px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-64 lg:w-80"
+          className="group flex h-8 w-8 sm:w-44 items-center justify-center sm:justify-start gap-2 rounded-md border-input bg-transparent px-0 sm:px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-64 lg:w-80"
         >
-          <Search className="mx-1 size-4 shrink-0" />
-          <span className="flex-1 text-left">Search...</span>
+          <Search className="size-4 shrink-0 sm:mx-1" />
+          <span className="hidden sm:inline-block flex-1 text-left">Search...</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="top-4 w-full max-w-2xl translate-y-0 border-none bg-transparent p-0 px-4 ring-0 shadow-none sm:max-w-2xl lg:max-w-3xl md:px-0 [&>button]:hidden">
