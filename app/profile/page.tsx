@@ -66,7 +66,7 @@ export default async function ProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[28px] border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
+            <div className="rounded-xl border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
               You have not uploaded anything yet. Create your first post from the main page.
             </div>
           )}
@@ -92,7 +92,7 @@ export default async function ProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="rounded-[28px] border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
+            <div className="rounded-xl border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
               You have not liked any posts yet.
             </div>
           )}

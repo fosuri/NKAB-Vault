@@ -47,6 +47,7 @@ export function DetailsSection({
           maxLength={120}
           required
           placeholder="Give your post a short title"
+          className="text-sm"
         />
         <FieldDescription>
           A title helps users quickly understand your post.
@@ -154,8 +155,8 @@ export function DetailsSection({
                 value={passwordValue}
                 onChange={(e) => setPasswordValue(e.target.value)}
                 maxLength={100}
-                placeholder="Enter a password for this post"
-                className="pr-10"
+                placeholder="Enter post password"
+                className="pr-10 text-sm"
                 required={addPassword}
               />
               {passwordValue && (

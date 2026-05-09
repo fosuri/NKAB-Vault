@@ -43,7 +43,7 @@ export default async function Home({
             </div>
           ) : (
             <div className="flex h-full min-h-[60vh] items-center justify-center">
-              <div className="max-w-2xl rounded-[28px] border border-dashed border-border/60 bg-background/75 px-8 py-14 text-center text-lg font-medium leading-relaxed text-muted-foreground backdrop-blur">
+              <div className="max-w-2xl rounded-xl border border-dashed border-border/60 bg-background/75 px-8 py-14 text-center text-lg font-medium leading-relaxed text-muted-foreground backdrop-blur">
                 No posts yet. The first uploaded image, GIF, or video will appear here.
               </div>
             </div>

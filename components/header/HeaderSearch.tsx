@@ -73,9 +73,9 @@ export function HeaderSearch({
                     key={item.id}
                     variant="ghost"
                     onClick={() => openPostFromSuggestion(item.id)}
-                    className="grid min-h-16 h-auto w-full grid-cols-[3rem,minmax(0,1fr)] items-start gap-3 overflow-hidden rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/60 font-normal whitespace-normal"
+                    className="flex min-h-16 h-auto w-full flex-row items-center justify-start gap-3 overflow-hidden rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-border hover:bg-muted/60 font-normal whitespace-normal"
                   >
-                    <div className="relative mt-0.5 size-12 overflow-hidden rounded-md border border-border/70 bg-muted shrink-0">
+                    <div className="relative size-12 overflow-hidden rounded-md border border-border/70 bg-muted shrink-0">
                       {item.previewUrl ? (
                         <Image
                           src={item.previewUrl}
@@ -90,10 +90,10 @@ export function HeaderSearch({
                         </div>
                       )}
                     </div>
-                    <div className="min-w-0 space-y-0.5 pt-0.5 flex flex-col justify-start">
+                    <div className="min-w-0 flex flex-col justify-center">
                       <p className="truncate text-sm font-semibold leading-tight text-foreground">{item.title}</p>
-                      <p className="truncate text-xs leading-tight text-muted-foreground">{item.description}</p>
-                      <p className="truncate text-[11px] leading-tight text-muted-foreground/80">by {item.authorName}</p>
+                      <p className="truncate text-xs leading-tight text-muted-foreground mt-0.5">{item.description}</p>
+                      <p className="truncate text-[11px] leading-tight text-muted-foreground/80 mt-0.5">by {item.authorName}</p>
                     </div>
                   </Button>
                 ))}

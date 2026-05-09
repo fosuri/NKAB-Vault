@@ -67,7 +67,7 @@ export function UserStatistics({ userId }: UserStatisticsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-32 bg-muted/40 rounded-2xl w-full"></div>
+          <div className="h-32 bg-muted/40 rounded-xl w-full"></div>
         </CardContent>
       </Card>
     );
@@ -93,68 +93,68 @@ export function UserStatistics({ userId }: UserStatisticsProps) {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="group flex items-center gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
-            <div className="p-3 bg-primary/10 rounded-2xl text-primary transition-transform duration-300 group-hover:scale-110">
-              <FileText className="w-5 h-5" />
+          <div className="group flex items-center gap-3 md:gap-4 rounded-xl border border-border/50 bg-muted/30 p-3 md:p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
+            <div className="p-2.5 md:p-3 bg-primary/10 rounded-xl text-primary transition-transform duration-300 group-hover:scale-110">
+              <FileText className="w-4 h-4 md:w-5 md:h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Posts</p>
-              <p className="text-2xl font-bold tracking-tight">{postsCount}</p>
+              <p className="text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground font-medium mb-0.5 md:mb-1">Posts</p>
+              <p className="text-lg md:text-2xl font-bold tracking-tight">{postsCount}</p>
             </div>
           </div>
 
-          <div className="group flex items-center gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
-            <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500 transition-transform duration-300 group-hover:scale-110">
-              <Eye className="w-5 h-5" />
+          <div className="group flex items-center gap-3 md:gap-4 rounded-xl border border-border/50 bg-muted/30 p-3 md:p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
+            <div className="p-2.5 md:p-3 bg-blue-500/10 rounded-xl text-blue-500 transition-transform duration-300 group-hover:scale-110">
+              <Eye className="w-4 h-4 md:w-5 md:h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Views</p>
-              <p className="text-2xl font-bold tracking-tight">{stats.views}</p>
+              <p className="text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground font-medium mb-0.5 md:mb-1">Views</p>
+              <p className="text-lg md:text-2xl font-bold tracking-tight">{stats.views}</p>
             </div>
           </div>
 
-          <div className="group flex items-center gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
-            <div className="p-3 bg-green-500/10 rounded-2xl text-green-500 transition-transform duration-300 group-hover:scale-110">
-              <ThumbsUp className="w-5 h-5" />
+          <div className="group flex items-center gap-3 md:gap-4 rounded-xl border border-border/50 bg-muted/30 p-3 md:p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
+            <div className="p-2.5 md:p-3 bg-green-500/10 rounded-xl text-green-500 transition-transform duration-300 group-hover:scale-110">
+              <ThumbsUp className="w-4 h-4 md:w-5 md:h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Likes</p>
-              <p className="text-2xl font-bold tracking-tight">{stats.likes}</p>
+              <p className="text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground font-medium mb-0.5 md:mb-1">Likes</p>
+              <p className="text-lg md:text-2xl font-bold tracking-tight">{stats.likes}</p>
             </div>
           </div>
 
-          <div className="group flex items-center gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
-            <div className="p-3 bg-red-500/10 rounded-2xl text-red-500 transition-transform duration-300 group-hover:scale-110">
-              <ThumbsDown className="w-5 h-5" />
+          <div className="group flex items-center gap-3 md:gap-4 rounded-xl border border-border/50 bg-muted/30 p-3 md:p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
+            <div className="p-2.5 md:p-3 bg-red-500/10 rounded-xl text-red-500 transition-transform duration-300 group-hover:scale-110">
+              <ThumbsDown className="w-4 h-4 md:w-5 md:h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Dislikes</p>
-              <p className="text-2xl font-bold tracking-tight">{stats.dislikes}</p>
+              <p className="text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground font-medium mb-0.5 md:mb-1">Dislikes</p>
+              <p className="text-lg md:text-2xl font-bold tracking-tight">{stats.dislikes}</p>
             </div>
           </div>
 
-          <div className="group flex items-center gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
-            <div className="p-3 bg-purple-500/10 rounded-2xl text-purple-500 transition-transform duration-300 group-hover:scale-110">
-              <MessageCircle className="w-5 h-5" />
+          <div className="group flex items-center gap-3 md:gap-4 rounded-xl border border-border/50 bg-muted/30 p-3 md:p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
+            <div className="p-2.5 md:p-3 bg-purple-500/10 rounded-xl text-purple-500 transition-transform duration-300 group-hover:scale-110">
+              <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Comments</p>
-              <p className="text-2xl font-bold tracking-tight">{stats.comments}</p>
+              <p className="text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground font-medium mb-0.5 md:mb-1">Comments</p>
+              <p className="text-lg md:text-2xl font-bold tracking-tight">{stats.comments}</p>
             </div>
           </div>
 
-          <div className="relative overflow-hidden group flex items-center gap-4 rounded-2xl border border-border/50 bg-muted/30 p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
-            <div className={`p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 ${totalReactions > 0 ? (positivePercentage >= 75 ? 'bg-green-500/10 text-green-500' : positivePercentage >= 50 ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500') : 'bg-muted text-muted-foreground'}`}>
-              <Activity className="w-5 h-5" />
+          <div className="relative overflow-hidden group flex items-center gap-3 md:gap-4 rounded-xl border border-border/50 bg-muted/30 p-3 md:p-4 transition-all duration-300 hover:bg-muted/50 hover:shadow-sm">
+            <div className={`p-2.5 md:p-3 rounded-xl transition-transform duration-300 group-hover:scale-110 ${totalReactions > 0 ? (positivePercentage >= 75 ? 'bg-green-500/10 text-green-500' : positivePercentage >= 50 ? 'bg-yellow-500/10 text-yellow-500' : 'bg-red-500/10 text-red-500') : 'bg-muted text-muted-foreground'}`}>
+              <Activity className="w-4 h-4 md:w-5 md:h-5" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-1">Rating</p>
-              <p className={`text-2xl font-bold tracking-tight ${percentageColor}`}>
+              <p className="text-[10px] md:text-xs uppercase tracking-wider text-muted-foreground font-medium mb-0.5 md:mb-1">Rating</p>
+              <p className={`text-lg md:text-2xl font-bold tracking-tight ${percentageColor}`}>
                 {totalReactions > 0 ? `${positivePercentage}%` : "N/A"}
               </p>
             </div>
             {totalReactions > 0 && positivePercentage >= 75 && (
-              <div className="absolute inset-0 bg-green-500/5 blur-xl pointer-events-none rounded-2xl" />
+              <div className="absolute inset-0 bg-green-500/5 blur-xl pointer-events-none rounded-xl" />
             )}
           </div>
         </div>

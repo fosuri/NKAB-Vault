@@ -111,7 +111,7 @@ export function PostSideMenu({
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Grab a link</h3>
         <div className="flex rounded-md overflow-hidden ring-1 ring-border shadow-sm">
           <Input
-            className="rounded-none border-0 bg-background/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="rounded-none border-0 bg-background/50 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
             value={postUrl}
             readOnly
           />

@@ -84,7 +84,7 @@ export default async function UserProfilePage({ params }: PageProps) {
               ))}
             </div>
           ) : (
-            <div className="rounded-[28px] border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
+            <div className="rounded-xl border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
               {targetUser.name} has not uploaded anything yet.
             </div>
           )}
@@ -110,7 +110,7 @@ export default async function UserProfilePage({ params }: PageProps) {
               ))}
             </div>
           ) : (
-            <div className="rounded-[28px] border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
+            <div className="rounded-xl border border-dashed border-border/60 bg-background/75 p-10 text-center text-sm text-muted-foreground backdrop-blur">
               {targetUser.name} has not liked any posts yet.
             </div>
           )}

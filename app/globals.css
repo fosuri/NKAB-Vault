@@ -130,3 +130,9 @@
     @apply font-sans;
   }
 }
+
+/* Hide default browser password reveal eye icon to prevent overlap with custom one */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}

@@ -38,7 +38,7 @@ export function MediaSection({
     <div className="flex flex-col gap-4">
       <div className="rounded-xl border border-border p-4">
         <Dropzone
-          className="h-52 rounded-lg border border-dashed border-border bg-background p-6 hover:bg-muted/40"
+          className="h-52 whitespace-normal rounded-lg border border-dashed border-border bg-background p-6 hover:bg-muted/40"
           accept={ACCEPTED_MEDIA_TYPES}
           maxSize={MAX_FILE_SIZE}
           maxFiles={3}

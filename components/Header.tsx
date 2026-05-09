@@ -124,7 +124,7 @@ export default function Header({ userRoleId, isPro }: HeaderProps) {
             <div className="flex items-center justify-center">
               <Plus className="size-4" />
             </div>
-            <span className="hidden lg:block text-foreground text-sm">New Post</span>
+            <span className="hidden md:block text-foreground text-sm">New Post</span>
           </Link>
         </div>
 

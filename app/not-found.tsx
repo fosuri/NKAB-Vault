@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <main className="grid min-h-[70vh] place-items-center px-4 py-16">
-      <div className="w-full max-w-xl rounded-[28px] border border-border/60 bg-background/80 p-10 text-center shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
+      <div className="w-full max-w-xl rounded-xl border border-border/60 bg-background/80 p-10 text-center shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
           Error 404
         </p>
