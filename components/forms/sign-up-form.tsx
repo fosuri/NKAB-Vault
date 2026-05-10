@@ -135,6 +135,7 @@ export function SignUpForm({
                       aria-invalid={fieldState.invalid}
                       type="email"
                       placeholder="m@example.com"
+                      className="text-sm"
                       required
                     />
                     {fieldState.invalid && (
@@ -180,6 +181,7 @@ export function SignUpForm({
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder=""
+                        className="text-sm"
                         required
                       />
                       {field.value && (
@@ -220,6 +222,7 @@ export function SignUpForm({
                         id="confirm-password"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder=""
+                        className="text-sm"
                         required
                       />
                       {field.value && (

@@ -113,6 +113,7 @@ export function SignInForm({
                       id="email"
                       type="email"
                       placeholder="m@example.com"
+                      className="text-sm"
                       required
                     />
                     {fieldState.invalid && (
@@ -137,6 +138,7 @@ export function SignInForm({
                         aria-invalid={fieldState.invalid}
                         id="password"
                         type={showPassword ? "text" : "password"}
+                        className="text-sm"
                         required
                       />
                       {field.value && (
@@ -151,12 +153,12 @@ export function SignInForm({
                         </Button>
                       )}
                     </div>
-                    <a
+                    <Link
                       href="/forgot-password"
                       className="text-right text-sm underline-offset-4 hover:underline"
                     >
                       Forgot your password?
-                    </a>
+                    </Link>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
