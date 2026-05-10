@@ -21,6 +21,19 @@ export function AdminActiveSanctions({
     key: "type" | "targetUserName" | "reason" | "createdByName" | "expiresAt";
     direction: "asc" | "desc";
   }>({ key: "expiresAt", direction: "desc" });
+  const [expandedReasons, setExpandedReasons] = useState<Set<string>>(new Set());
+  
+  const toggleReason = (id: string) => {
+    setExpandedReasons((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
   
   const pageSize = 8;
   
@@ -103,7 +116,7 @@ export function AdminActiveSanctions({
   };
 
   return (
-    <section className="rounded-2xl border border-border/60 bg-background/80 p-5">
+    <section className="rounded-2xl border border-border/60 bg-background/80 p-5 overflow-hidden">
       <h2 className="text-lg font-semibold">Active sanctions</h2>
       <div className="mt-3">
         <Input
@@ -117,7 +130,7 @@ export function AdminActiveSanctions({
         />
       </div>
       <div className="mt-3 overflow-x-auto">
-        <table className="min-w-full table-fixed text-sm">
+        <table className="min-w-[1000px] w-full table-fixed text-sm">
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="w-24 pb-2 pr-4">
@@ -153,7 +166,13 @@ export function AdminActiveSanctions({
               <tr key={item.id} className="border-t border-border/40">
                 <td className="py-2 pr-4 uppercase whitespace-nowrap">{item.type}</td>
                 <td className="py-2 pr-4 truncate" title={item.targetUserName}>{item.targetUserName}</td>
-                <td className="py-2 pr-4 truncate" title={item.reason}>{item.reason}</td>
+                <td 
+                  className={`py-2 pr-4 cursor-pointer ${expandedReasons.has(item.id) ? "" : "truncate"}`} 
+                  title={item.reason}
+                  onClick={() => toggleReason(item.id)}
+                >
+                  {item.reason}
+                </td>
                 <td className="py-2 pr-4 truncate" title={item.createdByName}>{item.createdByName}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">{item.expiresAt ? item.expiresAt.toLocaleString() : "Never"}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">

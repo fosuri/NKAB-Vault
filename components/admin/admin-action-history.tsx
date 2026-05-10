@@ -32,6 +32,19 @@ export function AdminActionHistory({
     key: "createdAt" | "actionType" | "targetUserName" | "details";
     direction: "asc" | "desc";
   }>({ key: "createdAt", direction: "desc" });
+  const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
+
+  const toggleDetails = (id: string) => {
+    setExpandedDetails((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const pageSize = 8;
 
@@ -113,7 +126,7 @@ export function AdminActionHistory({
   };
 
   return (
-    <section className="rounded-2xl border border-border/60 bg-background/80 p-5">
+    <section className="rounded-2xl border border-border/60 bg-background/80 p-5 overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">
           {actorRole === "admin" && logUserId && currentUserId && logUserId !== currentUserId
@@ -183,7 +196,7 @@ export function AdminActionHistory({
         />
       </div>
       <div className="mt-3 overflow-x-auto">
-        <table className="min-w-full table-fixed text-sm">
+        <table className="min-w-[1000px] w-full table-fixed text-sm">
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="w-52 pb-2 pr-4">
@@ -214,7 +227,13 @@ export function AdminActionHistory({
                 <td className="py-2 pr-4 whitespace-nowrap">{item.createdAt.toLocaleString()}</td>
                 <td className="py-2 pr-4 whitespace-nowrap">{item.actionType}</td>
                 <td className="py-2 pr-4 truncate" title={item.targetUserName ?? "-"}>{item.targetUserName ?? "-"}</td>
-                <td className="py-2 pr-4 truncate" title={item.details ?? "-"}>{item.details ?? "-"}</td>
+                <td 
+                  className={`py-2 pr-4 cursor-pointer ${expandedDetails.has(item.id) ? "" : "truncate"}`} 
+                  title={item.details ?? "-"}
+                  onClick={() => toggleDetails(item.id)}
+                >
+                  {item.details ?? "-"}
+                </td>
               </tr>
             ))}
             {Array.from({ length: emptyHistoryRows }).map((_, index) => (

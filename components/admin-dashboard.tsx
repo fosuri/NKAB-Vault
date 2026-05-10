@@ -21,7 +21,7 @@ export function AdminDashboard({
   currentUserId?: string;
 }) {
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 min-w-0">
       <AdminUserModeration users={users} actorRole={actorRole} />
       <AdminActiveSanctions activeSanctions={activeSanctions} />
       <AdminActionHistory 

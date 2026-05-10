@@ -226,7 +226,7 @@ export function PostSideMenu({
         <div className="flex flex-col">
           <Button
             variant="ghost"
-            className="flex px-0 items-center gap-3 py-2 text-muted-foreground hover:bg-transparent hover:text-destructive transition-colors text-sm font-medium w-fit disabled:opacity-50"
+            className="flex px-0 items-center gap-3 py-2 text-muted-foreground hover:bg-transparent dark:hover:bg-transparent hover:text-destructive transition-colors text-sm font-medium w-fit disabled:opacity-50"
             disabled={isPending}
             onClick={handleDeletePost}
             onBlur={() => setConfirmDelete(false)}

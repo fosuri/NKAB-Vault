@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
-import { postMedia, posts, user, ROLES, adminActionLog, notifications } from "@/lib/db/auth-schema";
+import { posts, user, ROLES, adminActionLog, notifications } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
 type DeletePostResult = { error?: string; success?: boolean };

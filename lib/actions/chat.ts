@@ -1,13 +1,12 @@
 "use server";
 
-import { and, eq, ne, isNotNull } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import {
   conversations,
   conversationParticipants,
   messages,
-  user,
 } from "@/lib/db/auth-schema";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
