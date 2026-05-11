@@ -46,6 +46,7 @@ export function ProfileContent({ user, isOwner = true, currentUserId }: ProfileC
   const [deleting, setDeleting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const router = useRouter();
 
   const handleDeleteAccount = async () => {
@@ -104,6 +105,20 @@ export function ProfileContent({ user, isOwner = true, currentUserId }: ProfileC
                 )}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+              {user.profileDescription && (
+                <div 
+                  className="mt-3 cursor-pointer text-sm text-muted-foreground hover:text-foreground/80 transition-colors"
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  title={isDescriptionExpanded ? "Click to collapse" : "Click to expand"}
+                >
+                  <p className={cn(
+                    "leading-relaxed",
+                    !isDescriptionExpanded ? "line-clamp-1" : "whitespace-pre-wrap break-words"
+                  )}>
+                    {user.profileDescription}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
