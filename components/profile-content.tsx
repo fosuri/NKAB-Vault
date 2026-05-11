@@ -85,9 +85,9 @@ export function ProfileContent({ user, isOwner = true, currentUserId }: ProfileC
   return (
     <>
       <section className="rounded-xl border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            <Avatar size="lg" className={cn("size-16 shrink-0", user.isPro && "outline-1 outline-pro-bg outline-offset-2 border-none")}>
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4 min-w-0 flex-1">
+            <Avatar size="lg" className={cn("size-16 shrink-0 mt-2.5", user.isPro && "outline-1 outline-pro-bg outline-offset-2 border-none")}>
               {user.image ? <AvatarImage src={user.image} alt={user.name} /> : null}
               <AvatarFallback>{user.name?.charAt(0) ?? user.email?.charAt(0) ?? "U"}</AvatarFallback>
             </Avatar>
