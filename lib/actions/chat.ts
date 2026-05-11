@@ -63,6 +63,11 @@ export async function getOrCreateConversationAction(targetUserId: string) {
     ]);
   });
 
+  // Emit event to both users to update their sidebars
+  const { chatEventEmitter } = await import("@/lib/events");
+  chatEventEmitter.emit(`user:${currentUserId}`, { type: "new_conversation", conversationId: newConversationId! });
+  chatEventEmitter.emit(`user:${targetUserId}`, { type: "new_conversation", conversationId: newConversationId! });
+
   revalidatePath("/chat");
   return { success: true, conversationId: newConversationId! };
 }
@@ -179,18 +184,17 @@ export async function sendMessageAction(
 
   const userId = session.user.id;
 
-  const participant = await db.query.conversationParticipants.findFirst({
-    where: and(
-      eq(conversationParticipants.conversationId, conversationId),
-      eq(conversationParticipants.userId, userId)
-    ),
+  const participants = await db.query.conversationParticipants.findMany({
+    where: eq(conversationParticipants.conversationId, conversationId),
   });
+
+  const participant = participants.find(p => p.userId === userId);
 
   if (!participant) {
     return { error: "You do not have access to this conversation" };
   }
 
-  let newMessageId: string;
+  let newMessageData: any;
 
   await db.transaction(async (tx) => {
     const [newMessage] = await tx.insert(messages).values({
@@ -200,19 +204,40 @@ export async function sendMessageAction(
       mediaUrl,
       mediaType,
       mediaPublicId,
-    }).returning({ id: messages.id });
+    }).returning();
     
-    newMessageId = newMessage.id;
+    newMessageData = newMessage;
 
     await tx.update(conversations)
       .set({ updatedAt: new Date() })
       .where(eq(conversations.id, conversationId));
   });
 
+  // Emit event to subscribers
+  if (newMessageData) {
+    const { chatEventEmitter } = await import("@/lib/events");
+    const payload = {
+      ...newMessageData,
+      sender: {
+        id: userId,
+        name: session.user.name,
+        image: session.user.image,
+      }
+    };
+    
+    // Emit to conversation stream
+    chatEventEmitter.emit(`chat:${conversationId}`, payload);
+    
+    // Emit to all participants' personal streams (for sidebar refresh)
+    participants.forEach(p => {
+      chatEventEmitter.emit(`user:${p.userId}`, { type: "new_message", conversationId });
+    });
+  }
+
   revalidatePath("/chat");
   revalidatePath(`/chat/${conversationId}`);
   
-  return { success: true, messageId: newMessageId! };
+  return { success: true, messageId: newMessageData.id };
 }
 
 export async function deleteMessageAction(messageId: string) {
@@ -274,7 +299,6 @@ export async function deleteConversationAction(conversationId: string) {
     return { error: "You do not have access to this conversation" };
   }
 
-  // Find all messages in this conversation with media to delete from Cloudinary
   const msgsWithMedia = await db.query.messages.findMany({
     where: (m, { and, eq, isNotNull }) => and(
       eq(m.conversationId, conversationId),
@@ -288,12 +312,20 @@ export async function deleteConversationAction(conversationId: string) {
         const resourceType = msg.mediaType === "video" ? "video" : "image";
         await cloudinary.uploader.destroy(msg.mediaPublicId, { resource_type: resourceType });
       } catch (error) {
-        console.error("Failed to delete media from Cloudinary:", error);
+        console.error(error);
       }
     }
   }
 
-  // Delete conversation (cascades to messages and participants)
+  const allParticipants = await db.query.conversationParticipants.findMany({
+    where: eq(conversationParticipants.conversationId, conversationId),
+  });
+
+  const { chatEventEmitter } = await import("@/lib/events");
+  allParticipants.forEach(p => {
+    chatEventEmitter.emit(`user:${p.userId}`, { type: "delete_conversation", conversationId });
+  });
+
   await db.delete(conversations).where(eq(conversations.id, conversationId));
 
   revalidatePath("/chat");

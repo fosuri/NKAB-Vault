@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useEffect } from "react";
 
 export function ChatLayoutWrapper({
   sidebar,
@@ -11,7 +11,33 @@ export function ChatLayoutWrapper({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isChatRoom = pathname !== "/chat";
+
+  useEffect(() => {
+    const eventSource = new EventSource("/api/chat/stream/user");
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "delete_conversation" && pathname === `/chat/${data.conversationId}`) {
+          router.push("/chat");
+        } else {
+          router.refresh();
+        }
+      } catch (e) {
+        router.refresh();
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error(error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [router, pathname]);
 
   return (
     <div className="flex h-[calc(100%-4rem)] gap-0 md:gap-6 relative">

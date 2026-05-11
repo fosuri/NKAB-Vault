@@ -83,11 +83,31 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
   }, [conversationId, messages, currentUserId]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      router.refresh();
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [router]);
+    const eventSource = new EventSource(`/api/chat/stream?conversationId=${conversationId}`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const newMessage = JSON.parse(event.data);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === newMessage.id)) {
+            return prev;
+          }
+          const withoutTemp = prev.filter(m => !(m.id.startsWith('temp-') && m.senderId === newMessage.senderId && m.content === newMessage.content));
+          return [...withoutTemp, newMessage];
+        });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error("SSE error:", error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [conversationId]);
 
   useEffect(() => {
     if (

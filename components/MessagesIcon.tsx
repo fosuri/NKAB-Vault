@@ -18,13 +18,6 @@ export function MessagesIcon() {
     }
     
     fetchUnreadCount();
-
-    // Poll for new messages every 30 seconds since websockets aren't used
-    const interval = setInterval(() => {
-      fetchUnreadCount();
-    }, 30000);
-
-    return () => clearInterval(interval);
   }, []);
 
   return (
