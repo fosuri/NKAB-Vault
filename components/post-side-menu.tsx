@@ -190,7 +190,7 @@ export function PostSideMenu({
                   onChange={(e) => setDraftPassword(e.target.value)}
                   maxLength={100}
                   placeholder="Enter a password"
-                  className="h-9 pr-10"
+                  className="h-9 pr-10 text-sm"
                   required={addPassword}
                 />
                 {draftPassword && (

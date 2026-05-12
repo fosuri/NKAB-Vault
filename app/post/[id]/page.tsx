@@ -66,9 +66,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         </div>
 
         <PostContentWrapper postId={post.id} hasPassword={hasPassword} isOwner={isOwner}>
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            <div className="flex-1 flex w-full flex-col gap-8 min-w-0">
-              <Card className="overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur">
+          <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_288px] gap-8 items-start">
+            <Card className="min-w-0 w-full overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur lg:col-start-1 lg:row-start-1">
                 <CardHeader className="gap-2 border-b border-border/50 pb-4">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
@@ -124,8 +123,17 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 </CardContent>
               </Card>
 
-              <section className="rounded-xl border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
-                <CommentSection
+            <div className="w-full lg:col-start-2 lg:row-start-1 lg:row-span-2">
+              <PostSideMenu 
+                postId={post.id} 
+                initialAccess={post.access} 
+                initialPassword={getActualPassword(post.password) ?? null} 
+                isOwner={isOwner} 
+              />
+            </div>
+
+            <section className="min-w-0 w-full rounded-xl border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur lg:col-start-1 lg:row-start-2">
+              <CommentSection
                   postId={post.id}
                   initialComments={post.comments}
                   currentUserId={currentUserId}
@@ -133,15 +141,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                   canModerateComments={Boolean(canModerateContent)}
                   actorRoleId={moderationState?.roleId as RoleId | undefined}
                 />
-              </section>
-            </div>
-
-            <PostSideMenu 
-              postId={post.id} 
-              initialAccess={post.access} 
-              initialPassword={getActualPassword(post.password) ?? null} 
-              isOwner={isOwner} 
-            />
+            </section>
           </div>
         </PostContentWrapper>
       </div>

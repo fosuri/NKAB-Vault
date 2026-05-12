@@ -118,7 +118,7 @@ export function HeaderDesktop({
           <Separator className="my-1" />
 
           <DropdownMenuItem
-            className="cursor-pointer rounded-sm px-2 py-1.5 text-base font-medium transition-colors hover:bg-muted hover:text-destructive focus:bg-muted focus:text-destructive"
+            className="cursor-pointer rounded-sm px-2 py-1.5 font-medium text-destructive transition-colors hover:bg-muted hover:text-destructive focus:bg-muted focus:text-destructive"
             onSelect={(event) => {
               event.preventDefault();
               onSignOut();
