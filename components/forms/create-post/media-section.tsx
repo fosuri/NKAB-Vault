@@ -35,7 +35,7 @@ export function MediaSection({
   setCropIndex,
 }: MediaSectionProps) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 min-w-0">
       <div className="rounded-xl border border-border p-4">
         <Dropzone
           className="h-52 whitespace-normal rounded-lg border border-dashed border-border bg-background p-6 hover:bg-muted/40"
@@ -83,7 +83,7 @@ export function MediaSection({
                         ) : (
                           <ImagePlus className="size-4 shrink-0" />
                         )}
-                        <span className="truncate text-xs flex-1">
+                        <span className="truncate text-xs flex-1 min-w-0">
                           {entry.original.name}
                         </span>
                         {entry.croppedDataUrl && (
@@ -112,7 +112,7 @@ export function MediaSection({
       </div>
 
       {entries.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 min-w-0">
           <Carousel className="w-full" setApi={setApi}>
             <CarouselContent>
               {entries.map((entry, idx) => {
@@ -128,7 +128,7 @@ export function MediaSection({
                         ) : (
                           <ImagePlus className="size-4 text-muted-foreground shrink-0" />
                         )}
-                        <span className="truncate text-xs font-medium text-foreground flex-1">
+                        <span className="truncate text-xs font-medium text-foreground flex-1 min-w-0">
                           {entry.original.name}
                         </span>
                         {entry.croppedDataUrl && (
