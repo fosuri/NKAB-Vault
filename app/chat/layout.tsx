@@ -30,7 +30,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
       <div className="flex-1 overflow-y-auto p-2 flex flex-col gap-2">
         {conversations.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground text-sm">
-            You don't have any conversations yet. Visit a user's profile to start a chat.
+            You don&apos;t have any conversations yet. Visit a user&apos;s profile to start a chat.
           </div>
         ) : (
           conversations.map((conv) => {
@@ -43,7 +43,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
 
             return (
               <Link key={conv.id} href={`/chat/${conv.id}`}>
-                <Card className={`p-3 hover:bg-accent/50 border-none shadow-none transition-colors flex items-center gap-3 ${isUnread ? 'bg-accent/20 border-l-4 border-l-red-500 rounded-l-none' : ''}`}>
+                <Card className={`p-3 hover:bg-accent/50 border-none shadow-none transition-colors flex flex-row items-center gap-3 ${isUnread ? 'bg-accent/20 border-l-4 border-l-red-500 rounded-l-none' : ''}`}>
                   <Avatar className="h-10 w-10 shrink-0">
                     {otherUser?.image ? (
                       <AvatarImage src={otherUser.image} alt={otherUser?.name || "User"} />
