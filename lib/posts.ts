@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, or, count, ne } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, or, count, ne, sql } from "drizzle-orm";
 import { db } from "@/lib/db/db";
 import { comments, postMedia, postReactions, posts, postViews, user, subscriptions } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
@@ -102,6 +102,9 @@ export async function getFeedPosts(
         orderBy: [postMedia.sortOrder],
       },
     },
+    extras: {
+      viewCount: sql<number>`CAST((SELECT COUNT(*) FROM post_views WHERE post_views.post_id = posts.id) AS integer)`.as("viewCount"),
+    },
   });
 
   return rows;
@@ -196,6 +199,9 @@ export async function searchPosts({
         orderBy: [postMedia.sortOrder],
       },
     },
+    extras: {
+      viewCount: sql<number>`CAST((SELECT COUNT(*) FROM post_views WHERE post_views.post_id = posts.id) AS integer)`.as("viewCount"),
+    },
     orderBy: [desc(posts.createdAt)],
   });
 }
@@ -242,6 +248,9 @@ export async function getPostsByUserId(userId: string) {
       media: {
         orderBy: [postMedia.sortOrder],
       },
+    },
+    extras: {
+      viewCount: sql<number>`CAST((SELECT COUNT(*) FROM post_views WHERE post_views.post_id = posts.id) AS integer)`.as("viewCount"),
     },
   });
 }
@@ -294,6 +303,9 @@ export async function getPostById(postId: string, currentUserId?: string) {
             },
           },
         },
+      },
+      extras: {
+        viewCount: sql<number>`CAST((SELECT COUNT(*) FROM post_views WHERE post_views.post_id = posts.id) AS integer)`.as("viewCount"),
       },
     }),
     db
@@ -363,6 +375,9 @@ export async function getLikedPostsByUserId(userId: string) {
       media: {
         orderBy: [postMedia.sortOrder],
       },
+    },
+    extras: {
+      viewCount: sql<number>`CAST((SELECT COUNT(*) FROM post_views WHERE post_views.post_id = posts.id) AS integer)`.as("viewCount"),
     },
   });
 }

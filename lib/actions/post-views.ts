@@ -24,10 +24,5 @@ export async function incrementPostViewsAction(postId: string) {
     if (!inserted.length) {
       return;
     }
-
-    await tx
-      .update(posts)
-      .set({ viewCount: sql`${posts.viewCount} + 1` })
-      .where(eq(posts.id, postId));
   });
 }

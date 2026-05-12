@@ -39,8 +39,9 @@ export function NotificationsMenu() {
     async function fetchNotifications() {
       const result = await getNotifications();
       if (result.success && result.data) {
-        setNotifications(result.data as Notification[]);
-        setUnreadCount(result.data.filter((n: Notification) => !n.isRead).length);
+        const notificationsData = result.data as unknown as Notification[];
+        setNotifications(notificationsData);
+        setUnreadCount(notificationsData.filter((n) => !n.isRead).length);
       }
     }
     fetchNotifications();

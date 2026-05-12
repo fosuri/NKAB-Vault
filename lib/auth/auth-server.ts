@@ -16,6 +16,11 @@ const resendFrom = process.env.RESEND_FROM || "nkab@resend.dev";
 await ensureDefaultRoles();
 
 export const auth = betterAuth({
+  advanced: {
+    database: {
+      generateId: "uuid",
+    },
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
