@@ -95,10 +95,6 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                       </CardTitle>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Eye className="size-3.5" />
-                        {post.viewCount.toLocaleString()}
-                      </span>
                       <span className={`flex items-center gap-1.5 text-xs font-medium ${className}`}>
                         <Icon className="size-3.5" />
                         {label}
@@ -111,7 +107,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
                 <CardContent className="pt-4">
                   <PostMediaCarousel media={post.media} />
-                  <div className="mt-4 flex items-center">
+                  <div className="mt-4 flex items-center justify-between">
                     <PostReactions
                       postId={post.id}
                       initialLikeCount={post.likeCount}
@@ -119,6 +115,10 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                       initialUserReaction={post.userReaction}
                       currentUserId={currentUserId}
                     />
+                    <span className="flex items-center gap-1 text-sm text-muted-foreground pr-2">
+                      <Eye className="size-4" />
+                      {post.viewCount.toLocaleString()}
+                    </span>
                   </div>
                 </CardContent>
               </Card>

@@ -77,12 +77,6 @@ export function FeedPostCard({
             </CardTitle>
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
-            {post.access !== "public" && (
-              <span className={`flex items-center gap-1.5 ${className}`}>
-                <Icon className="size-3.5" />
-                {label}
-              </span>
-            )}
             <span>{getRelativeTime(new Date(post.createdAt))}</span>
           </div>
         </div>
@@ -99,7 +93,15 @@ export function FeedPostCard({
             fileCount={post.media.length}
           />
         )}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {post.access !== "public" && (
+              <span className={`flex items-center gap-1.5 text-xs font-medium ${className}`}>
+                <Icon className="size-3.5" />
+                {label}
+              </span>
+            )}
+          </div>
           <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
             <Eye className="size-3" />
             {post.viewCount.toLocaleString()}
