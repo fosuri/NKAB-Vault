@@ -63,7 +63,6 @@ export async function getOrCreateConversationAction(targetUserId: string) {
     ]);
   });
 
-  // Emit event to both users to update their sidebars
   const { chatEventEmitter } = await import("@/lib/events");
   chatEventEmitter.emit(`user:${currentUserId}`, { type: "new_conversation", conversationId: newConversationId! });
   chatEventEmitter.emit(`user:${targetUserId}`, { type: "new_conversation", conversationId: newConversationId! });
@@ -213,7 +212,6 @@ export async function sendMessageAction(
       .where(eq(conversations.id, conversationId));
   });
 
-  // Emit event to subscribers
   if (newMessageData) {
     const { chatEventEmitter } = await import("@/lib/events");
     const payload = {
@@ -225,10 +223,8 @@ export async function sendMessageAction(
       }
     };
     
-    // Emit to conversation stream
     chatEventEmitter.emit(`chat:${conversationId}`, payload);
     
-    // Emit to all participants' personal streams (for sidebar refresh)
     participants.forEach(p => {
       chatEventEmitter.emit(`user:${p.userId}`, { type: "new_message", conversationId });
     });
@@ -261,7 +257,6 @@ export async function deleteMessageAction(messageId: string) {
     return { error: "You can only delete your own messages" };
   }
 
-  // If the message has media, delete from Cloudinary
   if (msg.mediaPublicId) {
     try {
       const resourceType = msg.mediaType === "video" ? "video" : "image";
