@@ -114,6 +114,11 @@ export const verification = pgTable(
 
 
 
+export const accessTypes = pgTable("access_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
 export const posts = pgTable(
   "posts",
   {
@@ -123,7 +128,10 @@ export const posts = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     title: text("title").default("").notNull(),
     description: text("description").notNull(),
-    access: text("access").default("public").notNull(),
+    access: text("access")
+      .default("public")
+      .references(() => accessTypes.name, { onDelete: "restrict", onUpdate: "cascade" })
+      .notNull(),
     password: text("password"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -409,6 +417,14 @@ export const postsRelations = relations(posts, ({ many, one }) => ({
   comments: many(comments),
   reactions: many(postReactions),
   views: many(postViews),
+  accessType: one(accessTypes, {
+    fields: [posts.access],
+    references: [accessTypes.name],
+  }),
+}));
+
+export const accessTypesRelations = relations(accessTypes, ({ many }) => ({
+  posts: many(posts),
 }));
 
 export const postReactionsRelations = relations(postReactions, ({ one }) => ({

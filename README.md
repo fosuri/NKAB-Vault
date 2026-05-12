@@ -51,6 +51,9 @@ cat dump.sql | docker exec -i nkab-postgres psql -U nkab -d nkab_vault
 #seed roles
 bun ./lib/db/seed-roles.ts
 
+#seed access types
+bun ./lib/db/seed-access-types.ts
+
 #seed admin
 bun ./lib/db/seed-admin.ts --email=
 
