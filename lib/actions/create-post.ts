@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { postMedia, posts } from "@/lib/db/auth-schema";
+import { postMedia, posts, subscriptions } from "@/lib/db/auth-schema";
+import { eq, and, inArray } from "drizzle-orm";
 import { ensureCanCreatePost } from "@/lib/auth/moderation";
 import { protectPassword } from "@/lib/post-password";
 const ACCESS_VALUES = ["public", "private", "paid"] as const;
@@ -58,6 +59,21 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
     parsed.data.access === "private" && parsed.data.password?.trim()
       ? await protectPassword(parsed.data.password.trim())
       : null;
+
+  const hasPro = await db.query.subscriptions.findFirst({
+    where: and(
+      eq(subscriptions.userId, session.user.id),
+      inArray(subscriptions.status, ["active", "trialing"])
+    ),
+  });
+
+  const maxBytes = hasPro ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+
+  for (const item of parsed.data.media) {
+    if (item.bytes && item.bytes > maxBytes) {
+      return { error: `File size exceeds the limit of ${hasPro ? 20 : 10}MB` };
+    }
+  }
 
   const newPost = await db.transaction(async (tx) => {
 

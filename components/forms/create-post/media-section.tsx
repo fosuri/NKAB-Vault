@@ -13,7 +13,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { toast } from "sonner";
-import { ACCEPTED_MEDIA_TYPES, MAX_FILE_SIZE, type FileEntry } from "./types";
+import { ACCEPTED_MEDIA_TYPES, type FileEntry } from "./types";
+import Image from "next/image";
 
 interface MediaSectionProps {
   entries: FileEntry[];
@@ -23,6 +24,7 @@ interface MediaSectionProps {
   handleDrop: (files: File[]) => void;
   handleRemove: (index: number) => void;
   setCropIndex: (index: number) => void;
+  isPro?: boolean;
 }
 
 export function MediaSection({
@@ -33,14 +35,18 @@ export function MediaSection({
   handleDrop,
   handleRemove,
   setCropIndex,
+  isPro,
 }: MediaSectionProps) {
+  const maxSize = isPro ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+  const maxSizeMB = isPro ? 20 : 10;
+
   return (
     <div className="flex flex-col gap-4 min-w-0">
       <div className="rounded-xl border border-border p-4">
         <Dropzone
           className="h-52 whitespace-normal rounded-lg border border-dashed border-border bg-background p-6 hover:bg-muted/40"
           accept={ACCEPTED_MEDIA_TYPES}
-          maxSize={MAX_FILE_SIZE}
+          maxSize={maxSize}
           maxFiles={3}
           onDrop={handleDrop}
           onError={(error) => {
@@ -59,7 +65,7 @@ export function MediaSection({
                 <p className="text-xs text-muted-foreground">
                   JPG, PNG, WEBP, GIF, MP4, WEBM, MOV (Max 3 files)
                 </p>
-                <p className="text-xs text-muted-foreground">Max 25 MB</p>
+                <p className="text-xs text-muted-foreground">Max {maxSizeMB} MB</p>
               </div>
               <span className="rounded-lg border border-border bg-background px-5 py-2 text-sm font-semibold text-foreground">
                 Choose files
@@ -119,6 +125,7 @@ export function MediaSection({
                 const isImage = entry.original.type.startsWith("image/");
                 const isStaticImage = isImage && entry.original.type !== "image/gif";
                 const isVideo = entry.original.type.startsWith("video/");
+                const isMov = isVideo && (entry.original.type === "video/quicktime" || entry.original.name.toLowerCase().endsWith(".mov"));
                 return (
                   <CarouselItem key={idx}>
                     <div className="rounded-xl border border-border overflow-hidden bg-background">
@@ -161,17 +168,28 @@ export function MediaSection({
 
                       <div className="p-3">
                         {isImage ? (
-                          <img
+                          <Image
                             src={entry.croppedDataUrl ?? entry.previewUrl}
                             alt={entry.original.name}
                             className="mx-auto max-h-64 h-64 max-w-full rounded-md object-contain bg-muted/40"
+                            width={500}
+                            height={500}
+                            unoptimized
                           />
                         ) : isVideo ? (
-                          <video
-                            src={entry.previewUrl}
-                            controls
-                            className="mx-auto max-h-64 h-64 w-full rounded-md bg-muted/40 object-contain"
-                          />
+                          isMov ? (
+                            <div className="mx-auto flex h-64 w-full flex-col items-center justify-center rounded-md bg-muted/40 p-4 text-center">
+                              <Video className="mb-2 size-10 text-muted-foreground opacity-50" />
+                              <p className="text-sm font-medium text-foreground">Preview not supported</p>
+                              <p className="text-xs text-muted-foreground">This .mov file will be converted to a playable format upon upload.</p>
+                            </div>
+                          ) : (
+                            <video
+                              src={entry.previewUrl}
+                              controls
+                              className="mx-auto max-h-64 h-64 w-full rounded-md bg-muted/40 object-contain"
+                            />
+                          )
                         ) : null}
                       </div>
                     </div>

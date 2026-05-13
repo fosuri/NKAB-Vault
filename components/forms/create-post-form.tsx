@@ -36,6 +36,7 @@ export function CreatePostForm({ isPro }: { isPro?: boolean }) {
             handleDrop={handlers.handleDrop}
             handleRemove={handlers.handleRemove}
             setCropIndex={actions.setCropIndex}
+            isPro={isPro}
           />
           <DetailsSection
             entriesLength={entries.length}

@@ -10,7 +10,7 @@ export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: st
   useEffect(() => {
     if (isVideo) {
       const video = document.createElement("video");
-      video.src = src;
+      video.src = src.replace(/\.mov$/i, ".mp4");
       video.preload = "metadata";
       video.onloadedmetadata = () => {
         setDuration(video.duration);

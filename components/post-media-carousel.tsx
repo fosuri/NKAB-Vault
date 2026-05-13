@@ -71,7 +71,7 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
                     ref={(el) => {
                       videoRefs.current[index] = el;
                     }}
-                    src={item.secureUrl}
+                    src={item.secureUrl.replace(/\.mov$/i, ".mp4")}
                     controls
                     className="h-full w-full bg-black object-contain"
                   />
