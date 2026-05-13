@@ -50,7 +50,13 @@ export function MediaSection({
           maxFiles={3}
           onDrop={handleDrop}
           onError={(error) => {
-            toast.error(error.message || "Unable to add file");
+            let message = error.message || "Unable to add file";
+            if (message.includes("bytes")) {
+              message = message.replace(/(\d+)\s*bytes/, (match, bytes) => {
+                return `${Math.round(Number(bytes) / 1024 / 1024)} MB`;
+              });
+            }
+            toast.error(message);
           }}
         >
           <DropzoneEmptyState className="h-full text-center">
