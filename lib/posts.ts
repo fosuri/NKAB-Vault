@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, inArray, or, count, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, inArray, or, count, ne, sql, isNull } from "drizzle-orm";
 import { db } from "@/lib/db/db";
 import { comments, postMedia, postReactions, posts, postViews, user, subscriptions, ACCESS_TYPES, REACTION_TYPES, RESOURCE_TYPES, MEDIA_FORMATS, SUBSCRIPTION_STATUSES, ROLES } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
@@ -105,6 +105,7 @@ export async function getFeedPosts(
 
   const feedWhere = and(
     accessFilter,
+    isNull(posts.deletedByStaffAt),
     createdAfter ? gte(posts.createdAt, createdAfter) : undefined,
     postIdsByType ? inArray(posts.id, postIdsByType) : undefined,
   );
@@ -155,6 +156,7 @@ export async function searchPosts({
 
   const whereClause = and(
     accessFilter,
+    isNull(posts.deletedByStaffAt),
     or(
       ilike(posts.title, `%${trimmedQuery}%`),
       ilike(posts.description, `%${trimmedQuery}%`),
@@ -240,7 +242,7 @@ export async function getPostsByUserId(userId: string, viewerUserId?: string) {
   const accessFilter = await getViewerAccessFilter(viewerUserId, viewerModerationState?.roleId);
 
   return db.query.posts.findMany({
-    where: and(eq(posts.userId, userId), accessFilter),
+    where: and(eq(posts.userId, userId), accessFilter, isNull(posts.deletedByStaffAt)),
     orderBy: [desc(posts.createdAt)],
     with: {
       media: { orderBy: [postMedia.sortOrder] },
@@ -256,7 +258,7 @@ export async function getPostsByUserId(userId: string, viewerUserId?: string) {
  */
 export async function getPostById(postId: string, currentUserId?: string) {
   const lightweightPost = await db.query.posts.findFirst({
-    where: eq(posts.id, postId),
+    where: and(eq(posts.id, postId), isNull(posts.deletedByStaffAt)),
     columns: { id: true, userId: true },
   });
 
@@ -274,6 +276,7 @@ export async function getPostById(postId: string, currentUserId?: string) {
         },
         media: { orderBy: [postMedia.sortOrder] },
         comments: {
+          where: isNull(comments.deletedByStaffAt),
           orderBy: [desc(comments.createdAt)],
           with: {
             author: { columns: { id: true, name: true, image: true, email: true, roleId: true } },
@@ -336,7 +339,7 @@ export async function getLikedPostsByUserId(userId: string, viewerUserId?: strin
   const accessFilter = await getViewerAccessFilter(viewerUserId, moderationState?.roleId);
 
   return db.query.posts.findMany({
-    where: and(inArray(posts.id, postIds), accessFilter),
+    where: and(inArray(posts.id, postIds), accessFilter, isNull(posts.deletedByStaffAt)),
     orderBy: [desc(posts.createdAt)],
     with: {
       author: {
@@ -354,7 +357,7 @@ export async function getLikedPostsByUserId(userId: string, viewerUserId?: strin
  * Aggregates comprehensive activity statistics for a user's entire content portfolio.
  */
 export async function getUserAccountStatistics(userId: string) {
-  const userPosts = await db.select({ id: posts.id }).from(posts).where(eq(posts.userId, userId));
+  const userPosts = await db.select({ id: posts.id }).from(posts).where(and(eq(posts.userId, userId), isNull(posts.deletedByStaffAt)));
   const postIds = userPosts.map(p => p.id);
 
   if (postIds.length === 0) {
@@ -365,7 +368,7 @@ export async function getUserAccountStatistics(userId: string) {
   const [viewsResult, reactionsResult, commentsResult] = await Promise.all([
     db.select({ count: count() }).from(postViews).where(and(inArray(postViews.postId, postIds), ne(postViews.userId, userId))),
     db.select({ typeId: postReactions.typeId, count: count() }).from(postReactions).where(and(inArray(postReactions.postId, postIds), ne(postReactions.userId, userId))).groupBy(postReactions.typeId),
-    db.select({ count: count() }).from(comments).where(and(inArray(comments.postId, postIds), ne(comments.userId, userId)))
+    db.select({ count: count() }).from(comments).where(and(inArray(comments.postId, postIds), ne(comments.userId, userId), isNull(comments.deletedByStaffAt)))
   ]);
 
   const views = Number(viewsResult[0]?.count ?? 0);

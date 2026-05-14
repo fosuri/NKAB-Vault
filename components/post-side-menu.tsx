@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { Check, ChevronDown, Eye, EyeOff, KeyRound, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -12,6 +13,7 @@ import { updatePostAccess } from "@/lib/actions/update-post-access";
 import { deletePost } from "@/lib/actions/delete-post";
 import { POST_ACCESS_OPTIONS } from "@/lib/config/post-access";
 import { ACCESS_TYPES } from "@/lib/db/auth-schema";
+import { cn } from "@/lib/utils";
 
 /**
  * Post Side Menu Component.
@@ -27,11 +29,13 @@ export function PostSideMenu({
   initialAccess,
   initialPassword,
   isOwner = true,
+  isPro = false,
 }: {
   postId: string;
   initialAccess: number;
   initialPassword: string | null;
   isOwner?: boolean;
+  isPro?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -173,19 +177,43 @@ export function PostSideMenu({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  {POST_ACCESS_OPTIONS.map((option) => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() => handleAccessChange(option.value)}
-                      className="flex items-center justify-between cursor-pointer"
-                    >
-                      <span className="flex items-center gap-2">
-                        <option.icon className="size-4" />
-                        {option.label}
-                      </span>
-                      {draftAccess === option.value && <Check className="size-4 text-emerald-500" />}
-                    </DropdownMenuItem>
-                  ))}
+                  {POST_ACCESS_OPTIONS.map((option) => {
+                    const isDisabledPaid = option.value === ACCESS_TYPES.PAID && !isPro;
+
+                    return (
+                      <DropdownMenuItem
+                        key={option.value}
+                        onClick={(e) => {
+                          if (isDisabledPaid) {
+                            e.preventDefault();
+                            return;
+                          }
+                          handleAccessChange(option.value);
+                        }}
+                        className={cn(
+                          "flex items-center justify-between",
+                          isDisabledPaid ? "cursor-default hover:bg-transparent focus:bg-transparent" : "cursor-pointer"
+                        )}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className={cn("flex items-center gap-2", isDisabledPaid && "opacity-50")}>
+                            <option.icon className="size-4" />
+                            {option.label}
+                          </span>
+                          {isDisabledPaid && (
+                            <Button asChild variant="link" className="h-auto p-0 text-xs text-primary">
+                              <Link href="/subscription" onClick={(e) => e.stopPropagation()}>
+                                Upgrade
+                              </Link>
+                            </Button>
+                          )}
+                        </span>
+                        {!isDisabledPaid && draftAccess === option.value && (
+                          <Check className="size-4 text-emerald-500" />
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

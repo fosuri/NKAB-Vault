@@ -13,11 +13,12 @@ import { redirect } from "next/navigation";
 import { PostMediaCarousel } from "@/components/post-media-carousel";
 import { PostViewTracker } from "@/components/post-view-tracker";
 import { PostReactions } from "@/components/post-reactions";
-import { ROLES, type RoleId, ACCESS_TYPES, RESOURCE_TYPES } from "@/lib/db/auth-schema";
+import { ROLES, type RoleId, ACCESS_TYPES, RESOURCE_TYPES, SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 import { PostSideMenu } from "@/components/post-side-menu";
 import { PostContentWrapper } from "@/components/post-content-wrapper";
 import { ACCESS_META } from "@/lib/config/post-access";
 import { getActualPassword } from "@/lib/post-password";
+import { db } from "@/lib/db/db";
 
 /**
  * Individual Post Details Page.
@@ -59,6 +60,15 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   }
 
   const hasPassword = post.accessTypeId === ACCESS_TYPES.PRIVATE && Boolean(post.password) && !canModerateContent;
+
+  const activeSub = currentUserId ? await db.query.subscriptions.findFirst({
+    where: (subs, { eq, and, gt }) => and(
+      eq(subs.userId, currentUserId),
+      eq(subs.statusId, SUBSCRIPTION_STATUSES.ACTIVE),
+      gt(subs.currentPeriodEnd, new Date())
+    )
+  }) : null;
+  const isPro = !!activeSub;
 
   const accessMeta = ACCESS_META[post.accessTypeId] ?? ACCESS_META[ACCESS_TYPES.PUBLIC];
   const { Icon, label, className } = accessMeta;
@@ -145,13 +155,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 </CardContent>
               </Card>
 
-            {/* Side Menu: Options for owner (Visibility, Password) */}
             <div className="w-full lg:col-start-2 lg:row-start-1 lg:row-span-2">
               <PostSideMenu 
                 postId={post.id} 
                 initialAccess={post.accessTypeId} 
                 initialPassword={getActualPassword(post.password) ?? null} 
                 isOwner={isOwner} 
+                isPro={isPro}
               />
             </div>
 

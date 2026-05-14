@@ -122,10 +122,7 @@ export async function deleteComment(
     }
   }
 
-  // 4. Persistence: Wipe from DB
-  await db.delete(comments).where(eq(comments.id, commentId));
-
-  // 5. Staff Cleanup: Logging and user notification for administrative deletions
+  // 4. Staff Cleanup: Logging and user notification for administrative deletions
   if (comment.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
       actorUserId: session.user.id,
@@ -144,6 +141,12 @@ export async function deleteComment(
       message: "Deleted for community guidelines violation",
     });
     chatEventEmitter.emit(`notifications:${comment.userId}`, { type: "update" });
+
+    // 5. Persistence: Soft delete for staff
+    await db.update(comments).set({ deletedByStaffAt: new Date() }).where(eq(comments.id, commentId));
+  } else {
+    // 5. Persistence: Wipe from DB for user deletion
+    await db.delete(comments).where(eq(comments.id, commentId));
   }
 
   revalidatePath(`/post/${postId}`);

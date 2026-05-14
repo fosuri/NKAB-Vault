@@ -421,19 +421,10 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
       return { error: permissionError };
     }
 
-    // 1. Delete associated media from Cloudinary
-    await Promise.allSettled(
-      post.media.map((mediaItem) =>
-        cloudinary.uploader.destroy(mediaItem.publicId, {
-          resource_type: mediaItem.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
-        })
-      )
-    );
+    // 1. Soft delete post record
+    await db.update(posts).set({ deletedByStaffAt: new Date() }).where(eq(posts.id, postId));
 
-    // 2. Delete post record
-    await db.delete(posts).where(eq(posts.id, postId));
-
-    // 3. Audit Log
+    // 2. Audit Log
     await createAdminLog({
       actorUserId: actor.id,
       actionTypeId: ADMIN_ACTION_TYPES.DELETE_POST,
@@ -442,7 +433,7 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
       details: `Deleted by staff (${actor.roleId === ROLES.ADMIN ? "admin" : actor.roleId === ROLES.MODERATOR ? "moderator" : "user"})`,
     });
 
-    // 4. Notify author
+    // 3. Notify author
     await db.insert(notifications).values({
       userId: post.userId,
       actorId: actor.id,
@@ -451,7 +442,7 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
     });
     chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
 
-    // Cache revalidation
+    // 4. Cache revalidation
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath("/profile");
@@ -494,10 +485,7 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
       return { error: permissionError };
     }
 
-    // 1. Delete database record
-    await db.delete(comments).where(eq(comments.id, commentId));
-
-    // 2. Audit Log
+    // 1. Audit Log
     await createAdminLog({
       actorUserId: actor.id,
       actionTypeId: ADMIN_ACTION_TYPES.DELETE_COMMENT,
@@ -507,7 +495,7 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
       details: `Deleted by staff (${actor.roleId === ROLES.ADMIN ? "admin" : actor.roleId === ROLES.MODERATOR ? "moderator" : "user"})`,
     });
 
-    // 3. Notify author
+    // 2. Notify author
     await db.insert(notifications).values({
       userId: comment.userId,
       actorId: actor.id,
@@ -516,6 +504,9 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
       message: "Deleted for community guidelines violation",
     });
     chatEventEmitter.emit(`notifications:${comment.userId}`, { type: "update" });
+
+    // 3. Soft delete database record
+    await db.update(comments).set({ deletedByStaffAt: new Date() }).where(eq(comments.id, commentId));
 
     revalidatePath(`/post/${comment.postId}`);
     revalidateModerationDashboards();

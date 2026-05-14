@@ -60,19 +60,7 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     }
   }
 
-  // 4. Media Cleanup: Wipe files from Cloudinary storage
-  await Promise.allSettled(
-    post.media.map((m) =>
-      cloudinary.uploader.destroy(m.publicId, {
-        resource_type: m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
-      })
-    )
-  );
-
-  // 5. Database Wipe
-  await db.delete(posts).where(eq(posts.id, postId));
-
-  // 6. Staff Cleanup: Log action and notify author for administrative removals
+  // 4. Staff Cleanup: Logging, notification, and soft delete for administrative removals
   if (post.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
       actorUserId: session.user.id,
@@ -90,6 +78,20 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     });
     // Trigger real-time alert refresh
     chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
+
+    // Soft delete
+    await db.update(posts).set({ deletedByStaffAt: new Date() }).where(eq(posts.id, postId));
+  } else {
+    // 5. Media Cleanup & Database Wipe for user self-deletion
+    await Promise.allSettled(
+      post.media.map((m) =>
+        cloudinary.uploader.destroy(m.publicId, {
+          resource_type: m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
+        })
+      )
+    );
+
+    await db.delete(posts).where(eq(posts.id, postId));
   }
 
   revalidatePath("/");

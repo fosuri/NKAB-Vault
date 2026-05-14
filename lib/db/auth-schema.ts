@@ -251,6 +251,7 @@ export const posts = pgTable(
       .references(() => accessTypes.id, { onDelete: "restrict", onUpdate: "cascade" })
       .notNull(),
     password: text("password"),
+    deletedByStaffAt: timestamp("deleted_by_staff_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -307,6 +308,7 @@ export const comments = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
+    deletedByStaffAt: timestamp("deleted_by_staff_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -484,8 +486,12 @@ export const adminActionLog = pgTable(
     targetUserId: uuid("target_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
-    targetPostId: uuid("target_post_id"),
-    targetCommentId: uuid("target_comment_id"),
+    targetPostId: uuid("target_post_id").references(() => posts.id, {
+      onDelete: "set null",
+    }),
+    targetCommentId: uuid("target_comment_id").references(() => comments.id, {
+      onDelete: "set null",
+    }),
     details: text("details"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
@@ -493,6 +499,8 @@ export const adminActionLog = pgTable(
     index("admin_action_log_actorUserId_idx").on(table.actorUserId),
     index("admin_action_log_actionTypeId_idx").on(table.actionTypeId),
     index("admin_action_log_targetUserId_idx").on(table.targetUserId),
+    index("admin_action_log_targetPostId_idx").on(table.targetPostId),
+    index("admin_action_log_targetCommentId_idx").on(table.targetCommentId),
   ]
 );
 
@@ -586,6 +594,7 @@ export const postsRelations = relations(posts, ({ many, one }) => ({
   comments: many(comments),
   reactions: many(postReactions),
   views: many(postViews),
+  adminActions: many(adminActionLog, { relationName: "postAdminActions" }),
   accessType: one(accessTypes, {
     fields: [posts.accessTypeId],
     references: [accessTypes.id],
@@ -657,7 +666,7 @@ export const postMediaRelations = relations(postMedia, ({ one }) => ({
   }),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
   post: one(posts, {
     fields: [comments.postId],
     references: [posts.id],
@@ -666,6 +675,7 @@ export const commentsRelations = relations(comments, ({ one }) => ({
     fields: [comments.userId],
     references: [user.id],
   }),
+  adminActions: many(adminActionLog, { relationName: "commentAdminActions" }),
 }));
 
 export const userSanctionsRelations = relations(userSanctions, ({ one }) => ({
@@ -696,6 +706,16 @@ export const adminActionLogRelations = relations(adminActionLog, ({ one }) => ({
     fields: [adminActionLog.targetUserId],
     references: [user.id],
     relationName: "receivedActions",
+  }),
+  targetPost: one(posts, {
+    fields: [adminActionLog.targetPostId],
+    references: [posts.id],
+    relationName: "postAdminActions",
+  }),
+  targetComment: one(comments, {
+    fields: [adminActionLog.targetCommentId],
+    references: [comments.id],
+    relationName: "commentAdminActions",
   }),
 }));
 
