@@ -10,7 +10,126 @@ export const ROLES = {
 export type RoleId = typeof ROLES[keyof typeof ROLES];
 export type RoleName = Lowercase<keyof typeof ROLES>;
 
+export const ACCESS_TYPES = {
+  PUBLIC: 1,
+  PRIVATE: 2,
+  PAID: 3,
+} as const;
+
+export const SUBSCRIPTION_STATUSES = {
+  ACTIVE: 1,
+  CANCELED: 2,
+  PAST_DUE: 3,
+  UNPAID: 4,
+  TRIALING: 5,
+  INCOMPLETE: 6,
+  INCOMPLETE_EXPIRED: 7,
+  PAUSED: 8,
+} as const;
+
+export const RESOURCE_TYPES = {
+  IMAGE: 1,
+  VIDEO: 2,
+  AUDIO: 3,
+  DOCUMENT: 4,
+} as const;
+
+export const MEDIA_FORMATS = {
+  JPEG: 1,
+  PNG: 2,
+  WEBP: 3,
+  GIF: 4,
+  MP4: 5,
+  WEBM: 6,
+} as const;
+
+export const REACTION_TYPES = {
+  LIKE: 1,
+  DISLIKE: 2,
+} as const;
+
+export const SANCTION_TYPES = {
+  MUTE: 1,
+  BAN: 2,
+  WARNING: 3,
+} as const;
+
+export const ADMIN_ACTION_TYPES = {
+  DELETE_POST: 1,
+  DELETE_COMMENT: 2,
+  MUTE_USER: 3,
+  BAN_USER: 4,
+  REVOKE_SANCTION: 5,
+  REMOVE_MODERATOR: 6,
+  ADD_MODERATOR: 7,
+} as const;
+
+export const NOTIFICATION_TYPES = {
+  LIKE: 1,
+  COMMENT: 2,
+  NEW_POST: 3,
+  MENTION: 4,
+  SYSTEM: 5,
+  WARNING: 6,
+  DELETE_POST: 7,
+  DELETE_COMMENT: 8,
+  DISLIKE: 9,
+  MUTE: 10,
+  BAN: 11,
+} as const;
+
+export const MESSAGE_MEDIA_TYPES = {
+  IMAGE: 1,
+  VIDEO: 2,
+  FILE: 3,
+} as const;
+
 export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const accessTypes = pgTable("access_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const subscriptionStatuses = pgTable("subscription_statuses", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const resourceTypes = pgTable("resource_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const mediaFormats = pgTable("media_formats", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const reactionTypes = pgTable("reaction_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const sanctionTypes = pgTable("sanction_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const adminActionTypes = pgTable("admin_action_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const notificationTypes = pgTable("notification_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const messageMediaTypes = pgTable("message_media_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
 });
@@ -44,7 +163,9 @@ export const subscriptions = pgTable("subscriptions", {
     .notNull(),
   stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
   stripePriceId: text("stripe_price_id").notNull(),
-  status: text("status").notNull(),
+  statusId: integer("status_id")
+    .references(() => subscriptionStatuses.id)
+    .notNull(),
   currentPeriodEnd: timestamp("current_period_end").notNull(),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -114,11 +235,6 @@ export const verification = pgTable(
 
 
 
-export const accessTypes = pgTable("access_types", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-});
-
 export const posts = pgTable(
   "posts",
   {
@@ -128,9 +244,9 @@ export const posts = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     title: text("title").default("").notNull(),
     description: text("description").notNull(),
-    access: text("access")
-      .default("public")
-      .references(() => accessTypes.name, { onDelete: "restrict", onUpdate: "cascade" })
+    accessTypeId: integer("access_type_id")
+      .default(ACCESS_TYPES.PUBLIC)
+      .references(() => accessTypes.id, { onDelete: "restrict", onUpdate: "cascade" })
       .notNull(),
     password: text("password"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -141,7 +257,7 @@ export const posts = pgTable(
   },
   (table) => [
     index("posts_userId_idx").on(table.userId),
-    index("posts_access_idx").on(table.access),
+    index("posts_accessTypeId_idx").on(table.accessTypeId),
   ]
 );
 
@@ -172,8 +288,11 @@ export const postMedia = pgTable(
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
     publicId: text("public_id").notNull().unique(),
-    resourceType: text("resource_type").notNull(),
-    format: text("format"),
+    resourceTypeId: integer("resource_type_id")
+      .references(() => resourceTypes.id)
+      .notNull(),
+    formatId: integer("format_id")
+      .references(() => mediaFormats.id),
     secureUrl: text("secure_url").notNull(),
     width: integer("width"),
     height: integer("height"),
@@ -184,7 +303,7 @@ export const postMedia = pgTable(
   },
   (table) => [
     index("post_media_postId_idx").on(table.postId),
-    index("post_media_resourceType_idx").on(table.resourceType),
+    index("post_media_resourceTypeId_idx").on(table.resourceTypeId),
   ]
 );
 
@@ -198,7 +317,9 @@ export const postReactions = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    type: text("type").notNull(),
+    typeId: integer("type_id")
+      .references(() => reactionTypes.id)
+      .notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
@@ -234,7 +355,9 @@ export const userSanctions = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    type: text("type").notNull(),
+    typeId: integer("type_id")
+      .references(() => sanctionTypes.id)
+      .notNull(),
     reason: text("reason").notNull(),
     createdByUserId: uuid("created_by_user_id")
       .notNull()
@@ -248,7 +371,7 @@ export const userSanctions = pgTable(
   },
   (table) => [
     index("user_sanctions_userId_idx").on(table.userId),
-    index("user_sanctions_type_idx").on(table.type),
+    index("user_sanctions_typeId_idx").on(table.typeId),
     index("user_sanctions_createdByUserId_idx").on(table.createdByUserId),
   ]
 );
@@ -260,7 +383,9 @@ export const adminActionLog = pgTable(
     actorUserId: uuid("actor_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    actionType: text("action_type").notNull(),
+    actionTypeId: integer("action_type_id")
+      .references(() => adminActionTypes.id)
+      .notNull(),
     targetUserId: uuid("target_user_id").references(() => user.id, {
       onDelete: "set null",
     }),
@@ -271,7 +396,7 @@ export const adminActionLog = pgTable(
   },
   (table) => [
     index("admin_action_log_actorUserId_idx").on(table.actorUserId),
-    index("admin_action_log_actionType_idx").on(table.actionType),
+    index("admin_action_log_actionTypeId_idx").on(table.actionTypeId),
     index("admin_action_log_targetUserId_idx").on(table.targetUserId),
   ]
 );
@@ -286,7 +411,9 @@ export const notifications = pgTable(
     actorId: uuid("actor_id").references(() => user.id, {
       onDelete: "set null",
     }),
-    type: text("type").notNull(),
+    typeId: integer("type_id")
+      .references(() => notificationTypes.id)
+      .notNull(),
     postId: uuid("post_id").references(() => posts.id, {
       onDelete: "cascade",
     }),
@@ -346,7 +473,7 @@ export const messages = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     content: text("content"),
     mediaUrl: text("media_url"),
-    mediaType: text("media_type"),
+    mediaTypeId: integer("media_type_id").references(() => messageMediaTypes.id),
     mediaPublicId: text("media_public_id"),
     isRead: boolean("is_read").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -418,13 +545,45 @@ export const postsRelations = relations(posts, ({ many, one }) => ({
   reactions: many(postReactions),
   views: many(postViews),
   accessType: one(accessTypes, {
-    fields: [posts.access],
-    references: [accessTypes.name],
+    fields: [posts.accessTypeId],
+    references: [accessTypes.id],
   }),
 }));
 
 export const accessTypesRelations = relations(accessTypes, ({ many }) => ({
   posts: many(posts),
+}));
+
+export const subscriptionStatusesRelations = relations(subscriptionStatuses, ({ many }) => ({
+  subscriptions: many(subscriptions),
+}));
+
+export const resourceTypesRelations = relations(resourceTypes, ({ many }) => ({
+  postMedia: many(postMedia),
+}));
+
+export const mediaFormatsRelations = relations(mediaFormats, ({ many }) => ({
+  postMedia: many(postMedia),
+}));
+
+export const reactionTypesRelations = relations(reactionTypes, ({ many }) => ({
+  reactions: many(postReactions),
+}));
+
+export const sanctionTypesRelations = relations(sanctionTypes, ({ many }) => ({
+  sanctions: many(userSanctions),
+}));
+
+export const adminActionTypesRelations = relations(adminActionTypes, ({ many }) => ({
+  actionLogs: many(adminActionLog),
+}));
+
+export const notificationTypesRelations = relations(notificationTypes, ({ many }) => ({
+  notifications: many(notifications),
+}));
+
+export const messageMediaTypesRelations = relations(messageMediaTypes, ({ many }) => ({
+  messages: many(messages),
 }));
 
 export const postReactionsRelations = relations(postReactions, ({ one }) => ({

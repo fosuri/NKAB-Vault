@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
 
-type NotificationType = "LIKE" | "COMMENT" | "DELETE_POST" | "DELETE_COMMENT";
+import { NOTIFICATION_TYPES } from "@/lib/db/auth-schema";
 
 type Notification = {
   id: string;
-  type: NotificationType;
+  typeId: number;
   message: string | null;
   isRead: boolean;
   createdAt: Date;
@@ -51,7 +51,23 @@ export function NotificationsMenu() {
     };
 
     window.addEventListener("notificationsUpdated", handleUpdate);
-    return () => window.removeEventListener("notificationsUpdated", handleUpdate);
+
+    const eventSource = new EventSource("/api/notifications/stream");
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "update") {
+          fetchNotifications();
+        }
+      } catch (err) {
+        console.error("Failed to parse notification SSE:", err);
+      }
+    };
+
+    return () => {
+      window.removeEventListener("notificationsUpdated", handleUpdate);
+      eventSource.close();
+    };
   }, []);
 
   const handleOpenChange = async (open: boolean) => {
@@ -98,7 +114,7 @@ export function NotificationsMenu() {
           ) : (
             notifications.map((notification) => (
               <DropdownMenuItem key={notification.id} className="flex items-start gap-2 p-3 pr-8 relative group" asChild>
-                {notification.postId && (notification.type === "LIKE" || notification.type === "COMMENT") ? (
+                {notification.postId && (notification.typeId === NOTIFICATION_TYPES.LIKE || notification.typeId === NOTIFICATION_TYPES.COMMENT || notification.typeId === NOTIFICATION_TYPES.DISLIKE) ? (
                   <Link href={`/post/${notification.postId}`} className="cursor-pointer w-full">
                     <NotificationContent notification={notification} />
                     <Button
@@ -145,14 +161,20 @@ export function NotificationsMenu() {
 
 function NotificationContent({ notification }: { notification: Notification }) {
   let text = "";
-  if (notification.type === "LIKE") {
+  if (notification.typeId === NOTIFICATION_TYPES.LIKE) {
     text = `liked your post ${notification.post?.title ? `"${notification.post.title}"` : ""}`;
-  } else if (notification.type === "COMMENT") {
+  } else if (notification.typeId === NOTIFICATION_TYPES.DISLIKE) {
+    text = `disliked your post ${notification.post?.title ? `"${notification.post.title}"` : ""}`;
+  } else if (notification.typeId === NOTIFICATION_TYPES.COMMENT) {
     text = `commented on your post ${notification.post?.title ? `"${notification.post.title}"` : ""}`;
-  } else if (notification.type === "DELETE_POST") {
+  } else if (notification.typeId === NOTIFICATION_TYPES.DELETE_POST) {
     text = "Your post was deleted";
-  } else if (notification.type === "DELETE_COMMENT") {
+  } else if (notification.typeId === NOTIFICATION_TYPES.DELETE_COMMENT) {
     text = "Your comment was deleted";
+  } else if (notification.typeId === NOTIFICATION_TYPES.MUTE) {
+    text = "You were muted";
+  } else if (notification.typeId === NOTIFICATION_TYPES.BAN) {
+    text = "You were banned";
   }
 
   return (

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { getSession } from "@/lib/auth/auth-server";
 import { getUserModerationState } from "@/lib/auth/moderation";
-import { adminActionLog, user, userSanctions, ROLES } from "@/lib/db/auth-schema";
+import { adminActionLog, user, userSanctions, ROLES, SANCTION_TYPES, ADMIN_ACTION_TYPES } from "@/lib/db/auth-schema";
 import { db } from "@/lib/db/db";
 
 export default async function ModeratorPage() {
@@ -78,7 +78,7 @@ export default async function ModeratorPage() {
           actorRole="moderator"
           activeSanctions={activeSanctions.map((item) => ({
             id: item.id,
-            type: item.type,
+            type: item.typeId === SANCTION_TYPES.BAN ? "ban" : "mute",
             reason: item.reason,
             createdAt: item.createdAt,
             expiresAt: item.expiresAt,
@@ -88,7 +88,7 @@ export default async function ModeratorPage() {
           }))}
           myActionHistory={myActionHistory.map((item) => ({
             id: item.id,
-            actionType: item.actionType,
+            actionType: Object.entries(ADMIN_ACTION_TYPES).find(([, val]) => val === item.actionTypeId)?.[0] || String(item.actionTypeId),
             details: item.details,
             createdAt: item.createdAt,
             targetUserName: item.targetUser?.name ?? item.targetUser?.email ?? null,

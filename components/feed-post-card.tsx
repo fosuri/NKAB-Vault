@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Eye, Globe, Lock, BadgeDollarSign } from "lucide-react";
+import { ACCESS_TYPES, RESOURCE_TYPES } from "@/lib/db/auth-schema";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DeletePostButton } from "@/components/delete-post-button";
@@ -11,7 +12,7 @@ type FeedPost = {
   userId: string;
   title: string;
   description: string;
-  access: string;
+  accessTypeId: number;
   viewCount: number;
   createdAt: Date;
   author: {
@@ -23,15 +24,15 @@ type FeedPost = {
   media: Array<{
     id: string;
     secureUrl: string;
-    resourceType: string;
+    resourceTypeId: number;
     originalFilename: string | null;
   }>;
 };
 
-const ACCESS_META: Record<string, { label: string; Icon: React.ElementType; className: string }> = {
-  public: { label: "Public", Icon: Globe, className: "text-emerald-600 dark:text-emerald-400" },
-  private: { label: "Private", Icon: Lock, className: "text-amber-600 dark:text-amber-400" },
-  paid: { label: "Paid", Icon: BadgeDollarSign, className: "text-violet-600 dark:text-violet-400" },
+const ACCESS_META: Record<number, { label: string; Icon: React.ElementType; className: string }> = {
+  [ACCESS_TYPES.PUBLIC]: { label: "Public", Icon: Globe, className: "text-emerald-600 dark:text-emerald-400" },
+  [ACCESS_TYPES.PRIVATE]: { label: "Private", Icon: Lock, className: "text-amber-600 dark:text-amber-400" },
+  [ACCESS_TYPES.PAID]: { label: "Paid", Icon: BadgeDollarSign, className: "text-violet-600 dark:text-violet-400" },
 };
 
 export function FeedPostCard({
@@ -44,7 +45,7 @@ export function FeedPostCard({
   showDeleteButton?: boolean;
 }) {
   const isOwner = Boolean(currentUserId && currentUserId === post.userId);
-  const accessMeta = ACCESS_META[post.access] ?? ACCESS_META.public;
+  const accessMeta = ACCESS_META[post.accessTypeId] ?? ACCESS_META[ACCESS_TYPES.PUBLIC];
   const { Icon, label, className } = accessMeta;
   
   const firstMedia = post.media?.[0];
@@ -89,13 +90,13 @@ export function FeedPostCard({
           <PostMediaPreview
             src={firstMedia.secureUrl}
             alt={firstMedia.originalFilename ?? post.description}
-            isVideo={firstMedia.resourceType === "video"}
+            isVideo={firstMedia.resourceTypeId === RESOURCE_TYPES.VIDEO}
             fileCount={post.media.length}
           />
         )}
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            {post.access !== "public" && (
+            {post.accessTypeId !== ACCESS_TYPES.PUBLIC && (
               <span className={`flex items-center gap-1.5 text-xs font-medium ${className}`}>
                 <Icon className="size-3.5" />
                 {label}

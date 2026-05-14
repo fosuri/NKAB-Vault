@@ -3,10 +3,14 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { user, subscriptions } from "@/lib/db/auth-schema";
+import { user, subscriptions, SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+const getStatusId = (status: Stripe.Subscription.Status) => {
+  return SUBSCRIPTION_STATUSES[status.toUpperCase() as keyof typeof SUBSCRIPTION_STATUSES] || SUBSCRIPTION_STATUSES.INCOMPLETE;
+};
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -63,7 +67,7 @@ export async function POST(req: Request) {
             stripeSubscriptionId: sub.id,
             userId: targetUserId,
             stripePriceId: item.price.id,
-            status: sub.status,
+            statusId: getStatusId(sub.status),
             currentPeriodEnd: new Date(item.current_period_end * 1000),
             cancelAtPeriodEnd: sub.cancel_at_period_end,
           };
@@ -100,7 +104,7 @@ export async function POST(req: Request) {
           stripeSubscriptionId: subscription.id,
           userId: existingUser.id,
           stripePriceId: item.price.id,
-          status: subscription.status,
+          statusId: getStatusId(subscription.status),
           currentPeriodEnd: new Date(item.current_period_end * 1000),
           cancelAtPeriodEnd: subscription.cancel_at_period_end,
         };

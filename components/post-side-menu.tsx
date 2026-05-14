@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { updatePostAccess } from "@/lib/actions/update-post-access";
 import { deletePost } from "@/lib/actions/delete-post";
 import { POST_ACCESS_OPTIONS } from "@/lib/config/post-access";
+import { ACCESS_TYPES } from "@/lib/db/auth-schema";
 
 export function PostSideMenu({
   postId,
@@ -19,7 +20,7 @@ export function PostSideMenu({
   isOwner = true,
 }: {
   postId: string;
-  initialAccess: string;
+  initialAccess: number;
   initialPassword: string | null;
   isOwner?: boolean;
 }) {
@@ -44,15 +45,15 @@ export function PostSideMenu({
 
   const isDirty =
     draftAccess !== savedAccess ||
-    (draftAccess === "private" && (
+    (draftAccess === ACCESS_TYPES.PRIVATE && (
       addPassword
         ? draftPassword.trim() !== savedPassword
         : savedPassword !== ""
     ));
 
-  const handleAccessChange = (newAccess: string) => {
+  const handleAccessChange = (newAccess: number) => {
     setDraftAccess(newAccess);
-    if (newAccess !== "private") {
+    if (newAccess !== ACCESS_TYPES.PRIVATE) {
       setAddPassword(false);
       setDraftPassword("");
     }
@@ -60,7 +61,7 @@ export function PostSideMenu({
 
   const handleSave = () => {
     const effectivePassword =
-      draftAccess === "private" && addPassword && draftPassword.trim()
+      draftAccess === ACCESS_TYPES.PRIVATE && addPassword && draftPassword.trim()
         ? draftPassword.trim()
         : null;
 
@@ -159,7 +160,7 @@ export function PostSideMenu({
           </DropdownMenu>
         </div>
 
-        {draftAccess === "private" && (
+        {draftAccess === ACCESS_TYPES.PRIVATE && (
           <Field className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <Input

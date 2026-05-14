@@ -1,6 +1,7 @@
 import { PricingCard } from "@/components/pricing-card"
 import { getSession } from "@/lib/auth/auth-server"
 import { db } from "@/lib/db/db"
+import { SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 
 export default async function PricingPage() {
   const session = await getSession();
@@ -11,7 +12,7 @@ export default async function PricingPage() {
     const activeSub = await db.query.subscriptions.findFirst({
       where: (subs, { eq, and, gt }) => and(
         eq(subs.userId, session.user.id),
-        eq(subs.status, 'active'),
+        eq(subs.statusId, SUBSCRIPTION_STATUSES.ACTIVE),
         gt(subs.currentPeriodEnd, new Date())
       )
     });

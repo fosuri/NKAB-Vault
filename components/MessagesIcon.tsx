@@ -5,19 +5,38 @@ import { MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { getUnreadMessageCountAction } from "@/lib/actions/chat";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export function MessagesIcon() {
   const [unreadCount, setUnreadCount] = useState(0);
+  const router = useRouter();
+
+  const fetchUnreadCount = async () => {
+    const result = await getUnreadMessageCountAction();
+    if (result.success && result.count !== undefined) {
+      setUnreadCount(result.count);
+    }
+  };
 
   useEffect(() => {
-    async function fetchUnreadCount() {
-      const result = await getUnreadMessageCountAction();
-      if (result.success && result.count !== undefined) {
-        setUnreadCount(result.count);
-      }
-    }
-    
     fetchUnreadCount();
+
+    const eventSource = new EventSource("/api/chat/stream/user");
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "new_message" || data.type === "messages_read" || data.type === "delete_conversation") {
+          fetchUnreadCount();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   return (

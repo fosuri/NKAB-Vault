@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { ensureDefaultRoles } from "./ensure-roles";
+import { ensureDefaults } from "./ensure-defaults";
 import { user, ROLES } from "./auth-schema";
 
 type Input = {
@@ -46,7 +46,7 @@ async function printUsers() {
 }
 
 async function main() {
-  await ensureDefaultRoles();
+  await ensureDefaults();
 
   const { email, username } = parseInput();
 

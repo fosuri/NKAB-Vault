@@ -6,7 +6,7 @@ import { ProfileContent } from "@/components/profile-content";
 import { UserStatistics } from "@/components/user-statistics";
 import { db } from "@/lib/db/db";
 import { eq } from "drizzle-orm";
-import { user as userSchema } from "@/lib/db/auth-schema";
+import { user as userSchema, SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 
 interface PageProps {
   params: Promise<{
@@ -37,13 +37,13 @@ export default async function UserProfilePage({ params }: PageProps) {
     notFound();
   }
 
-  const userPosts = await getPostsByUserId(targetUser.id);
-  const likedPosts = await getLikedPostsByUserId(targetUser.id);
+  const userPosts = await getPostsByUserId(targetUser.id, session?.user?.id);
+  const likedPosts = await getLikedPostsByUserId(targetUser.id, session?.user?.id);
 
   const activeSub = await db.query.subscriptions.findFirst({
     where: (subs, { eq, and, gt }) => and(
       eq(subs.userId, targetUser.id),
-      eq(subs.status, 'active'),
+      eq(subs.statusId, SUBSCRIPTION_STATUSES.ACTIVE),
       gt(subs.currentPeriodEnd, new Date())
     )
   });

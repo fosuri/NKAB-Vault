@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 import { getSession } from "@/lib/auth/auth-server";
 import { ProfileSetupModal } from "@/components/ProfileSetupModal";
 import { db } from "@/lib/db/db";
-import { user, RoleId } from "@/lib/db/auth-schema";
+import { user, RoleId, SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 import { eq } from "drizzle-orm";
 
 export default async function RootLayout({
@@ -42,7 +42,7 @@ export default async function RootLayout({
     const activeSub = await db.query.subscriptions.findFirst({
       where: (subs, { eq, and, gt }) => and(
         eq(subs.userId, session.user.id),
-        eq(subs.status, 'active'),
+        eq(subs.statusId, SUBSCRIPTION_STATUSES.ACTIVE),
         gt(subs.currentPeriodEnd, new Date())
       )
     });

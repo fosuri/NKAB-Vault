@@ -2,8 +2,9 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
-import { postReactions, notifications, posts } from "@/lib/db/auth-schema";
+import { postReactions, notifications, posts, REACTION_TYPES, NOTIFICATION_TYPES } from "@/lib/db/auth-schema";
 import { getSession } from "@/lib/auth/auth-server";
+import { chatEventEmitter } from "@/lib/events";
 
 export async function toggleReactionAction(postId: string, type: "like" | "dislike") {
   const session = await getSession();
@@ -24,25 +25,37 @@ export async function toggleReactionAction(postId: string, type: "like" | "disli
   });
 
   if (existing) {
-    if (existing.type === type) {
+    if (existing.typeId === (type === "like" ? REACTION_TYPES.LIKE : REACTION_TYPES.DISLIKE)) {
       await db.delete(postReactions).where(eq(postReactions.id, existing.id));
     } else {
-      await db.update(postReactions).set({ type }).where(eq(postReactions.id, existing.id));
+      await db.update(postReactions).set({ typeId: type === "like" ? REACTION_TYPES.LIKE : REACTION_TYPES.DISLIKE }).where(eq(postReactions.id, existing.id));
+      
+      // Switched reaction
+      if (post && post.userId !== userId) {
+        await db.insert(notifications).values({
+          userId: post.userId,
+          actorId: userId,
+          typeId: type === "like" ? NOTIFICATION_TYPES.LIKE : NOTIFICATION_TYPES.DISLIKE,
+          postId,
+        });
+        chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
+      }
     }
   } else {
     await db.insert(postReactions).values({
       postId,
       userId,
-      type,
+      typeId: type === "like" ? REACTION_TYPES.LIKE : REACTION_TYPES.DISLIKE,
     });
 
-    if (type === "like" && post && post.userId !== userId) {
+    if (post && post.userId !== userId) {
       await db.insert(notifications).values({
         userId: post.userId,
         actorId: userId,
-        type: "LIKE",
+        typeId: type === "like" ? NOTIFICATION_TYPES.LIKE : NOTIFICATION_TYPES.DISLIKE,
         postId,
       });
+      chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
     }
   }
 

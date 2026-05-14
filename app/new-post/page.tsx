@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { getSession } from "@/lib/auth/auth-server";
 import { getUserModerationState } from "@/lib/auth/moderation";
 import { db } from "@/lib/db/db";
+import { SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 
 export default async function NewPostPage() {
   const session = await getSession();
@@ -52,7 +53,7 @@ export default async function NewPostPage() {
   const activeSub = await db.query.subscriptions.findFirst({
     where: (subs, { eq, and, gt }) => and(
       eq(subs.userId, session.user.id),
-      eq(subs.status, 'active'),
+      eq(subs.statusId, SUBSCRIPTION_STATUSES.ACTIVE),
       gt(subs.currentPeriodEnd, new Date())
     )
   });

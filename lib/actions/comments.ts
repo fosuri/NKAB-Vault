@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { comments, user, ROLES, adminActionLog, posts, notifications } from "@/lib/db/auth-schema";
+import { comments, user, ROLES, adminActionLog, posts, notifications, NOTIFICATION_TYPES, ADMIN_ACTION_TYPES } from "@/lib/db/auth-schema";
 import { ensureCanCreateComment, getUserModerationState } from "@/lib/auth/moderation";
+import { chatEventEmitter } from "@/lib/events";
 
 const bodySchema = z
   .string()
@@ -52,10 +53,11 @@ export async function createComment(
     await db.insert(notifications).values({
       userId: post.userId,
       actorId: session.user.id,
-      type: "COMMENT",
+      typeId: NOTIFICATION_TYPES.COMMENT,
       postId,
       commentId: newCommentId,
     });
+    chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
   }
 
   revalidatePath(`/post/${postId}`);
@@ -114,7 +116,7 @@ export async function deleteComment(
   if (comment.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
       actorUserId: session.user.id,
-      actionType: "delete_comment",
+      actionTypeId: ADMIN_ACTION_TYPES.DELETE_COMMENT,
       targetUserId: comment.userId,
       targetPostId: postId,
       targetCommentId: comment.id,
@@ -124,10 +126,11 @@ export async function deleteComment(
     await db.insert(notifications).values({
       userId: comment.userId,
       actorId: session.user.id,
-      type: "DELETE_COMMENT",
+      typeId: NOTIFICATION_TYPES.DELETE_COMMENT,
       postId,
       message: "Deleted for community guidelines violation",
     });
+    chatEventEmitter.emit(`notifications:${comment.userId}`, { type: "update" });
   }
 
   revalidatePath(`/post/${postId}`);

@@ -1,10 +1,33 @@
 import { and, desc, eq, gte, ilike, inArray, or, count, ne, sql } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { comments, postMedia, postReactions, posts, postViews, user, subscriptions } from "@/lib/db/auth-schema";
+import { comments, postMedia, postReactions, posts, postViews, user, subscriptions, ACCESS_TYPES, REACTION_TYPES, RESOURCE_TYPES, MEDIA_FORMATS, SUBSCRIPTION_STATUSES, ROLES } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
 export type PostTimeFilter = "all" | "24h" | "7d" | "30d" | "365d";
 export type PostContentFilter = "all" | "image" | "gif" | "video";
+
+async function getViewerAccessFilter(viewerUserId?: string, moderationRole?: number) {
+  if (!viewerUserId) return eq(posts.accessTypeId, ACCESS_TYPES.PUBLIC);
+
+  if (moderationRole === ROLES.ADMIN || moderationRole === ROLES.MODERATOR) {
+    return undefined;
+  }
+
+  let baseFilter: any = eq(posts.accessTypeId, ACCESS_TYPES.PUBLIC);
+
+  const sub = await db.query.subscriptions.findFirst({
+    where: and(
+      eq(subscriptions.userId, viewerUserId),
+      inArray(subscriptions.statusId, [SUBSCRIPTION_STATUSES.ACTIVE, SUBSCRIPTION_STATUSES.TRIALING])
+    ),
+  });
+
+  if (sub) {
+    baseFilter = inArray(posts.accessTypeId, [ACCESS_TYPES.PUBLIC, ACCESS_TYPES.PAID]);
+  }
+
+  return or(eq(posts.userId, viewerUserId), baseFilter);
+}
 
 type PostFilterOptions = {
   time?: PostTimeFilter;
@@ -36,8 +59,8 @@ async function getPostIdsByContentType(contentType: PostContentFilter): Promise<
 
   const mediaWhere =
     contentType === "gif"
-      ? and(eq(postMedia.resourceType, "image"), eq(postMedia.format, "gif"))
-      : eq(postMedia.resourceType, contentType);
+      ? and(eq(postMedia.resourceTypeId, RESOURCE_TYPES.IMAGE), eq(postMedia.formatId, MEDIA_FORMATS.GIF))
+      : eq(postMedia.resourceTypeId, contentType === "video" ? RESOURCE_TYPES.VIDEO : RESOURCE_TYPES.IMAGE);
 
   const mediaRows = await db
     .select({ postId: postMedia.postId })
@@ -51,25 +74,15 @@ export async function getFeedPosts(
   viewerUserId?: string,
   options: PostFilterOptions = {}
 ) {
-  let accessFilter = eq(posts.access, "public");
-
+  let moderationState = null;
   if (viewerUserId) {
-    const moderationState = await getUserModerationState(viewerUserId);
+    moderationState = await getUserModerationState(viewerUserId);
     if (moderationState?.activeBan) {
       return [];
     }
-
-    const sub = await db.query.subscriptions.findFirst({
-      where: and(
-        eq(subscriptions.userId, viewerUserId),
-        inArray(subscriptions.status, ["active", "trialing"])
-      ),
-    });
-
-    if (sub) {
-      accessFilter = inArray(posts.access, ["public", "paid"]);
-    }
   }
+
+  const accessFilter = await getViewerAccessFilter(viewerUserId, moderationState?.roleId);
 
   const time = options.time ?? "all";
   const contentType = options.contentType ?? "all";
@@ -125,25 +138,15 @@ export async function searchPosts({
   contentType = "all",
   limit = 24,
 }: PostSearchOptions) {
-  let accessFilter = eq(posts.access, "public");
-
+  let moderationState = null;
   if (viewerUserId) {
-    const moderationState = await getUserModerationState(viewerUserId);
+    moderationState = await getUserModerationState(viewerUserId);
     if (moderationState?.activeBan) {
       return [];
     }
-
-    const sub = await db.query.subscriptions.findFirst({
-      where: and(
-        eq(subscriptions.userId, viewerUserId),
-        inArray(subscriptions.status, ["active", "trialing"])
-      ),
-    });
-
-    if (sub) {
-      accessFilter = inArray(posts.access, ["public", "paid"]);
-    }
   }
+
+  const accessFilter = await getViewerAccessFilter(viewerUserId, moderationState?.roleId);
 
   const trimmedQuery = query.trim();
 
@@ -228,21 +231,31 @@ export async function getSearchSuggestions({
     createdAt: post.createdAt,
     authorName: post.author?.name ?? post.author?.email ?? "Unknown user",
     previewUrl: post.media[0]
-      ? post.media[0].resourceType === "video"
+      ? post.media[0].resourceTypeId === RESOURCE_TYPES.VIDEO
         ? post.media[0].secureUrl.replace(/\.[^/.?]+(?=(\?|$))/, ".jpg")
         : post.media[0].secureUrl
       : null,
   }));
 }
 
-export async function getPostsByUserId(userId: string) {
-  const moderationState = await getUserModerationState(userId);
-  if (moderationState?.activeBan) {
+export async function getPostsByUserId(userId: string, viewerUserId?: string) {
+  const targetModerationState = await getUserModerationState(userId);
+  if (targetModerationState?.activeBan) {
     return [];
   }
 
+  let viewerModerationState = null;
+  if (viewerUserId) {
+    viewerModerationState = await getUserModerationState(viewerUserId);
+    if (viewerModerationState?.activeBan) {
+      return [];
+    }
+  }
+
+  const accessFilter = await getViewerAccessFilter(viewerUserId, viewerModerationState?.roleId);
+
   return db.query.posts.findMany({
-    where: eq(posts.userId, userId),
+    where: and(eq(posts.userId, userId), accessFilter),
     orderBy: [desc(posts.createdAt)],
     with: {
       media: {
@@ -309,18 +322,19 @@ export async function getPostById(postId: string, currentUserId?: string) {
       },
     }),
     db
-      .select({ type: postReactions.type, userId: postReactions.userId })
+      .select({ typeId: postReactions.typeId, userId: postReactions.userId })
       .from(postReactions)
       .where(eq(postReactions.postId, postId)),
   ]);
 
   if (!post) return null;
 
-  const likeCount = reactions.filter((r) => r.type === "like").length;
-  const dislikeCount = reactions.filter((r) => r.type === "dislike").length;
-  const userReaction = currentUserId
-    ? (reactions.find((r) => r.userId === currentUserId)?.type as "like" | "dislike" | undefined) ?? null
+  const likeCount = reactions.filter((r) => r.typeId === REACTION_TYPES.LIKE).length;
+  const dislikeCount = reactions.filter((r) => r.typeId === REACTION_TYPES.DISLIKE).length;
+  const userReactionId = currentUserId
+    ? (reactions.find((r) => r.userId === currentUserId)?.typeId) ?? null
     : null;
+  const userReaction = userReactionId === REACTION_TYPES.LIKE ? "like" : userReactionId === REACTION_TYPES.DISLIKE ? "dislike" : null;
 
   return { ...post, likeCount, dislikeCount, userReaction };
 }
@@ -337,27 +351,24 @@ export async function getUserById(userId: string) {
   });
 }
 
-export async function getLikedPostsByUserId(userId: string) {
+export async function getLikedPostsByUserId(userId: string, viewerUserId?: string) {
   const liked = await db
     .select({ postId: postReactions.postId })
     .from(postReactions)
-    .where(and(eq(postReactions.userId, userId), eq(postReactions.type, "like")));
+    .where(and(eq(postReactions.userId, userId), eq(postReactions.typeId, REACTION_TYPES.LIKE)));
 
   const postIds = liked.map((r) => r.postId);
   if (!postIds.length) return [];
 
-  let accessFilter = eq(posts.access, "public");
-
-  const sub = await db.query.subscriptions.findFirst({
-    where: and(
-      eq(subscriptions.userId, userId),
-      inArray(subscriptions.status, ["active", "trialing"])
-    ),
-  });
-
-  if (sub) {
-    accessFilter = inArray(posts.access, ["public", "paid"]);
+  let moderationState = null;
+  if (viewerUserId) {
+    moderationState = await getUserModerationState(viewerUserId);
+    if (moderationState?.activeBan) {
+      return [];
+    }
   }
+
+  const accessFilter = await getViewerAccessFilter(viewerUserId, moderationState?.roleId);
 
   return db.query.posts.findMany({
     where: and(inArray(posts.id, postIds), accessFilter),
@@ -392,13 +403,13 @@ export async function getUserAccountStatistics(userId: string) {
 
   const [viewsResult, reactionsResult, commentsResult] = await Promise.all([
     db.select({ count: count() }).from(postViews).where(and(inArray(postViews.postId, postIds), ne(postViews.userId, userId))),
-    db.select({ type: postReactions.type, count: count() }).from(postReactions).where(and(inArray(postReactions.postId, postIds), ne(postReactions.userId, userId))).groupBy(postReactions.type),
+    db.select({ typeId: postReactions.typeId, count: count() }).from(postReactions).where(and(inArray(postReactions.postId, postIds), ne(postReactions.userId, userId))).groupBy(postReactions.typeId),
     db.select({ count: count() }).from(comments).where(and(inArray(comments.postId, postIds), ne(comments.userId, userId)))
   ]);
 
   const views = Number(viewsResult[0]?.count ?? 0);
-  const likes = Number(reactionsResult.find(r => r.type === "like")?.count ?? 0);
-  const dislikes = Number(reactionsResult.find(r => r.type === "dislike")?.count ?? 0);
+  const likes = Number(reactionsResult.find(r => r.typeId === REACTION_TYPES.LIKE)?.count ?? 0);
+  const dislikes = Number(reactionsResult.find(r => r.typeId === REACTION_TYPES.DISLIKE)?.count ?? 0);
   const commentsCount = Number(commentsResult[0]?.count ?? 0);
 
   return { views, likes, dislikes, comments: commentsCount };

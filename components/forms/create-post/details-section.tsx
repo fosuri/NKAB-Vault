@@ -6,12 +6,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { POST_ACCESS_OPTIONS } from "@/lib/config/post-access";
+import { ACCESS_TYPES } from "@/lib/db/auth-schema";
 import { cn } from "@/lib/utils";
 
 interface DetailsSectionProps {
   entriesLength: number;
-  access: "public" | "private" | "paid";
-  handleAccessChange: (newAccess: "public" | "private" | "paid") => void;
+  access: number;
+  handleAccessChange: (newAccess: number) => void;
   addPassword: boolean;
   setAddPassword: (val: boolean) => void;
   passwordValue: string;
@@ -85,7 +86,7 @@ export function DetailsSection({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {POST_ACCESS_OPTIONS.map((option) => {
-              const isDisabledPaid = option.value === "paid" && !isPro;
+              const isDisabledPaid = option.value === ACCESS_TYPES.PAID && !isPro;
 
               return (
                 <DropdownMenuItem
@@ -95,7 +96,7 @@ export function DetailsSection({
                       e.preventDefault();
                       return;
                     }
-                    handleAccessChange(option.value as "public" | "private" | "paid");
+                    handleAccessChange(option.value);
                   }}
                   className={cn(
                     "flex items-center justify-between",
@@ -128,7 +129,7 @@ export function DetailsSection({
         </FieldDescription>
       </Field>
 
-      {access === "private" && (
+      {access === 2 && ( // ACCESS_TYPES.PRIVATE
         <Field>
           <div className="flex items-center gap-2">
             <Input

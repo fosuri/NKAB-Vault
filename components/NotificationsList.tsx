@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button";
 import { X, Trash2 } from "lucide-react";
 import { deleteNotification, clearAllNotifications, getNotifications } from "@/lib/actions/notifications";
 
-type NotificationType = "LIKE" | "COMMENT" | "DELETE_POST" | "DELETE_COMMENT";
+import { NOTIFICATION_TYPES } from "@/lib/db/auth-schema";
 
 type Notification = {
   id: string;
-  type: NotificationType;
+  typeId: number;
   message: string | null;
   isRead: boolean;
   createdAt: Date;
@@ -45,7 +45,23 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
     };
 
     window.addEventListener("notificationsUpdated", handleUpdate);
-    return () => window.removeEventListener("notificationsUpdated", handleUpdate);
+
+    const eventSource = new EventSource("/api/notifications/stream");
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "update") {
+          fetchNotifications();
+        }
+      } catch (err) {
+        console.error("Failed to parse notification SSE:", err);
+      }
+    };
+
+    return () => {
+      window.removeEventListener("notificationsUpdated", handleUpdate);
+      eventSource.close();
+    };
   }, []);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -82,10 +98,13 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
       ) : (
         notifications.map((n) => {
           let text = "";
-          if (n.type === "LIKE") text = `liked your post ${n.post?.title ? `"${n.post.title}"` : ""}`;
-          else if (n.type === "COMMENT") text = `commented on your post ${n.post?.title ? `"${n.post.title}"` : ""}`;
-          else if (n.type === "DELETE_POST") text = "Your post was deleted";
-          else if (n.type === "DELETE_COMMENT") text = "Your comment was deleted";
+          if (n.typeId === NOTIFICATION_TYPES.LIKE) text = `liked your post ${n.post?.title ? `"${n.post.title}"` : ""}`;
+          else if (n.typeId === NOTIFICATION_TYPES.DISLIKE) text = `disliked your post ${n.post?.title ? `"${n.post.title}"` : ""}`;
+          else if (n.typeId === NOTIFICATION_TYPES.COMMENT) text = `commented on your post ${n.post?.title ? `"${n.post.title}"` : ""}`;
+          else if (n.typeId === NOTIFICATION_TYPES.DELETE_POST) text = "Your post was deleted";
+          else if (n.typeId === NOTIFICATION_TYPES.DELETE_COMMENT) text = "Your comment was deleted";
+          else if (n.typeId === NOTIFICATION_TYPES.MUTE) text = "You were muted";
+          else if (n.typeId === NOTIFICATION_TYPES.BAN) text = "You were banned";
 
           const content = (
             <div className="flex gap-4 items-start w-full group relative">
@@ -118,7 +137,7 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
             </div>
           );
 
-          if (n.postId && (n.type === "LIKE" || n.type === "COMMENT")) {
+          if (n.postId && (n.typeId === NOTIFICATION_TYPES.LIKE || n.typeId === NOTIFICATION_TYPES.COMMENT || n.typeId === NOTIFICATION_TYPES.DISLIKE)) {
             return (
               <Link key={n.id} href={`/post/${n.postId}`} className="block p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors w-full">
                 {content}

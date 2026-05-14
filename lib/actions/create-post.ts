@@ -4,11 +4,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { postMedia, posts, subscriptions } from "@/lib/db/auth-schema";
+import { postMedia, posts, subscriptions, SUBSCRIPTION_STATUSES, ACCESS_TYPES, RESOURCE_TYPES, MEDIA_FORMATS } from "@/lib/db/auth-schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { ensureCanCreatePost } from "@/lib/auth/moderation";
 import { protectPassword } from "@/lib/post-password";
-const ACCESS_VALUES = ["public", "private", "paid"] as const;
 
 const uploadedMediaSchema = z.object({
   publicId: z.string(),
@@ -24,7 +23,7 @@ const uploadedMediaSchema = z.object({
 const createPostSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(120, "Title is too long"),
   description: z.string().trim().min(1, "Description is required").max(500, "Description is too long"),
-  access: z.enum(ACCESS_VALUES).default("public"),
+  access: z.coerce.number().refine(val => [ACCESS_TYPES.PUBLIC, ACCESS_TYPES.PRIVATE, ACCESS_TYPES.PAID].includes(val as any), "Invalid access type").default(ACCESS_TYPES.PUBLIC),
   password: z.string().max(255, "Password is too long").optional().nullable(),
   media: z.array(uploadedMediaSchema).min(1, "Add at least one file").max(3, "Too many files selected"),
 });
@@ -56,14 +55,14 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
   }
 
   const effectivePassword =
-    parsed.data.access === "private" && parsed.data.password?.trim()
+    parsed.data.access === ACCESS_TYPES.PRIVATE && parsed.data.password?.trim()
       ? await protectPassword(parsed.data.password.trim())
       : null;
 
   const hasPro = await db.query.subscriptions.findFirst({
     where: and(
       eq(subscriptions.userId, session.user.id),
-      inArray(subscriptions.status, ["active", "trialing"])
+      inArray(subscriptions.statusId, [SUBSCRIPTION_STATUSES.ACTIVE, SUBSCRIPTION_STATUSES.TRIALING])
     ),
   });
 
@@ -81,7 +80,7 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
       userId: session.user.id,
       title: parsed.data.title,
       description: parsed.data.description,
-      access: parsed.data.access,
+      accessTypeId: parsed.data.access,
       password: effectivePassword,
     }).returning({ id: posts.id });
 
@@ -91,8 +90,8 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
       parsed.data.media.map((item, index) => ({
         postId,
         publicId: item.publicId,
-        resourceType: item.resourceType,
-        format: item.format ?? null,
+        resourceTypeId: item.resourceType === "video" ? RESOURCE_TYPES.VIDEO : item.resourceType === "audio" ? RESOURCE_TYPES.AUDIO : RESOURCE_TYPES.IMAGE,
+        formatId: item.format === "gif" ? MEDIA_FORMATS.GIF : item.format === "mp4" ? MEDIA_FORMATS.MP4 : item.format === "webm" ? MEDIA_FORMATS.WEBM : item.format === "png" ? MEDIA_FORMATS.PNG : MEDIA_FORMATS.JPEG,
         secureUrl: item.secureUrl,
         width: item.width ?? null,
         height: item.height ?? null,

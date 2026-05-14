@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
-import { posts, user, ROLES, adminActionLog, notifications } from "@/lib/db/auth-schema";
+import { posts, user, ROLES, adminActionLog, notifications, ADMIN_ACTION_TYPES, NOTIFICATION_TYPES, RESOURCE_TYPES } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
+import { chatEventEmitter } from "@/lib/events";
 
 type DeletePostResult = { error?: string; success?: boolean };
 
@@ -57,7 +58,7 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
   await Promise.allSettled(
     post.media.map((m) =>
       cloudinary.uploader.destroy(m.publicId, {
-        resource_type: m.resourceType as "image" | "video" | "raw",
+        resource_type: m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
       })
     )
   );
@@ -67,7 +68,7 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
   if (post.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
       actorUserId: session.user.id,
-      actionType: "delete_post",
+      actionTypeId: ADMIN_ACTION_TYPES.DELETE_POST,
       targetUserId: post.userId,
       targetPostId: post.id,
       details: `Deleted by (${isAdmin ? "admin" : "moderator"})`,
@@ -76,9 +77,10 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     await db.insert(notifications).values({
       userId: post.userId,
       actorId: session.user.id,
-      type: "DELETE_POST",
+      typeId: NOTIFICATION_TYPES.DELETE_POST,
       message: "Deleted for community guidelines violation",
     });
+    chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
   }
 
   revalidatePath("/");

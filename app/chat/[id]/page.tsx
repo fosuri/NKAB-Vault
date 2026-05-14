@@ -39,14 +39,14 @@ export default async function ChatConversationPage({ params }: PageProps) {
 
   const currentUserParticipant = participants.find(p => p.userId === currentUserId);
   if (!currentUserParticipant) {
-    notFound();
+    redirect("/chat");
   }
 
   const otherUserParticipant = participants.find(p => p.userId !== currentUserId);
   const otherUser = otherUserParticipant?.user;
 
   if (!otherUser) {
-    notFound();
+    redirect("/chat");
   }
 
   const result = await getConversationMessagesAction(conversationId);

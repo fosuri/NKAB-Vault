@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { user, userSanctions, ROLES, type RoleId } from "@/lib/db/auth-schema";
+import { user, userSanctions, ROLES, type RoleId, SANCTION_TYPES } from "@/lib/db/auth-schema";
 
 export type SanctionType = "mute" | "ban";
 
@@ -43,15 +43,15 @@ export async function getUserModerationState(userId: string): Promise<UserModera
     orderBy: [desc(userSanctions.createdAt)],
     columns: {
       id: true,
-      type: true,
+      typeId: true,
       reason: true,
       expiresAt: true,
       createdAt: true,
     },
   });
 
-  const activeMute = sanctions.find((item) => item.type === "mute") ?? null;
-  const activeBan = sanctions.find((item) => item.type === "ban") ?? null;
+  const activeMute = sanctions.find((item) => item.typeId === SANCTION_TYPES.MUTE) ?? null;
+  const activeBan = sanctions.find((item) => item.typeId === SANCTION_TYPES.BAN) ?? null;
 
   return {
     userId: dbUser.id,

@@ -13,7 +13,7 @@ import { redirect } from "next/navigation";
 import { PostMediaCarousel } from "@/components/post-media-carousel";
 import { PostViewTracker } from "@/components/post-view-tracker";
 import { PostReactions } from "@/components/post-reactions";
-import { ROLES, type RoleId } from "@/lib/db/auth-schema";
+import { ROLES, type RoleId, ACCESS_TYPES, RESOURCE_TYPES } from "@/lib/db/auth-schema";
 import { PostSideMenu } from "@/components/post-side-menu";
 import { PostContentWrapper } from "@/components/post-content-wrapper";
 import { ACCESS_META } from "@/lib/config/post-access";
@@ -41,13 +41,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const isOwner = currentUserId === post.userId;
   const canModerateContent = moderationState?.roleId === ROLES.ADMIN || moderationState?.roleId === ROLES.MODERATOR;
 
-  if (post.access === "paid" && !isOwner) {
+  if (post.accessTypeId === ACCESS_TYPES.PAID && !isOwner && !canModerateContent) {
     notFound();
   }
 
-  const hasPassword = post.access === "private" && Boolean(post.password);
+  const hasPassword = post.accessTypeId === ACCESS_TYPES.PRIVATE && Boolean(post.password) && !canModerateContent;
 
-  const accessMeta = ACCESS_META[post.access] ?? ACCESS_META.public;
+  const accessMeta = ACCESS_META[post.accessTypeId] ?? ACCESS_META[ACCESS_TYPES.PUBLIC];
   const { Icon, label, className } = accessMeta;
 
   return (
@@ -106,13 +106,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 </CardHeader>
 
                 <CardContent className="pt-4">
-                  <PostMediaCarousel media={post.media} />
+                  <PostMediaCarousel media={post.media.map(m => ({ ...m, resourceType: m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : ("image" as const) }))} />
                   <div className="mt-4 flex items-center justify-between">
                     <PostReactions
                       postId={post.id}
                       initialLikeCount={post.likeCount}
                       initialDislikeCount={post.dislikeCount}
-                      initialUserReaction={post.userReaction}
+                      initialUserReaction={post.userReaction as "like" | "dislike" | null}
                       currentUserId={currentUserId}
                     />
                     <span className="flex items-center gap-1 text-sm text-muted-foreground pr-2">
@@ -126,7 +126,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <div className="w-full lg:col-start-2 lg:row-start-1 lg:row-span-2">
               <PostSideMenu 
                 postId={post.id} 
-                initialAccess={post.access} 
+                initialAccess={post.accessTypeId} 
                 initialPassword={getActualPassword(post.password) ?? null} 
                 isOwner={isOwner} 
               />

@@ -11,6 +11,7 @@ import {
   deleteMessageAction,
   deleteConversationAction
 } from "@/lib/actions/chat";
+import { MESSAGE_MEDIA_TYPES } from "@/lib/db/auth-schema";
 import { getCloudinarySignature } from "@/lib/actions/cloudinary";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ type Message = {
   senderId: string;
   content: string | null;
   mediaUrl: string | null;
-  mediaType: string | null;
+  mediaTypeId: number | null;
   mediaPublicId: string | null;
   isRead: boolean;
   createdAt: Date;
@@ -87,14 +88,24 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
 
     eventSource.onmessage = (event) => {
       try {
-        const newMessage = JSON.parse(event.data);
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === newMessage.id)) {
-            return prev;
-          }
-          const withoutTemp = prev.filter(m => !(m.id.startsWith('temp-') && m.senderId === newMessage.senderId && m.content === newMessage.content));
-          return [...withoutTemp, newMessage];
-        });
+        const data = JSON.parse(event.data);
+        
+        if (data.type === "delete_message") {
+          setMessages(prev => prev.filter(m => m.id !== data.messageId));
+        } else if (data.type === "messages_read") {
+          setMessages(prev => prev.map(m => 
+            m.senderId !== data.readerId && !m.isRead ? { ...m, isRead: true } : m
+          ));
+        } else {
+          // Assume it's a new message
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === data.id)) {
+              return prev;
+            }
+            const withoutTemp = prev.filter(m => !(m.id.startsWith('temp-') && m.senderId === data.senderId && m.content === data.content));
+            return [...withoutTemp, data];
+          });
+        }
       } catch (error) {
         console.error(error);
       }
@@ -184,7 +195,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
       senderId: currentUserId,
       content: content || null,
       mediaUrl: mediaData?.url || null,
-      mediaType: mediaData?.resourceType || null,
+      mediaTypeId: mediaData?.resourceType === "video" ? MESSAGE_MEDIA_TYPES.VIDEO : mediaData?.resourceType === "image" ? MESSAGE_MEDIA_TYPES.IMAGE : mediaData?.resourceType === "file" ? MESSAGE_MEDIA_TYPES.FILE : null,
       mediaPublicId: mediaData?.publicId || null,
       isRead: false,
       createdAt: new Date(),
@@ -316,7 +327,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
                   >
                     {message.mediaUrl && (
                       <div className="mb-2 max-w-[200px] sm:max-w-sm rounded-lg overflow-hidden">
-                        {message.mediaType?.includes("video") ? (
+                        {message.mediaTypeId === MESSAGE_MEDIA_TYPES.VIDEO ? (
                           <video src={message.mediaUrl} controls className="w-full h-auto object-cover" />
                         ) : (
                           <img src={message.mediaUrl} alt="Attachment" className="w-full h-auto object-cover" />

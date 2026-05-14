@@ -6,14 +6,14 @@ import * as schema from "@/lib/db/auth-schema";
 import { nextCookies } from "better-auth/next-js";
 import { Resend } from "resend";
 import ForgotPasswordEmail from "@/components/emails/reset-password";
-import { ensureDefaultRoles } from "@/lib/db/ensure-roles";
+import { ensureDefaults } from "@/lib/db/ensure-defaults";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { eq } from "drizzle-orm";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const resendFrom = process.env.RESEND_FROM || "nkab@resend.dev";
 
-await ensureDefaultRoles();
+await ensureDefaults();
 
 export const auth = betterAuth({
   advanced: {

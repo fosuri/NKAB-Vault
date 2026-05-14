@@ -5,6 +5,7 @@ import { type CarouselApi } from "@/components/ui/carousel";
 import { getCloudinarySignature } from "@/lib/actions/cloudinary";
 import { createPost } from "@/lib/actions/create-post";
 import { type FileEntry, dataUrlToFile } from "./types";
+import { ACCESS_TYPES } from "@/lib/db/auth-schema";
 
 export function useCreatePost() {
   const formRef = useRef<HTMLFormElement>(null);
@@ -17,13 +18,13 @@ export function useCreatePost() {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
-  const [access, setAccess] = useState<"public" | "private" | "paid">("public");
+  const [access, setAccess] = useState<number>(ACCESS_TYPES.PUBLIC);
   const [addPassword, setAddPassword] = useState(false);
   const [password, setPassword] = useState("");
 
-  const handleAccessChange = (newAccess: "public" | "private" | "paid") => {
+  const handleAccessChange = (newAccess: number) => {
     setAccess(newAccess);
-    if (newAccess !== "private") {
+    if (newAccess !== ACCESS_TYPES.PRIVATE) {
       setAddPassword(false);
       setPassword("");
     }
@@ -79,9 +80,9 @@ export function useCreatePost() {
     const formData = new FormData(event.currentTarget);
     const title = formData.get("title") as string;
     const description = formData.get("description") as string;
-    const formAccess = formData.get("access") as "public" | "private" | "paid";
+    const formAccess = Number(formData.get("access"));
 
-    const effectivePassword = formAccess === "private" && addPassword && password.trim() ? password.trim() : null;
+    const effectivePassword = formAccess === ACCESS_TYPES.PRIVATE && addPassword && password.trim() ? password.trim() : null;
 
     startTransition(async () => {
       try {

@@ -6,6 +6,7 @@ import { getPostsByUserId, getLikedPostsByUserId } from "@/lib/posts";
 import { ProfileContent } from "@/components/profile-content";
 import { UserStatistics } from "@/components/user-statistics";
 import { db } from "@/lib/db/db";
+import { SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 
 export default async function ProfilePage() {
   const session = await getSession();
@@ -19,13 +20,13 @@ export default async function ProfilePage() {
     redirect("/banned");
   }
 
-  const userPosts = await getPostsByUserId(session.user.id);
-  const likedPosts = await getLikedPostsByUserId(session.user.id);
+  const userPosts = await getPostsByUserId(session.user.id, session.user.id);
+  const likedPosts = await getLikedPostsByUserId(session.user.id, session.user.id);
 
   const activeSub = await db.query.subscriptions.findFirst({
     where: (subs, { eq, and, gt }) => and(
       eq(subs.userId, session.user.id),
-      eq(subs.status, 'active'),
+      eq(subs.statusId, SUBSCRIPTION_STATUSES.ACTIVE),
       gt(subs.currentPeriodEnd, new Date())
     )
   });

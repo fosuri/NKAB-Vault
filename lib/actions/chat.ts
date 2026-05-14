@@ -7,6 +7,7 @@ import {
   conversations,
   conversationParticipants,
   messages,
+  MESSAGE_MEDIA_TYPES,
 } from "@/lib/db/auth-schema";
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
@@ -201,7 +202,7 @@ export async function sendMessageAction(
       senderId: userId,
       content,
       mediaUrl,
-      mediaType,
+      mediaTypeId: mediaType === "video" ? MESSAGE_MEDIA_TYPES.VIDEO : mediaType === "image" ? MESSAGE_MEDIA_TYPES.IMAGE : mediaType === "file" ? MESSAGE_MEDIA_TYPES.FILE : undefined,
       mediaPublicId,
     }).returning();
     
@@ -259,7 +260,7 @@ export async function deleteMessageAction(messageId: string) {
 
   if (msg.mediaPublicId) {
     try {
-      const resourceType = msg.mediaType === "video" ? "video" : "image";
+      const resourceType = msg.mediaTypeId === MESSAGE_MEDIA_TYPES.VIDEO ? "video" : "image";
       await cloudinary.uploader.destroy(msg.mediaPublicId, { resource_type: resourceType });
     } catch (error) {
       console.error("Failed to delete media from Cloudinary:", error);
@@ -267,6 +268,9 @@ export async function deleteMessageAction(messageId: string) {
   }
 
   await db.delete(messages).where(eq(messages.id, messageId));
+
+  const { chatEventEmitter } = await import("@/lib/events");
+  chatEventEmitter.emit(`chat:${msg.conversationId}`, { type: "delete_message", messageId });
 
   revalidatePath("/chat");
   revalidatePath(`/chat/${msg.conversationId}`);
@@ -304,7 +308,7 @@ export async function deleteConversationAction(conversationId: string) {
   for (const msg of msgsWithMedia) {
     if (msg.mediaPublicId) {
       try {
-        const resourceType = msg.mediaType === "video" ? "video" : "image";
+        const resourceType = msg.mediaTypeId === MESSAGE_MEDIA_TYPES.VIDEO ? "video" : "image";
         await cloudinary.uploader.destroy(msg.mediaPublicId, { resource_type: resourceType });
       } catch (error) {
         console.error(error);
@@ -391,6 +395,10 @@ export async function markConversationMessagesAsReadAction(conversationId: strin
         eq(messages.isRead, false)
       )
     );
+
+  const { chatEventEmitter } = await import("@/lib/events");
+  chatEventEmitter.emit(`chat:${conversationId}`, { type: "messages_read", readerId: userId });
+  chatEventEmitter.emit(`user:${userId}`, { type: "messages_read" });
 
   revalidatePath("/chat");
   revalidatePath(`/chat/${conversationId}`);

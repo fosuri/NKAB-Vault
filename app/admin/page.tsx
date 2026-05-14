@@ -2,7 +2,7 @@ import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db/db";
-import { adminActionLog, user, userSanctions, ROLES } from "@/lib/db/auth-schema";
+import { adminActionLog, user, userSanctions, ROLES, SANCTION_TYPES, ADMIN_ACTION_TYPES } from "@/lib/db/auth-schema";
 import { AdminDashboard } from "@/components/admin-dashboard";
 import { getUserModerationState } from "@/lib/auth/moderation";
 
@@ -84,7 +84,7 @@ export default async function AdminPage(props: { searchParams: Promise<SearchPar
             currentUserId={session.user.id}
             activeSanctions={activeSanctions.map((item) => ({
               id: item.id,
-              type: item.type,
+              type: item.typeId === SANCTION_TYPES.BAN ? "ban" : "mute",
               reason: item.reason,
               createdAt: item.createdAt,
               expiresAt: item.expiresAt,
@@ -94,7 +94,7 @@ export default async function AdminPage(props: { searchParams: Promise<SearchPar
             }))}
             myActionHistory={myActionHistory.map((item) => ({
               id: item.id,
-              actionType: item.actionType,
+              actionType: Object.entries(ADMIN_ACTION_TYPES).find(([, val]) => val === item.actionTypeId)?.[0] || String(item.actionTypeId),
               details: item.details,
               createdAt: item.createdAt,
               targetUserName: item.targetUser?.name ?? item.targetUser?.email ?? null,

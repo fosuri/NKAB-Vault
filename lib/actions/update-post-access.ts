@@ -4,13 +4,13 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { posts } from "@/lib/db/auth-schema";
+import { posts, ACCESS_TYPES } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
 import { protectPassword } from "@/lib/post-password";
 
 export async function updatePostAccess(
   postId: string,
-  newAccess: string,
+  newAccess: number,
   newPassword?: string | null,
 ) {
   const session = await getSession();
@@ -37,15 +37,15 @@ export async function updatePostAccess(
     return { error: "Not authorised. Only the post author can change the access." };
   }
 
-  if (!["public", "private", "paid"].includes(newAccess)) {
+  if (![ACCESS_TYPES.PUBLIC, ACCESS_TYPES.PRIVATE, ACCESS_TYPES.PAID].includes(newAccess as any)) {
     return { error: "Invalid access type" };
   }
 
   const effectivePassword =
-    newAccess === "private" && newPassword?.trim() ? await protectPassword(newPassword.trim()) : null;
+    newAccess === ACCESS_TYPES.PRIVATE && newPassword?.trim() ? await protectPassword(newPassword.trim()) : null;
 
   await db.update(posts)
-    .set({ access: newAccess, password: effectivePassword })
+    .set({ accessTypeId: newAccess, password: effectivePassword })
     .where(eq(posts.id, postId));
 
   revalidatePath(`/post/${postId}`);

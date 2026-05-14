@@ -2,7 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { posts } from "@/lib/db/auth-schema";
+import { posts, ACCESS_TYPES } from "@/lib/db/auth-schema";
 import { verifyPostPassword as utilVerify } from "@/lib/post-password";
 
 export async function verifyPostPassword(
@@ -11,14 +11,14 @@ export async function verifyPostPassword(
 ): Promise<{ valid: boolean; error?: string }> {
   const post = await db.query.posts.findFirst({
     where: eq(posts.id, postId),
-    columns: { password: true, access: true },
+    columns: { password: true, accessTypeId: true },
   });
 
   if (!post) {
     return { valid: false, error: "Post not found" };
   }
 
-  if (post.access !== "private" || !post.password) {
+  if (post.accessTypeId !== ACCESS_TYPES.PRIVATE || !post.password) {
     return { valid: true };
   }
 

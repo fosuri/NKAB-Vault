@@ -10,8 +10,9 @@ import {
   requireStaff,
   type SanctionType,
 } from "@/lib/auth/moderation";
-import { adminActionLog, comments, posts, user, userSanctions, ROLES, type RoleId } from "@/lib/db/auth-schema";
+import { adminActionLog, comments, posts, user, userSanctions, ROLES, type RoleId, ADMIN_ACTION_TYPES, SANCTION_TYPES, RESOURCE_TYPES, notifications, NOTIFICATION_TYPES } from "@/lib/db/auth-schema";
 import { db } from "@/lib/db/db";
+import { chatEventEmitter } from "@/lib/events";
 
 type AdminActionResult = { success?: boolean; error?: string };
 
@@ -19,7 +20,7 @@ type Role = "user" | "moderator";
 
 async function createAdminLog(params: {
   actorUserId: string;
-  actionType: string;
+  actionTypeId: number;
   targetUserId?: string;
   targetPostId?: string;
   targetCommentId?: string;
@@ -27,7 +28,7 @@ async function createAdminLog(params: {
 }) {
   await db.insert(adminActionLog).values({
     actorUserId: params.actorUserId,
-    actionType: params.actionType,
+    actionTypeId: params.actionTypeId,
     targetUserId: params.targetUserId ?? null,
     targetPostId: params.targetPostId ?? null,
     targetCommentId: params.targetCommentId ?? null,
@@ -88,7 +89,7 @@ async function purgeUserContentOnBan(targetUserId: string) {
     await Promise.allSettled(
       mediaItems.map((mediaItem) =>
         cloudinary.uploader.destroy(mediaItem.publicId, {
-          resource_type: mediaItem.resourceType as "image" | "video" | "raw",
+          resource_type: mediaItem.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
         })
       )
     );
@@ -143,7 +144,7 @@ export async function setUserRoleAction(targetUserId: string, roleId: RoleId): P
 
     await createAdminLog({
       actorUserId: adminUserId,
-      actionType: roleId === ROLES.MODERATOR ? "assign_moderator" : "remove_moderator",
+      actionTypeId: roleId === ROLES.MODERATOR ? ADMIN_ACTION_TYPES.ADD_MODERATOR : ADMIN_ACTION_TYPES.REMOVE_MODERATOR,
       targetUserId,
       details: `Set role to ${roleId === ROLES.ADMIN ? "admin" : roleId === ROLES.MODERATOR ? "moderator" : "user"}`,
     });
@@ -201,7 +202,7 @@ export async function issueSanctionAction(params: {
     const existingSanction = await db.query.userSanctions.findFirst({
       where: and(
         eq(userSanctions.userId, params.targetUserId),
-        eq(userSanctions.type, params.type),
+        eq(userSanctions.typeId, params.type === "ban" ? SANCTION_TYPES.BAN : SANCTION_TYPES.MUTE),
         isNull(userSanctions.revokedAt),
       ),
       columns: { id: true },
@@ -216,7 +217,7 @@ export async function issueSanctionAction(params: {
 
     await db.insert(userSanctions).values({
       userId: params.targetUserId,
-      type: params.type,
+      typeId: params.type === "ban" ? SANCTION_TYPES.BAN : SANCTION_TYPES.MUTE,
       reason: trimmedReason,
       createdByUserId: actor.id,
       expiresAt: parsedExpiresAt,
@@ -227,7 +228,7 @@ export async function issueSanctionAction(params: {
 
       await createAdminLog({
         actorUserId: actor.id,
-        actionType: "remove_moderator",
+        actionTypeId: ADMIN_ACTION_TYPES.REMOVE_MODERATOR,
         targetUserId: params.targetUserId,
         details: "Removed moderator role due to ban",
       });
@@ -244,10 +245,18 @@ export async function issueSanctionAction(params: {
 
     await createAdminLog({
       actorUserId: actor.id,
-      actionType: params.type === "ban" ? "ban_user" : "mute_user",
+      actionTypeId: params.type === "ban" ? ADMIN_ACTION_TYPES.BAN_USER : ADMIN_ACTION_TYPES.MUTE_USER,
       targetUserId: params.targetUserId,
       details,
     });
+
+    await db.insert(notifications).values({
+      userId: params.targetUserId,
+      actorId: actor.id,
+      typeId: params.type === "ban" ? NOTIFICATION_TYPES.BAN : NOTIFICATION_TYPES.MUTE,
+      message: `You have been ${params.type === "ban" ? "banned" : "muted"}. Reason: ${trimmedReason}`,
+    });
+    chatEventEmitter.emit(`notifications:${params.targetUserId}`, { type: "update" });
 
     if (params.type === "ban") {
       revalidatePath("/");
@@ -269,7 +278,7 @@ export async function revokeSanctionAction(sanctionId: string): Promise<AdminAct
 
     const sanction = await db.query.userSanctions.findFirst({
       where: and(eq(userSanctions.id, sanctionId), isNull(userSanctions.revokedAt)),
-      columns: { id: true, userId: true, type: true },
+      columns: { id: true, userId: true, typeId: true },
       with: {
         targetUser: {
           columns: { roleId: true },
@@ -297,9 +306,9 @@ export async function revokeSanctionAction(sanctionId: string): Promise<AdminAct
 
     await createAdminLog({
       actorUserId: actor.id,
-      actionType: "revoke_sanction",
+      actionTypeId: ADMIN_ACTION_TYPES.REVOKE_SANCTION,
       targetUserId: sanction.userId,
-      details: `Revoked ${sanction.type}`,
+      details: `Revoked ${sanction.typeId === SANCTION_TYPES.BAN ? "ban" : "mute"}`,
     });
 
     revalidateModerationDashboards();
@@ -355,7 +364,7 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
     await Promise.allSettled(
       post.media.map((mediaItem) =>
         cloudinary.uploader.destroy(mediaItem.publicId, {
-          resource_type: mediaItem.resourceType as "image" | "video" | "raw",
+          resource_type: mediaItem.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
         })
       )
     );
@@ -364,11 +373,19 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
 
     await createAdminLog({
       actorUserId: actor.id,
-      actionType: "delete_post",
+      actionTypeId: ADMIN_ACTION_TYPES.DELETE_POST,
       targetUserId: post.userId,
       targetPostId: post.id,
       details: `Deleted by staff (${actor.roleId === ROLES.ADMIN ? "admin" : actor.roleId === ROLES.MODERATOR ? "moderator" : "user"})`,
     });
+
+    await db.insert(notifications).values({
+      userId: post.userId,
+      actorId: actor.id,
+      typeId: NOTIFICATION_TYPES.DELETE_POST,
+      message: "Deleted for community guidelines violation",
+    });
+    chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
 
     revalidatePath("/");
     revalidatePath("/search");
@@ -412,12 +429,21 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
 
     await createAdminLog({
       actorUserId: actor.id,
-      actionType: "delete_comment",
+      actionTypeId: ADMIN_ACTION_TYPES.DELETE_COMMENT,
       targetUserId: comment.userId,
       targetCommentId: comment.id,
       targetPostId: comment.postId,
       details: `Deleted by staff (${actor.roleId === ROLES.ADMIN ? "admin" : actor.roleId === ROLES.MODERATOR ? "moderator" : "user"})`,
     });
+
+    await db.insert(notifications).values({
+      userId: comment.userId,
+      actorId: actor.id,
+      typeId: NOTIFICATION_TYPES.DELETE_COMMENT,
+      postId: comment.postId,
+      message: "Deleted for community guidelines violation",
+    });
+    chatEventEmitter.emit(`notifications:${comment.userId}`, { type: "update" });
 
     revalidatePath(`/post/${comment.postId}`);
     revalidateModerationDashboards();
