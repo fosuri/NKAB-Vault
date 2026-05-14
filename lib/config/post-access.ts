@@ -1,8 +1,15 @@
 import { Globe, Lock, BadgeDollarSign, type LucideIcon } from "lucide-react";
 import { ACCESS_TYPES } from "@/lib/db/auth-schema";
 
+/**
+ * Defines the access hierarchy and UI metadata for post visibility.
+ */
+
 export type PostAccessType = number;
 
+/**
+ * Configuration for the access selector UI, mapping database constants to Lucide icons and styles.
+ */
 export const POST_ACCESS_OPTIONS: {
   value: PostAccessType;
   label: string;
@@ -33,6 +40,9 @@ export const POST_ACCESS_OPTIONS: {
   },
 ];
 
+/**
+ * Optimized lookup map for quick access to metadata by its numeric constant.
+ */
 export const ACCESS_META = POST_ACCESS_OPTIONS.reduce((acc, option) => {
   acc[option.value] = {
     label: option.label,

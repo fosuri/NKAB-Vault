@@ -29,6 +29,11 @@ type Notification = {
   } | null;
 };
 
+/**
+ * Notifications List Component.
+ * Displays a persistent list of user notifications with real-time syncing.
+ * Actions: Navigate to source post, individual deletion, and bulk clearing.
+ */
 export function NotificationsList({ initialNotifications }: { initialNotifications: Notification[] }) {
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
 
@@ -44,6 +49,7 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
       fetchNotifications();
     };
 
+    // Listen for local UI events and real-time SSE updates
     window.addEventListener("notificationsUpdated", handleUpdate);
 
     const eventSource = new EventSource("/api/notifications/stream");
@@ -93,10 +99,12 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
         </Button>
       </div>
 
+      {/* Notification Stream */}
       {notifications.length === 0 ? (
         <p className="text-muted-foreground">No notifications yet.</p>
       ) : (
         notifications.map((n) => {
+          // Dynamic text generation based on notification type
           let text = "";
           if (n.typeId === NOTIFICATION_TYPES.LIKE) text = `liked your post ${n.post?.title ? `"${n.post.title}"` : ""}`;
           else if (n.typeId === NOTIFICATION_TYPES.DISLIKE) text = `disliked your post ${n.post?.title ? `"${n.post.title}"` : ""}`;
@@ -121,11 +129,13 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
                   {n.actor && <span className="font-semibold">{n.actor.name} </span>}
                   {text}
                 </p>
+                {/* Optional administrative/moderation message */}
                 {n.message && <p className="text-sm text-red-500 font-medium">{n.message}</p>}
                 <p className="text-xs text-muted-foreground">
                   {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
                 </p>
               </div>
+              {/* Action: Delete notification */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -137,6 +147,7 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
             </div>
           );
 
+          // Interactive: Links to the relevant post if applicable
           if (n.postId && (n.typeId === NOTIFICATION_TYPES.LIKE || n.typeId === NOTIFICATION_TYPES.COMMENT || n.typeId === NOTIFICATION_TYPES.DISLIKE)) {
             return (
               <Link key={n.id} href={`/post/${n.postId}`} className="block p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors w-full">
@@ -155,3 +166,4 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
     </div>
   );
 }
+

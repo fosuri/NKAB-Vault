@@ -19,10 +19,13 @@ interface ForgotPasswordEmailProps {
   userEmail: string
 }
 
+/**
+ * Forgot Password Email Template.
+ * A React Email component that generates the HTML content for password reset requests.
+ * Includes dynamic user info, a secure action link, and security instructions.
+ */
 const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
   const { username, resetUrl, userEmail } = props;
-
-
 
   return (
     <Html lang="en" dir="ltr">
@@ -31,6 +34,7 @@ const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
         <Preview>Reset your password - Action required</Preview>
         <Body className="bg-gray-100 font-sans py-10">
           <Container className="bg-white rounded-[8px] shadow-lg max-w-145 mx-auto p-10">
+            {/* Main Header */}
             <Section className="text-center mb-8">
               <Heading className="text-[28px] font-bold text-gray-900 m-0 mb-2">
                 Reset Your Password
@@ -40,6 +44,7 @@ const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
               </Text>
             </Section>
 
+            {/* Content Body */}
             <Section className="mb-8">
               <Text className="text-[16px] text-gray-700 leading-6 m-0 mb-4">
                 Hello, {username}
@@ -53,6 +58,7 @@ const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
                 expire in 24 hours for security reasons.
               </Text>
 
+              {/* Action Button: Redirects to the secure reset page */}
               <Section className="text-center mb-6">
                 <Button
                   href={resetUrl}
@@ -62,6 +68,7 @@ const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
                 </Button>
               </Section>
 
+              {/* Plain text fallback for the link */}
               <Text className="text-[14px] text-gray-600 leading-5 m-0 mb-4">
                 If the button above doesn&apos;t work, copy and paste this link into
                 your browser:
@@ -72,6 +79,7 @@ const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
                 </Link>
               </Text>
 
+              {/* Security Warning: Instructs user to ignore if they didn't initiate the request */}
               <Section className="bg-amber-50 border border-amber-200 rounded-[6px] p-4 mb-6">
                 <Text className="text-[14px] text-amber-800 leading-5 m-0 mb-2 font-semibold">
                   Security Notice
@@ -89,12 +97,13 @@ const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
               </Text>
             </Section>
 
+            {/* Footer: Legal and Address Info */}
             <Section className="border-t border-gray-200 pt-6">
               <Text className="text-[12px] text-gray-500 leading-4 m-0 mb-2">
                 This email was sent to {userEmail}
               </Text>
               <Text className="text-[12px] text-gray-500 leading-4 m-0 mb-2">
-                © 2026 Your Company Name. All rights reserved.
+                © 2026 NKAB Vault. All rights reserved.
               </Text>
               <Text className="text-[12px] text-gray-500 leading-4 m-0">
                 123 Business Street, Jõhvi, Estonia |{" "}
@@ -110,5 +119,5 @@ const ForgotPasswordEmail = (props: ForgotPasswordEmailProps) => {
   );
 };
 
-
 export default ForgotPasswordEmail;
+

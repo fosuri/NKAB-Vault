@@ -1,11 +1,17 @@
 import Image from "next/image"
 import Link from "next/link"
 
+/**
+ * Footer Component.
+ * Displays project branding and links to the core contributors' GitHub profiles.
+ */
 export default function Footer() {
 
   return (
     <div className="h-fit py-6 bg-sidebar border-t border-border flex flex-col items-center justify-center w-full gap-2">
       <h2 className="text-foreground text-lg font-bold tracking-wider">NKAB-Vault</h2>
+      
+      {/* Contributor Links */}
       <div className="flex items-center gap-2">
         <Link href="https://github.com/fosuri" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
           <p>fosuri</p>
@@ -43,9 +49,11 @@ export default function Footer() {
           </span>
         </Link>
       </div>
+      
+      {/* Copyright Notice */}
       <div>
         <p className="text-foreground text-sm">© 2026 NKAB-Vault. All rights reserved.</p>
       </div>
     </div>
   )
-}
+}

@@ -19,6 +19,11 @@ type HeaderMobileProps = {
   onSignOut: () => void;
 };
 
+/**
+ * Header Mobile Component.
+ * Provides a responsive sidebar navigation for small screens.
+ * Features a slide-out menu with a focus backdrop and role-based links.
+ */
 export function HeaderMobile({
   isPending,
   user,
@@ -30,6 +35,7 @@ export function HeaderMobile({
 }: HeaderMobileProps) {
   return (
     <div className="lg:hidden">
+      {/* Sidebar Trigger (Hamburger Menu) */}
       {!isPending ? (
         <Button
           variant="ghost"
@@ -42,6 +48,7 @@ export function HeaderMobile({
         </Button>
       ) : null}
 
+      {/* Focus Backdrop */}
       {isSidebarOpen ? (
         <div
           className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
@@ -49,10 +56,12 @@ export function HeaderMobile({
         />
       ) : null}
 
+      {/* Slide-out Sidebar Container */}
       <div
         className={`fixed inset-y-0 right-0 z-50 flex h-full w-64 flex-col bg-background p-4 shadow-lg transition-transform duration-300 ${isSidebarOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         <div className="flex-1 overflow-y-auto">
+          {/* Header section with close button */}
           <div className="mb-6 flex items-center justify-between">
             <span className="text-lg font-bold">Menu</span>
             <Button
@@ -66,6 +75,7 @@ export function HeaderMobile({
           </div>
 
           <nav className="flex flex-col">
+            {/* Unauthenticated Links */}
             {!user ? (
               <>
                 <Link
@@ -84,6 +94,7 @@ export function HeaderMobile({
                 </Link>
               </>
             ) : (
+              // Authenticated Links
               <div className="flex flex-col gap-2">
                 <Link
                   href="/profile"
@@ -99,6 +110,7 @@ export function HeaderMobile({
                 >
                   Add Post
                 </Link>
+                {/* Administrative Gated Links */}
                 {showAdminDashboardLink ? (
                   <Link
                     href="/admin"
@@ -141,6 +153,7 @@ export function HeaderMobile({
           </nav>
         </div>
 
+        {/* Footer: User Identity Section */}
         {user ? (
           <div className="mt-auto border-t pt-4">
             <Link
@@ -161,4 +174,4 @@ export function HeaderMobile({
       </div>
     </div>
   );
-}
+}

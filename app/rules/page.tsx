@@ -2,9 +2,15 @@ import { Shield, FileText, AlertTriangle, CheckCircle2, UserX } from "lucide-rea
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Site Rules Page.
+ * A static informational page that outlines community guidelines, 
+ * content standards, and moderation enforcement policies.
+ */
 export default function RulesPage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12 md:py-20">
+      {/* Header Section */}
       <div className="mb-12 text-center space-y-4">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Shield className="h-8 w-8" />
@@ -16,6 +22,7 @@ export default function RulesPage() {
       </div>
 
       <div className="space-y-8">
+        {/* Rule 1: Respect */}
         <section className="rounded-2xl border bg-card p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-emerald-500/10 p-2 text-emerald-500">
@@ -35,6 +42,7 @@ export default function RulesPage() {
           </div>
         </section>
 
+        {/* Rule 2: Content Guidelines */}
         <section className="rounded-2xl border bg-card p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-blue-500/10 p-2 text-blue-500">
@@ -55,6 +63,7 @@ export default function RulesPage() {
           </div>
         </section>
 
+        {/* Rule 3: Privacy */}
         <section className="rounded-2xl border bg-card p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-amber-500/10 p-2 text-amber-500">
@@ -74,6 +83,7 @@ export default function RulesPage() {
           </div>
         </section>
 
+        {/* Enforcement Policy */}
         <section className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 md:p-8">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-destructive/10 p-2 text-destructive">
@@ -102,3 +112,4 @@ export default function RulesPage() {
     </div>
   );
 }
+

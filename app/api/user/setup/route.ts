@@ -8,6 +8,7 @@ import { cloudinary } from "@/lib/cloudinary";
 
 const DATA_IMAGE_REGEX = /^data:image\/[a-zA-Z0-9.+-]+;base64,/;
 
+// Schema for initial account setup
 const setupSchema = z.object({
   username: z.string()
     .min(3, "Username must be at least 3 characters")
@@ -21,6 +22,10 @@ const setupSchema = z.object({
   ]).optional(),
 });
 
+/**
+ * Handles avatar URL resolution for new users.
+ * Uploads chosen Base64 avatar to Cloudinary.
+ */
 async function resolveAvatarUrl(avatar: string | undefined, userId: string): Promise<string | null | undefined> {
   if (avatar === undefined) return undefined;
   if (avatar === "") {
@@ -47,6 +52,11 @@ async function resolveAvatarUrl(avatar: string | undefined, userId: string): Pro
   return avatar;
 }
 
+/**
+ * Initial User Setup API.
+ * Finalizes account creation by setting username, bio, and avatar.
+ * Marks 'setupCompleted' as true to allow full access to the application.
+ */
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -66,6 +76,7 @@ export async function POST(request: Request) {
 
     const { username, description, avatar } = result.data;
 
+    // Check if the chosen username is already in use
     const existingUser = await db.query.user.findFirst({
       where: eq(user.name, username),
     });
@@ -74,6 +85,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Username is already taken" }, { status: 400 });
     }
 
+    // Set user data and mark setup as finished
     const updateData: Partial<typeof user.$inferInsert> = {
       name: username,
       profileDescription: description || "",

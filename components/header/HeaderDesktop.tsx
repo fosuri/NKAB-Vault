@@ -23,6 +23,11 @@ type HeaderDesktopProps = {
   onSignOut: () => void;
 };
 
+/**
+ * Header Desktop Component.
+ * Handles the navigation bar for large screens, including the user profile dropdown.
+ * Role-based dashboard links are conditionally rendered for Admins and Moderators.
+ */
 export function HeaderDesktop({
   isPending,
   user,
@@ -30,10 +35,12 @@ export function HeaderDesktop({
   showModeratorDashboardLink,
   onSignOut,
 }: HeaderDesktopProps) {
+  // Loading state skeleton for the profile menu
   if (isPending) {
     return <div className="hidden size-8 animate-pulse rounded-full bg-muted lg:block" />;
   }
 
+  // Auth state: Not logged in
   if (!user) {
     return (
       <div className="hidden items-center gap-4 lg:flex">
@@ -47,6 +54,7 @@ export function HeaderDesktop({
     );
   }
 
+  // Auth state: Logged in
   return (
     <div className="hidden h-8 w-8 lg:block">
       <DropdownMenu>
@@ -57,6 +65,7 @@ export function HeaderDesktop({
             className="rounded-full h-8 w-8 outline-none ring-ring/50 focus-visible:ring-3"
             aria-label="Open profile menu"
           >
+            {/* Pro users get a distinct visual border around their avatar */}
             <Avatar className={cn(user.isPro && "outline-1 outline-pro-bg outline-offset-2 border-none")}>
               {user.image ? <AvatarImage src={user.image} alt={user.name || ""} /> : null}
               <AvatarFallback>{user.name?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
@@ -82,6 +91,7 @@ export function HeaderDesktop({
             </Link>
           </DropdownMenuItem>
 
+          {/* Conditional Administrative Dashboard Links */}
           {showAdminDashboardLink ? (
             <DropdownMenuItem asChild>
               <Link
@@ -130,4 +140,4 @@ export function HeaderDesktop({
       </DropdownMenu>
     </div>
   );
-}
+}

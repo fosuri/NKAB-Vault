@@ -6,17 +6,26 @@ import { getFeedPosts } from "@/lib/posts";
 import { parsePostContentFilter, parsePostTimeFilter } from "@/lib/post-filters";
 import { redirect } from "next/navigation";
 
+/**
+ * Main Feed Page.
+ * Renders the primary landing page where users can browse all public and 
+ * accessible posts, filtered by time or content type.
+ */
 export default async function Home({
   searchParams,
 }: {
   searchParams: Promise<{ time?: string; contentType?: string }>;
 }) {
   const params = await searchParams;
+  
+  // Parse active feed filters from URL parameters
   const time = parsePostTimeFilter(params.time);
   const contentType = parsePostContentFilter(params.contentType);
+  
   const session = await getSession();
   const viewerUserId = session?.user?.id;
 
+  // Security Check: Redirect if the user is currently banned
   if (viewerUserId) {
     const moderationState = await getUserModerationState(viewerUserId);
     if (moderationState?.activeBan) {
@@ -24,15 +33,19 @@ export default async function Home({
     }
   }
 
+  // Fetch the latest posts for the feed based on the current filters
   const feedPosts = await getFeedPosts(viewerUserId, { time, contentType });
 
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top_left,rgba(243,244,246,0.95),transparent_40%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top_left,rgba(55,65,81,0.35),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
       <div className="mx-auto w-full max-w-[1600px]">
         <section className="min-h-[60vh]">
+          {/* Feed Filter UI (Most Recent, Top Rated, Content Type) */}
           <div className="mb-4">
             <PostFilterControls actionPath="/" time={time} contentType={contentType} />
           </div>
+          
+          {/* Responsive Grid of Posts */}
           {feedPosts.length ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
               {feedPosts.map((post) => (
@@ -53,3 +66,4 @@ export default async function Home({
     </div>
   );
 }
+

@@ -27,6 +27,10 @@ interface MediaSectionProps {
   isPro?: boolean;
 }
 
+/**
+ * Post Media Section.
+ * Handles the upload, preview, and management of media files (Images/Videos) for a post.
+ */
 export function MediaSection({
   entries,
   current,
@@ -37,12 +41,14 @@ export function MediaSection({
   setCropIndex,
   isPro,
 }: MediaSectionProps) {
+  // Subscription-based file size limits
   const maxSize = isPro ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
   const maxSizeMB = isPro ? 20 : 10;
 
   return (
     <div className="flex flex-col gap-4 min-w-0">
       <div className="rounded-xl border border-border p-4">
+        {/* Dropzone for multi-file selection (Max 3) */}
         <Dropzone
           className="h-52 whitespace-normal rounded-lg border border-dashed border-border bg-background p-6 hover:bg-muted/40"
           accept={ACCEPTED_MEDIA_TYPES}
@@ -85,6 +91,7 @@ export function MediaSection({
                 <p className="text-sm text-muted-foreground">
                   {entries.length} file{entries.length !== 1 ? "s" : ""} selected
                 </p>
+                {/* List of currently selected files with quick metadata */}
                 <div className="flex flex-col gap-2 max-h-[100px] overflow-y-auto">
                   {entries.map((entry, idx) => {
                     const isVideo = entry.original.type.startsWith("video/");
@@ -123,6 +130,7 @@ export function MediaSection({
         </Dropzone>
       </div>
 
+      {/* Media Carousel: Allows detailed preview, cropping, and removal */}
       {entries.length > 0 && (
         <div className="flex flex-col gap-2 min-w-0">
           <Carousel className="w-full" setApi={setApi}>
@@ -131,10 +139,13 @@ export function MediaSection({
                 const isImage = entry.original.type.startsWith("image/");
                 const isStaticImage = isImage && entry.original.type !== "image/gif";
                 const isVideo = entry.original.type.startsWith("video/");
+                // Handle formats with limited browser preview support (e.g., MOV)
                 const isMov = isVideo && (entry.original.type === "video/quicktime" || entry.original.name.toLowerCase().endsWith(".mov"));
+                
                 return (
                   <CarouselItem key={idx}>
                     <div className="rounded-xl border border-border overflow-hidden bg-background">
+                      {/* Media Item Header: Controls and status */}
                       <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/30">
                         {isVideo ? (
                           <Video className="size-4 text-muted-foreground shrink-0" />
@@ -149,6 +160,7 @@ export function MediaSection({
                             <CheckIcon className="size-3" /> Cropped
                           </span>
                         )}
+                        {/* Only allow cropping for static images */}
                         {isStaticImage && (
                           <Button
                             type="button"
@@ -172,6 +184,7 @@ export function MediaSection({
                         </Button>
                       </div>
 
+                      {/* Content Preview Area */}
                       <div className="p-3">
                         {isImage ? (
                           <Image
@@ -220,3 +233,4 @@ export function MediaSection({
     </div>
   );
 }
+

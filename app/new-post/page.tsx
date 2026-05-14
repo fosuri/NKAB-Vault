@@ -7,13 +7,23 @@ import { getUserModerationState } from "@/lib/auth/moderation";
 import { db } from "@/lib/db/db";
 import { SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 
+/**
+ * New Post Page.
+ * Allows users to upload and publish new content.
+ */
 export default async function NewPostPage() {
   const session = await getSession();
 
+  // Ensure user is authenticated
   if (!session?.user) {
     redirect("/sign-in");
   }
 
+  /**
+   * Moderation Checks:
+   * 1. Redirect if the user is banned.
+   * 2. Show a 'Muted' status message if the user is restricted from posting.
+   */
   const moderationState = await getUserModerationState(session.user.id);
   if (moderationState?.activeBan) {
     redirect("/banned");
@@ -50,6 +60,7 @@ export default async function NewPostPage() {
     );
   }
 
+  // Check for active PRO subscription to unlock advanced posting options
   const activeSub = await db.query.subscriptions.findFirst({
     where: (subs, { eq, and, gt }) => and(
       eq(subs.userId, session.user.id),
@@ -63,6 +74,7 @@ export default async function NewPostPage() {
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top_left,rgba(243,244,246,0.95),transparent_40%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top_left,rgba(55,65,81,0.35),transparent_35%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
       <div className="mx-auto w-full max-w-6xl space-y-6">
+        {/* Page Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-background/80 px-5 py-4 backdrop-blur">
           <div>
             <p className="text-xs uppercase tracking-[0.28em] text-muted-foreground">NKAB Vault Studio</p>
@@ -73,8 +85,10 @@ export default async function NewPostPage() {
           </Button>
         </div>
 
+        {/* Post Creation Form */}
         <CreatePostForm isPro={isPro} />
       </div>
     </div>
   );
 }
+

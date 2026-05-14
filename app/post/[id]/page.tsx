@@ -19,10 +19,15 @@ import { PostContentWrapper } from "@/components/post-content-wrapper";
 import { ACCESS_META } from "@/lib/config/post-access";
 import { getActualPassword } from "@/lib/post-password";
 
+/**
+ * Individual Post Details Page.
+ * Displays a single post with its media, reactions, views, and comments.
+ */
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
 
+  // Security Check: Redirect banned users away from content
   if (session?.user?.id) {
     const moderationState = await getUserModerationState(session.user.id);
     if (moderationState?.activeBan) {
@@ -30,17 +35,25 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     }
   }
 
+  // Fetch complete post details and viewer-specific data (reactions, etc.)
   const post = await getPostById(id, session?.user?.id);
 
   if (!post) {
     notFound();
   }
 
+  /**
+   * Access Control Logic:
+   * 1. Check if viewer is the owner or an admin/moderator.
+   * 2. Handle 'Paid' content visibility (owners/moderators only see full page here).
+   * 3. Handle 'Private' content (password protection).
+   */
   const currentUserId = session?.user?.id;
   const moderationState = currentUserId ? await getUserModerationState(currentUserId) : null;
   const isOwner = currentUserId === post.userId;
   const canModerateContent = moderationState?.roleId === ROLES.ADMIN || moderationState?.roleId === ROLES.MODERATOR;
 
+  // Restrict access to Paid posts to only authorized users
   if (post.accessTypeId === ACCESS_TYPES.PAID && !isOwner && !canModerateContent) {
     notFound();
   }
@@ -52,8 +65,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="min-h-full flex-1 bg-[radial-gradient(circle_at_top,rgba(226,232,240,0.8),transparent_35%),linear-gradient(180deg,rgba(255,255,255,1)_0%,rgba(248,250,252,1)_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top,rgba(71,85,105,0.35),transparent_30%),linear-gradient(180deg,rgba(15,23,42,1)_0%,rgba(2,6,23,1)_100%)]">
+      {/* Track the view event on component mount */}
       <PostViewTracker postId={post.id} currentUserId={currentUserId} />
+      
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+        {/* Navigation and Moderation Header */}
         <div className="flex items-center justify-between gap-4">
           <Link
             href="/"
@@ -65,8 +81,11 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           {(!isOwner && canModerateContent) && <DeletePostButton postId={post.id} redirectTo="/" authorRoleId={post.author?.roleId as RoleId | undefined} actorRoleId={moderationState?.roleId as RoleId | undefined} />}
         </div>
 
+        {/* Wrapper handling password protection and blur logic */}
         <PostContentWrapper postId={post.id} hasPassword={hasPassword} isOwner={isOwner}>
           <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_288px] gap-8 items-start">
+            
+            {/* Main Post Content Card */}
             <Card className="min-w-0 w-full overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur lg:col-start-1 lg:row-start-1">
                 <CardHeader className="gap-2 border-b border-border/50 pb-4">
                   <div className="flex items-center justify-between gap-3">
@@ -106,7 +125,10 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 </CardHeader>
 
                 <CardContent className="pt-4">
+                  {/* Media Carousel (Images/Videos) */}
                   <PostMediaCarousel media={post.media.map(m => ({ ...m, resourceType: m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : ("image" as const) }))} />
+                  
+                  {/* Post Interactions (Likes/Dislikes and Views) */}
                   <div className="mt-4 flex items-center justify-between">
                     <PostReactions
                       postId={post.id}
@@ -123,6 +145,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 </CardContent>
               </Card>
 
+            {/* Side Menu: Options for owner (Visibility, Password) */}
             <div className="w-full lg:col-start-2 lg:row-start-1 lg:row-span-2">
               <PostSideMenu 
                 postId={post.id} 
@@ -132,6 +155,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               />
             </div>
 
+            {/* Community Comments Section */}
             <section className="min-w-0 w-full rounded-xl border border-border/50 bg-background/80 p-6 shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur lg:col-start-1 lg:row-start-2">
               <CommentSection
                   postId={post.id}
@@ -148,3 +172,4 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     </div>
   );
 }
+

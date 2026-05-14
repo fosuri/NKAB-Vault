@@ -14,21 +14,26 @@ interface PageProps {
   }>;
 }
 
+/**
+ * Public User Profile Page.
+ * Fetches and displays a user's profile, stats, and their uploaded/liked posts.
+ */
 export default async function UserProfilePage({ params }: PageProps) {
   const resolvedParams = await params;
   const session = await getSession();
 
+  // Decode username and handle optional '@' prefix
   let decodedUsername = decodeURIComponent(resolvedParams.username);
   if (decodedUsername.startsWith('@')) {
     decodedUsername = decodedUsername.slice(1);
   }
 
-  // If viewing own profile, redirect to /profile
+  // Prevent users from viewing their own public profile route (redirect to private dashboard)
   if (session?.user?.name === decodedUsername) {
     redirect("/profile");
   }
 
-  // Find user by name (which acts as username)
+  // Fetch target user data
   const targetUser = await db.query.user.findFirst({
     where: eq(userSchema.name, decodedUsername),
   });
@@ -37,9 +42,11 @@ export default async function UserProfilePage({ params }: PageProps) {
     notFound();
   }
 
+  // Parallel data fetching for posts and likes
   const userPosts = await getPostsByUserId(targetUser.id, session?.user?.id);
   const likedPosts = await getLikedPostsByUserId(targetUser.id, session?.user?.id);
 
+  // Check for active PRO subscription status
   const activeSub = await db.query.subscriptions.findFirst({
     where: (subs, { eq, and, gt }) => and(
       eq(subs.userId, targetUser.id),
@@ -119,3 +126,5 @@ export default async function UserProfilePage({ params }: PageProps) {
     </div>
   );
 }
+
+

@@ -14,10 +14,15 @@ import { adminActionLog, comments, posts, user, userSanctions, ROLES, type RoleI
 import { db } from "@/lib/db/db";
 import { chatEventEmitter } from "@/lib/events";
 
+/**
+ * Administrative and Moderation Server Actions.
+ */
+
 type AdminActionResult = { success?: boolean; error?: string };
 
-type Role = "user" | "moderator";
-
+/**
+ * Internal logger for maintaining an administrative audit trail.
+ */
 async function createAdminLog(params: {
   actorUserId: string;
   actionTypeId: number;
@@ -36,6 +41,9 @@ async function createAdminLog(params: {
   });
 }
 
+/**
+ * Ensures the current session belongs to an Admin.
+ */
 async function getAdminUserId() {
   const session = await getSession();
 
@@ -43,11 +51,15 @@ async function getAdminUserId() {
     throw new Error("Not authenticated");
   }
 
+  // Permission check
   await requireAdmin(session.user.id);
 
   return session.user.id;
 }
 
+/**
+ * Identifies and validates the current staff member (Admin or Moderator).
+ */
 async function getStaffActor() {
   const session = await getSession();
 
@@ -63,6 +75,9 @@ async function getStaffActor() {
   };
 }
 
+/**
+ * Enforces hierarchical limits to prevent moderators from acting on other staff.
+ */
 function getStaffTargetPermissionError(actorRoleId: RoleId, targetRoleId: RoleId) {
   if (actorRoleId === ROLES.MODERATOR && targetRoleId !== ROLES.USER) {
     return "Moderators cannot moderate admins or moderators";
@@ -71,12 +86,19 @@ function getStaffTargetPermissionError(actorRoleId: RoleId, targetRoleId: RoleId
   return null;
 }
 
+/**
+ * Triggers cache invalidation for staff dashboards.
+ */
 function revalidateModerationDashboards() {
   revalidatePath("/admin");
   revalidatePath("/moderator");
 }
 
+/**
+ * Wipes all user-generated content and associated media upon a permanent ban.
+ */
 async function purgeUserContentOnBan(targetUserId: string) {
+  // 1. Fetch user content including media links
   const userPosts = await db.query.posts.findMany({
     where: eq(posts.userId, targetUserId),
     with: { media: true },
@@ -85,6 +107,7 @@ async function purgeUserContentOnBan(targetUserId: string) {
 
   const mediaItems = userPosts.flatMap((post) => post.media);
 
+  // 2. Cleanup Cloudinary storage
   if (mediaItems.length > 0) {
     await Promise.allSettled(
       mediaItems.map((mediaItem) =>
@@ -95,6 +118,7 @@ async function purgeUserContentOnBan(targetUserId: string) {
     );
   }
 
+  // 3. Delete database records
   const deletedComments = await db
     .delete(comments)
     .where(eq(comments.userId, targetUserId))
@@ -112,10 +136,14 @@ async function purgeUserContentOnBan(targetUserId: string) {
   };
 }
 
+/**
+ * Updates a user's role while preventing unauthorized role escalation.
+ */
 export async function setUserRoleAction(targetUserId: string, roleId: RoleId): Promise<AdminActionResult> {
   try {
     const adminUserId = await getAdminUserId();
 
+    // Prevent self-demotion
     if (targetUserId === adminUserId) {
       return { error: "You cannot change your own role" };
     }
@@ -129,10 +157,12 @@ export async function setUserRoleAction(targetUserId: string, roleId: RoleId): P
       return { error: "Target user not found" };
     }
 
+    // Role protection
     if (targetUser.roleId === ROLES.ADMIN) {
       return { error: "Admin role cannot be changed here" };
     }
 
+    // Integrity check: prevent granting staff status to currently banned users
     if (roleId === ROLES.MODERATOR) {
       const moderationState = await getUserModerationState(targetUserId);
       if (moderationState?.activeBan) {
@@ -140,8 +170,10 @@ export async function setUserRoleAction(targetUserId: string, roleId: RoleId): P
       }
     }
 
+    // Update role in DB
     await db.update(user).set({ roleId }).where(eq(user.id, targetUserId));
 
+    // Audit log
     await createAdminLog({
       actorUserId: adminUserId,
       actionTypeId: roleId === ROLES.MODERATOR ? ADMIN_ACTION_TYPES.ADD_MODERATOR : ADMIN_ACTION_TYPES.REMOVE_MODERATOR,
@@ -157,6 +189,9 @@ export async function setUserRoleAction(targetUserId: string, roleId: RoleId): P
   }
 }
 
+/**
+ * Applies a sanction (Ban or Mute) to a user.
+ */
 export async function issueSanctionAction(params: {
   targetUserId: string;
   type: SanctionType;
@@ -166,6 +201,7 @@ export async function issueSanctionAction(params: {
   try {
     const actor = await getStaffActor();
 
+    // Authorization checks
     if (params.targetUserId === actor.id) {
       return { error: "You cannot sanction yourself" };
     }
@@ -179,6 +215,7 @@ export async function issueSanctionAction(params: {
       return { error: "Target user not found" };
     }
 
+    // Hierarchy checks
     const permissionError = getStaffTargetPermissionError(actor.roleId, targetUser.roleId as RoleId);
     if (permissionError) {
       return { error: permissionError };
@@ -189,16 +226,17 @@ export async function issueSanctionAction(params: {
     }
 
     const trimmedReason = params.reason.trim();
-
     if (!trimmedReason) {
       return { error: "Reason is required" };
     }
 
+    // Expiration parsing
     const parsedExpiresAt = params.expiresAt ? new Date(params.expiresAt) : null;
     if (parsedExpiresAt && Number.isNaN(parsedExpiresAt.getTime())) {
       return { error: "Invalid expiration date" };
     }
 
+    // 1. Close existing active sanctions of the same type
     const existingSanction = await db.query.userSanctions.findFirst({
       where: and(
         eq(userSanctions.userId, params.targetUserId),
@@ -215,6 +253,7 @@ export async function issueSanctionAction(params: {
         .where(eq(userSanctions.id, existingSanction.id));
     }
 
+    // 2. Insert the new sanction record
     await db.insert(userSanctions).values({
       userId: params.targetUserId,
       typeId: params.type === "ban" ? SANCTION_TYPES.BAN : SANCTION_TYPES.MUTE,
@@ -223,6 +262,7 @@ export async function issueSanctionAction(params: {
       expiresAt: parsedExpiresAt,
     });
 
+    // 3. Hierarchy Enforcement: strip moderator roles if they are being banned
     if (params.type === "ban" && targetUser.roleId === ROLES.MODERATOR) {
       await db.update(user).set({ roleId: ROLES.USER }).where(eq(user.id, params.targetUserId));
 
@@ -234,15 +274,17 @@ export async function issueSanctionAction(params: {
       });
     }
 
+    // 4. Content Purge (Optional): If ban, wipe their posts/media
     const purgeResult =
       params.type === "ban" ? await purgeUserContentOnBan(params.targetUserId) : null;
 
-    const details = `Reason: ${trimmedReason}${parsedExpiresAt ? ` | Expires: ${parsedExpiresAt.toISOString()}` : " | Expires: never"}${
-      purgeResult
+    // 5. Construct audit details string
+    const details = `Reason: ${trimmedReason}${parsedExpiresAt ? ` | Expires: ${parsedExpiresAt.toISOString()}` : " | Expires: never"}${purgeResult
         ? ` | Deleted posts: ${purgeResult.deletedPostsCount} | Deleted comments: ${purgeResult.deletedCommentsCount} | Deleted media: ${purgeResult.deletedMediaCount}`
         : ""
-    }`;
+      }`;
 
+    // 6. Audit Log
     await createAdminLog({
       actorUserId: actor.id,
       actionTypeId: params.type === "ban" ? ADMIN_ACTION_TYPES.BAN_USER : ADMIN_ACTION_TYPES.MUTE_USER,
@@ -250,14 +292,18 @@ export async function issueSanctionAction(params: {
       details,
     });
 
+    // 7. System Notification
     await db.insert(notifications).values({
       userId: params.targetUserId,
       actorId: actor.id,
       typeId: params.type === "ban" ? NOTIFICATION_TYPES.BAN : NOTIFICATION_TYPES.MUTE,
       message: `You have been ${params.type === "ban" ? "banned" : "muted"}. Reason: ${trimmedReason}`,
     });
+
+    // 8. Real-time broadcast
     chatEventEmitter.emit(`notifications:${params.targetUserId}`, { type: "update" });
 
+    // Cache invalidation
     if (params.type === "ban") {
       revalidatePath("/");
       revalidatePath("/search");
@@ -272,10 +318,14 @@ export async function issueSanctionAction(params: {
   }
 }
 
+/**
+ * Lifts an active sanction.
+ */
 export async function revokeSanctionAction(sanctionId: string): Promise<AdminActionResult> {
   try {
     const actor = await getStaffActor();
 
+    // Verify sanction exists and is active
     const sanction = await db.query.userSanctions.findFirst({
       where: and(eq(userSanctions.id, sanctionId), isNull(userSanctions.revokedAt)),
       columns: { id: true, userId: true, typeId: true },
@@ -294,16 +344,19 @@ export async function revokeSanctionAction(sanctionId: string): Promise<AdminAct
       return { error: "Target user not found" };
     }
 
+    // Permission check
     const permissionError = getStaffTargetPermissionError(actor.roleId, sanction.targetUser.roleId as RoleId);
     if (permissionError) {
       return { error: permissionError };
     }
 
+    // Mark as revoked in DB
     await db
       .update(userSanctions)
       .set({ revokedAt: new Date(), revokedByUserId: actor.id })
       .where(eq(userSanctions.id, sanctionId));
 
+    // Audit Log
     await createAdminLog({
       actorUserId: actor.id,
       actionTypeId: ADMIN_ACTION_TYPES.REVOKE_SANCTION,
@@ -319,6 +372,9 @@ export async function revokeSanctionAction(sanctionId: string): Promise<AdminAct
   }
 }
 
+/**
+ * Clears administrative logs for the actor.
+ */
 export async function clearMyAdminHistoryAction(): Promise<AdminActionResult> {
   try {
     const actor = await getStaffActor();
@@ -333,6 +389,9 @@ export async function clearMyAdminHistoryAction(): Promise<AdminActionResult> {
   }
 }
 
+/**
+ * Forces the removal of a post for community guideline violations.
+ */
 export async function adminDeletePostAction(postId: string): Promise<AdminActionResult> {
   try {
     const actor = await getStaffActor();
@@ -356,11 +415,13 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
       return { error: "Target user not found" };
     }
 
+    // Hierarchy check
     const permissionError = getStaffTargetPermissionError(actor.roleId, targetUser.roleId as RoleId);
     if (permissionError) {
       return { error: permissionError };
     }
 
+    // 1. Delete associated media from Cloudinary
     await Promise.allSettled(
       post.media.map((mediaItem) =>
         cloudinary.uploader.destroy(mediaItem.publicId, {
@@ -369,8 +430,10 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
       )
     );
 
+    // 2. Delete post record
     await db.delete(posts).where(eq(posts.id, postId));
 
+    // 3. Audit Log
     await createAdminLog({
       actorUserId: actor.id,
       actionTypeId: ADMIN_ACTION_TYPES.DELETE_POST,
@@ -379,6 +442,7 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
       details: `Deleted by staff (${actor.roleId === ROLES.ADMIN ? "admin" : actor.roleId === ROLES.MODERATOR ? "moderator" : "user"})`,
     });
 
+    // 4. Notify author
     await db.insert(notifications).values({
       userId: post.userId,
       actorId: actor.id,
@@ -387,6 +451,7 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
     });
     chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
 
+    // Cache revalidation
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath("/profile");
@@ -398,6 +463,9 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
   }
 }
 
+/**
+ * Forces the removal of a comment for community guideline violations.
+ */
 export async function adminDeleteCommentAction(commentId: string): Promise<AdminActionResult> {
   try {
     const actor = await getStaffActor();
@@ -420,13 +488,16 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
       return { error: "Target user not found" };
     }
 
+    // Hierarchy check
     const permissionError = getStaffTargetPermissionError(actor.roleId, targetUser.roleId as RoleId);
     if (permissionError) {
       return { error: permissionError };
     }
 
+    // 1. Delete database record
     await db.delete(comments).where(eq(comments.id, commentId));
 
+    // 2. Audit Log
     await createAdminLog({
       actorUserId: actor.id,
       actionTypeId: ADMIN_ACTION_TYPES.DELETE_COMMENT,
@@ -436,6 +507,7 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
       details: `Deleted by staff (${actor.roleId === ROLES.ADMIN ? "admin" : actor.roleId === ROLES.MODERATOR ? "moderator" : "user"})`,
     });
 
+    // 3. Notify author
     await db.insert(notifications).values({
       userId: comment.userId,
       actorId: actor.id,

@@ -11,6 +11,11 @@ import { clearMyAdminHistoryAction } from "@/lib/actions/admin";
 import { ROLES } from "@/lib/db/auth-schema";
 import { ROLE_NAMES, UserRow, LogRow, ActorRole } from "./types";
 
+/**
+ * Admin Action History Component.
+ * Displays a detailed log of moderation actions performed by admins and moderators.
+ * Supports searching, sorting, and pagination of the action logs.
+ */
 export function AdminActionHistory({
   users,
   myActionHistory,
@@ -26,6 +31,8 @@ export function AdminActionHistory({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  
+  // State for filtering and navigation
   const [historySearchQuery, setHistorySearchQuery] = useState("");
   const [historyPage, setHistoryPage] = useState(1);
   const [historySort, setHistorySort] = useState<{
@@ -34,6 +41,7 @@ export function AdminActionHistory({
   }>({ key: "createdAt", direction: "desc" });
   const [expandedDetails, setExpandedDetails] = useState<Set<string>>(new Set());
 
+  // Expand/collapse long detail strings in the table
   const toggleDetails = (id: string) => {
     setExpandedDetails((prev) => {
       const next = new Set(prev);
@@ -48,6 +56,7 @@ export function AdminActionHistory({
 
   const pageSize = 8;
 
+  // Filter history based on search query across multiple fields
   const filteredHistory = useMemo(() => {
     const normalizedQuery = historySearchQuery.trim().toLowerCase();
 
@@ -61,6 +70,7 @@ export function AdminActionHistory({
     });
   }, [historySearchQuery, myActionHistory]);
 
+  // Sort history based on selected column and direction
   const sortedHistory = useMemo(() => {
     const sorted = [...filteredHistory];
 
@@ -68,20 +78,11 @@ export function AdminActionHistory({
       const aValue = a[historySort.key];
       const bValue = b[historySort.key];
 
-      if (aValue === bValue) {
-        return 0;
-      }
-
-      if (aValue === null) {
-        return historySort.direction === "asc" ? -1 : 1;
-      }
-
-      if (bValue === null) {
-        return historySort.direction === "asc" ? 1 : -1;
-      }
+      if (aValue === bValue) return 0;
+      if (aValue === null) return historySort.direction === "asc" ? -1 : 1;
+      if (bValue === null) return historySort.direction === "asc" ? 1 : -1;
 
       let comparison = 0;
-
       if (aValue instanceof Date && bValue instanceof Date) {
         comparison = aValue.getTime() - bValue.getTime();
       } else {
@@ -96,12 +97,14 @@ export function AdminActionHistory({
     return sorted;
   }, [filteredHistory, historySort]);
 
+  // Pagination calculations
   const historyTotalPages = Math.max(1, Math.ceil(sortedHistory.length / pageSize));
   const safeHistoryPage = Math.min(historyPage, historyTotalPages);
   const pagedHistory = useMemo(() => {
     const start = (safeHistoryPage - 1) * pageSize;
     return sortedHistory.slice(start, start + pageSize);
   }, [safeHistoryPage, sortedHistory]);
+  
   const emptyHistoryRows = Math.max(0, pageSize - pagedHistory.length);
 
   const toggleHistorySort = (key: "createdAt" | "actionType" | "targetUserName" | "details") => {
@@ -113,6 +116,7 @@ export function AdminActionHistory({
     });
   };
 
+  // Helper for server action execution with feedback
   const runAction = (callback: () => Promise<{ success?: boolean; error?: string }>, successMessage: string) => {
     startTransition(async () => {
       const result = await callback();
@@ -129,11 +133,13 @@ export function AdminActionHistory({
     <section className="rounded-2xl border border-border/60 bg-background/80 p-5 overflow-hidden">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">
+          {/* Dynamic title based on whose history is being viewed */}
           {actorRole === "admin" && logUserId && currentUserId && logUserId !== currentUserId
             ? `Moderation history: ${users.find((u) => u.id === logUserId)?.name || "User"}`
             : `Your ${actorRole === "admin" ? "admin" : "moderation"} history`}
         </h2>
         <div className="flex flex-wrap items-center gap-3">
+          {/* Admin-only: dropdown to view other moderators' logs */}
           {actorRole === "admin" && currentUserId ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -167,6 +173,7 @@ export function AdminActionHistory({
             </DropdownMenu>
           ) : null}
 
+          {/* Feature to clear personal moderation history */}
           {(!logUserId || logUserId === currentUserId) ? (
             <Button
               variant="outline"
@@ -184,6 +191,7 @@ export function AdminActionHistory({
           ) : null}
         </div>
       </div>
+
       <div className="mt-3">
         <Input
           type="text"
@@ -195,6 +203,8 @@ export function AdminActionHistory({
           placeholder="Search history"
         />
       </div>
+
+      {/* Action Logs Table */}
       <div className="mt-3 overflow-x-auto">
         <table className="min-w-[1000px] w-full table-fixed text-sm">
           <thead>
@@ -236,6 +246,7 @@ export function AdminActionHistory({
                 </td>
               </tr>
             ))}
+            {/* Visual padding to maintain table height */}
             {Array.from({ length: emptyHistoryRows }).map((_, index) => (
               <tr key={`empty-history-${index}`} className="border-t border-border/40">
                 <td className="py-2 pr-4" colSpan={4}>&nbsp;</td>
@@ -243,7 +254,10 @@ export function AdminActionHistory({
             ))}
           </tbody>
         </table>
+
         {!sortedHistory.length ? <p className="py-2 text-sm text-muted-foreground">No moderation actions yet.</p> : null}
+        
+        {/* Pagination UI */}
         {sortedHistory.length ? (
           <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <p>
@@ -276,3 +290,4 @@ export function AdminActionHistory({
     </section>
   );
 }
+

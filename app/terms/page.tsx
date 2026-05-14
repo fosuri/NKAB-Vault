@@ -5,10 +5,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
+/**
+ * Terms of Service Page.
+ * A static informational page detailing the legal agreement between the 
+ * service provider and the users of the platform.
+ */
 export default function TermsOfServicePage() {
   const router = useRouter();
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12 md:py-20">
+      {/* Header Section */}
       <div className="mb-12 text-center space-y-4">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Scale className="h-8 w-8" />
@@ -23,6 +29,7 @@ export default function TermsOfServicePage() {
       </div>
 
       <div className="space-y-8">
+        {/* Section 1: Agreement */}
         <section className="rounded-2xl border bg-card p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-blue-500/10 p-2 text-blue-500">
@@ -37,6 +44,7 @@ export default function TermsOfServicePage() {
           </div>
         </section>
 
+        {/* Section 2: License */}
         <section className="rounded-2xl border bg-card p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-indigo-500/10 p-2 text-indigo-500">
@@ -58,6 +66,7 @@ export default function TermsOfServicePage() {
           </div>
         </section>
 
+        {/* Section 3: User Content Responsibility */}
         <section className="rounded-2xl border bg-card p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-emerald-500/10 p-2 text-emerald-500">
@@ -75,6 +84,7 @@ export default function TermsOfServicePage() {
           </div>
         </section>
 
+        {/* Section 4: Liability Limitations */}
         <section className="rounded-2xl border bg-card p-6 md:p-8 shadow-sm transition-all hover:shadow-md">
           <div className="flex items-start gap-4">
             <div className="mt-1 rounded-full bg-amber-500/10 p-2 text-amber-500">
@@ -90,6 +100,7 @@ export default function TermsOfServicePage() {
         </section>
       </div>
 
+      {/* Navigation Footer */}
       <div className="mt-12 flex justify-center gap-4">
         <Button variant="outline" size="lg" onClick={() => router.back()}>
           Go Back
@@ -103,3 +114,4 @@ export default function TermsOfServicePage() {
     </div>
   );
 }
+

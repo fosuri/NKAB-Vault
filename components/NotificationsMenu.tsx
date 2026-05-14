@@ -30,6 +30,11 @@ type Notification = {
   } | null;
 };
 
+/**
+ * Notifications Dropdown Menu.
+ * Provides a quick-access preview of recent notifications in the global header.
+ * Syncs in real-time via SSE and marks all as 'read' upon menu opening.
+ */
 export function NotificationsMenu() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -50,6 +55,7 @@ export function NotificationsMenu() {
       fetchNotifications();
     };
 
+    // Listen for local and remote updates
     window.addEventListener("notificationsUpdated", handleUpdate);
 
     const eventSource = new EventSource("/api/notifications/stream");
@@ -70,6 +76,10 @@ export function NotificationsMenu() {
     };
   }, []);
 
+  /**
+   * Menu Visibility Toggle:
+   * Marks unread notifications as read on the server when the menu is opened.
+   */
   const handleOpenChange = async (open: boolean) => {
     setIsOpen(open);
     if (open && unreadCount > 0) {
@@ -100,11 +110,13 @@ export function NotificationsMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
+          {/* Real-time unread count indicator */}
           {unreadCount > 0 && (
             <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-red-600" />
           )}
         </Button>
       </DropdownMenuTrigger>
+      
       <DropdownMenuContent align="end" className="w-80">
         <div className="max-h-96 overflow-y-auto">
           {notifications.length === 0 ? (
@@ -114,6 +126,7 @@ export function NotificationsMenu() {
           ) : (
             notifications.map((notification) => (
               <DropdownMenuItem key={notification.id} className="flex items-start gap-2 p-3 pr-8 relative group" asChild>
+                {/* Navigation: Links to relevant post content where applicable */}
                 {notification.postId && (notification.typeId === NOTIFICATION_TYPES.LIKE || notification.typeId === NOTIFICATION_TYPES.COMMENT || notification.typeId === NOTIFICATION_TYPES.DISLIKE) ? (
                   <Link href={`/post/${notification.postId}`} className="cursor-pointer w-full">
                     <NotificationContent notification={notification} />
@@ -144,6 +157,7 @@ export function NotificationsMenu() {
           )}
         </div>
         <DropdownMenuSeparator />
+        {/* Footer actions: Clear all or view full history */}
         <div className="flex items-center justify-between p-2">
           <Button variant="ghost" size="sm" className="text-xs" onClick={handleClearAll} disabled={notifications.length === 0}>
             Clear all
@@ -159,6 +173,10 @@ export function NotificationsMenu() {
   );
 }
 
+/**
+ * Shared Notification Content Fragment.
+ * Formats the actor avatar, action text, and relative timestamp.
+ */
 function NotificationContent({ notification }: { notification: Notification }) {
   let text = "";
   if (notification.typeId === NOTIFICATION_TYPES.LIKE) {
@@ -202,3 +220,4 @@ function NotificationContent({ notification }: { notification: Notification }) {
     </div>
   );
 }
+

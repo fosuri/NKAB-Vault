@@ -26,15 +26,22 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
 
+// Schema for email validation
 const formSchema = z.object({
   email: z.email(),
 });
 
+/**
+ * Forgot Password Form.
+ * Allows users to request a password reset link via email.
+ * Integration: Better Auth (authClient.requestPasswordReset).
+ */
 export function ForgotPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,16 +49,17 @@ export function ForgotPasswordForm({
     },
   });
 
+  /**
+   * Submit Handler:
+   * Requests a reset token from the auth provider and handles success/error toasts.
+   */
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
-
 
     const result = await authClient.requestPasswordReset({
       email: data.email,
       redirectTo: '/reset-password',
     });
-
-    console.log("forgot password result:", result);
 
     if (result?.error) {
       toast.error(result.error.message || "An error occurred");
@@ -108,9 +116,10 @@ export function ForgotPasswordForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our <a href="/terms">Terms of Service</a>{" "}
+        and <a href="/privacy">Privacy Policy</a>.
       </FieldDescription>
     </div>
   );
 }
+

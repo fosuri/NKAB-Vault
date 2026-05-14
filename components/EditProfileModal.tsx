@@ -21,6 +21,11 @@ interface EditProfileModalProps {
   user: User & { profileDescription?: string | null };
 }
 
+/**
+ * Edit Profile Modal.
+ * Facilitates updates to user identity: username, bio, and avatar.
+ * Features: Debounced username availability checks and a circular image cropper.
+ */
 export function EditProfileModal({ open, onClose, user }: EditProfileModalProps) {
   const [username, setUsername] = useState("");
   const [description, setDescription] = useState("");
@@ -46,6 +51,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
   const [usernameError, setUsernameError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Sync state with incoming user data when modal opens
   useEffect(() => {
     if (user) {
       setUsername(user.name || "");
@@ -54,6 +60,10 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
     }
   }, [user, open]);
 
+  /**
+   * Username Availability Effect:
+   * Debounces the username check to avoid excessive API calls during typing.
+   */
   useEffect(() => {
     if (!username || username === user.name) {
       setUsernameStatus("idle");
@@ -80,6 +90,11 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
     return () => clearTimeout(timer);
   }, [username, user.name]);
 
+  /**
+   * Submit Handler:
+   * 1. Applies any pending image crops to the avatar.
+   * 2. Persists changes to the user profile via internal API.
+   */
   const handleSubmit = async () => {
     if (username !== user.name && usernameStatus !== "valid") {
       toast.error("Please choose a valid username");
@@ -112,7 +127,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
       if (res.ok && data.success) {
         toast.success("Profile updated successfully!");
         onClose();
-        window.location.reload();
+        window.location.reload(); // Refresh to reflect global user state changes
       } else {
         toast.error(data.error || "Something went wrong.");
       }
@@ -155,6 +170,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
         </div>
 
         <FieldGroup>
+          {/* Avatar Section: Handles selection, cropping, and previewing */}
           <Field>
             <FieldLabel>Profile Avatar</FieldLabel>
             <div className="flex flex-col items-center gap-4 mt-2">
@@ -227,6 +243,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
             </div>
           </Field>
 
+          {/* Username Section: Real-time validation feedback */}
           <Field>
             <FieldLabel htmlFor="edit-username">Username</FieldLabel>
             <Input
@@ -251,6 +268,7 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
             </div>
           </Field>
 
+          {/* Bio Section */}
           <Field>
             <FieldLabel htmlFor="edit-description">Bio</FieldLabel>
             <Textarea
@@ -287,3 +305,4 @@ export function EditProfileModal({ open, onClose, user }: EditProfileModalProps)
     </div>
   );
 }
+

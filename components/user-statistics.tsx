@@ -10,12 +10,23 @@ interface UserStatisticsProps {
   userId: string;
 }
 
+/**
+ * User Statistics Component.
+ * 
+ * Fetches and displays cumulative engagement metrics (views, likes, comments) 
+ * for a specific user. Features an auto-refresh mechanism for real-time tracking.
+ */
 export function UserStatistics({ userId }: UserStatisticsProps) {
+  // Stats state management
   const [stats, setStats] = useState({ views: 0, likes: 0, dislikes: 0, comments: 0 });
   const [postsCount, setPostsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  /**
+   * Data Fetcher:
+   * Retrieves fresh statistics from the database using a server action.
+   */
   const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     try {
@@ -33,6 +44,7 @@ export function UserStatistics({ userId }: UserStatisticsProps) {
     }
   }, [userId]);
 
+  // Polling Effect: Refresh statistics every 15 seconds while the component is mounted
   useEffect(() => {
     loadData();
     const interval = setInterval(() => {

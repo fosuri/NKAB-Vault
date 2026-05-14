@@ -14,6 +14,11 @@ import {
 import { ROLES } from "@/lib/db/auth-schema";
 import { ROLE_NAMES, UserRow, ActorRole } from "./types";
 
+/**
+ * User Moderation Component.
+ * Provides the interface for admins and moderators to manage user accounts.
+ * Includes user search, role assignment (Admin only), and issuing sanctions (Mute/Ban).
+ */
 export function AdminUserModeration({
   users,
   actorRole = "admin",
@@ -23,10 +28,13 @@ export function AdminUserModeration({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  
+  // Selection and search state
   const [selectedUserId, setSelectedUserId] = useState(users[0]?.id ?? "");
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [isUserResultsOpen, setIsUserResultsOpen] = useState(false);
   
+  // Sanction parameters
   const [sanctionType, setSanctionType] = useState<"mute" | "ban">("mute");
   const [sanctionReason, setSanctionReason] = useState("");
   const [sanctionExpiresAt, setSanctionExpiresAt] = useState("");
@@ -36,6 +44,7 @@ export function AdminUserModeration({
     [users, selectedUserId]
   );
   
+  // Autocomplete filter for finding users by name or email
   const filteredUsers = useMemo(() => {
     const normalizedQuery = userSearchQuery.trim().toLowerCase();
 
@@ -52,6 +61,11 @@ export function AdminUserModeration({
       .slice(0, 8);
   }, [users, userSearchQuery]);
 
+  /**
+   * Permissions Hierarchy:
+   * 1. Admins can manage roles and sanction everyone except other Admins.
+   * 2. Moderators can only sanction standard Users.
+   */
   const selectedUserRoleId = selectedUser?.roleId ?? 0;
   const canManageRoles = actorRole === "admin";
   const canSanctionSelectedUser =
@@ -59,9 +73,11 @@ export function AdminUserModeration({
     (actorRole === "admin"
       ? selectedUserRoleId !== ROLES.ADMIN
       : selectedUserRoleId === ROLES.USER);
+  
   const canMakeModerator = selectedUserRoleId === ROLES.USER;
   const canRemoveModerator = selectedUserRoleId === ROLES.MODERATOR;
 
+  // Execute server action with loading state and toast feedback
   const runAction = (callback: () => Promise<{ success?: boolean; error?: string }>, successMessage: string) => {
     startTransition(async () => {
       const result = await callback();
@@ -83,6 +99,7 @@ export function AdminUserModeration({
           : "Mute or ban users, and review active sanctions."}
       </p>
 
+      {/* User Search and Role Management */}
       <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
         <div className="relative">
           <Input
@@ -94,11 +111,13 @@ export function AdminUserModeration({
             }}
             onFocus={() => setIsUserResultsOpen(true)}
             onBlur={() => {
+              // Delay blur to allow item clicks
               setTimeout(() => setIsUserResultsOpen(false), 100);
             }}
             placeholder="Search by username or email"
           />
 
+          {/* Autocomplete Results Dropdown */}
           {isUserResultsOpen ? (
             <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-input bg-background p-1 shadow-md">
               {filteredUsers.length ? (
@@ -124,6 +143,8 @@ export function AdminUserModeration({
             </div>
           ) : null}
         </div>
+        
+        {/* Role Elevation Buttons (Admin Only) */}
         {canManageRoles ? (
           <>
             <Button
@@ -153,6 +174,7 @@ export function AdminUserModeration({
         </p>
       ) : null}
 
+      {/* Sanction Control Form (Reason, Type, Expiry) */}
       <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_220px_auto]">
         <Input
           type="text"
@@ -201,3 +223,4 @@ export function AdminUserModeration({
     </section>
   );
 }
+

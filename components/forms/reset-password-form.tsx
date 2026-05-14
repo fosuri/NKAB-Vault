@@ -27,6 +27,7 @@ import { useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
 
+// Validation schema with strict security requirements
 const formSchema = z.object({
   password: z.string()
     .min(8, "Must be at least 8 characters long")
@@ -36,13 +37,21 @@ const formSchema = z.object({
   confirmPassword: z.string().min(8),
 });
 
+/**
+ * Reset Password Form.
+ * The final stage of the password recovery process. 
+ * Users enter their new password using a secure token received via email.
+ */
 export function ResetPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const searchParams = useSearchParams()
-  const router = useRouter()
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // Extract the reset token from the URL (provided by Better Auth redirect)
   const token = searchParams.get("token") as string;
+  
   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,6 +61,11 @@ export function ResetPasswordForm({
     },
   });
 
+  /**
+   * Submit Handler:
+   * Validates matching passwords and submits the new password with the token 
+   * to the auth provider.
+   */
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
@@ -66,13 +80,11 @@ export function ResetPasswordForm({
       token: token,
     });
 
-    console.log("reset password result:", result);
-
     if (result?.error) {
       toast.error(result.error.message || "An error occurred");
     } else {
       toast.success("Password reset successfully");
-      router.push("/sign-in");
+      router.push("/sign-in"); // Redirect to login upon success
     }
 
     setIsLoading(false);
@@ -90,6 +102,7 @@ export function ResetPasswordForm({
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
+              {/* New Password Field */}
               <Controller
                 name="password"
                 control={form.control}
@@ -110,6 +123,8 @@ export function ResetPasswordForm({
                   </Field>
                 )}
               />
+              
+              {/* Confirmation Field */}
               <Controller
                 name="confirmPassword"
                 control={form.control}
@@ -130,6 +145,7 @@ export function ResetPasswordForm({
                   </Field>
                 )}
               />
+              
               <Field>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? (
@@ -144,9 +160,10 @@ export function ResetPasswordForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our <a href="/terms">Terms of Service</a>{" "}
+        and <a href="/privacy">Privacy Policy</a>.
       </FieldDescription>
     </div>
   );
 }
+

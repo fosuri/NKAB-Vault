@@ -12,12 +12,26 @@ interface PostPasswordGateProps {
   onUnlocked: () => void;
 }
 
+/**
+ * Post Password Gate Component.
+ * 
+ * Provides a secure entry point for password-protected posts. 
+ * This component captures user input and validates it against the server 
+ * before granting access to the protected content.
+ */
 export function PostPasswordGate({ postId, onUnlocked }: PostPasswordGateProps) {
+  // Local state for password input and UI visibility toggles
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // useTransition manages the pending state of the server action without blocking the UI thread
   const [isPending, startTransition] = useTransition();
 
+  /**
+   * Handles the submission of the password form.
+   * Calls the verifyPostPassword server action and handles the response.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -25,8 +39,9 @@ export function PostPasswordGate({ postId, onUnlocked }: PostPasswordGateProps) 
     startTransition(async () => {
       const result = await verifyPostPassword(postId, password);
       if (result.valid) {
-        onUnlocked();
+        onUnlocked(); // Notify the parent wrapper to reveal the content
       } else {
+        // Handle validation errors or incorrect credentials
         setError(result.error ?? "Incorrect password");
         setPassword("");
       }

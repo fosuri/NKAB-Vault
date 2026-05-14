@@ -11,12 +11,21 @@ interface UpgradeSubscriptionButtonProps {
   buttonVariant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
 }
 
+/**
+ * Upgrade Subscription Button.
+ * 
+ * Triggers a server action to create a Stripe checkout session for the Pro plan
+ * and redirects the user to the secure payment page.
+ */
 export function UpgradeSubscriptionButton({
   buttonText,
   buttonVariant = "default",
 }: UpgradeSubscriptionButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * Initiates the Pro upgrade flow via Stripe.
+   */
   const handleUpgrade = async () => {
     setIsLoading(true);
     try {
@@ -24,6 +33,7 @@ export function UpgradeSubscriptionButton({
       if (result.error) {
         toast.error(result.error);
       } else if (result.url) {
+        // Redirect to Stripe's hosted checkout page
         window.location.href = result.url;
       }
     } catch (error) {

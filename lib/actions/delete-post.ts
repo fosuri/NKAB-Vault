@@ -9,8 +9,15 @@ import { posts, user, ROLES, adminActionLog, notifications, ADMIN_ACTION_TYPES, 
 import { getUserModerationState } from "@/lib/auth/moderation";
 import { chatEventEmitter } from "@/lib/events";
 
+/**
+ * Personal and Administrative Post Deletion Actions.
+ */
+
 type DeletePostResult = { error?: string; success?: boolean };
 
+/**
+ * Removes a post while enforcing authorship or hierarchical staff authority.
+ */
 export async function deletePost(postId: string): Promise<DeletePostResult> {
   const session = await getSession();
 
@@ -18,6 +25,7 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     return { error: "Not authenticated" };
   }
 
+  // 1. Identity Check
   const moderationState = await getUserModerationState(session.user.id);
   if (moderationState?.activeBan) {
     return { error: "Your account is banned" };
@@ -32,29 +40,27 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     return { error: "Post not found" };
   }
 
-  const actorRoleId = moderationState?.roleId;
-  const isAdmin = actorRoleId === ROLES.ADMIN;
-  const isModerator = actorRoleId === ROLES.MODERATOR;
+  // 2. Authority Check: Owner vs Staff
+  const isAdmin = moderationState?.roleId === ROLES.ADMIN;
+  const isModerator = moderationState?.roleId === ROLES.MODERATOR;
 
   if (post.userId !== session.user.id && !isAdmin && !isModerator) {
     return { error: "Not authorised" };
   }
 
+  // 3. Hierarchy Protection: Moderators cannot remove Staff/Admin content
   if (isModerator && post.userId !== session.user.id) {
     const targetUser = await db.query.user.findFirst({
       where: eq(user.id, post.userId),
       columns: { roleId: true },
     });
 
-    if (!targetUser) {
-      return { error: "Post author not found" };
-    }
-
-    if (targetUser.roleId === ROLES.ADMIN || targetUser.roleId === ROLES.MODERATOR) {
+    if (targetUser && (targetUser.roleId === ROLES.ADMIN || targetUser.roleId === ROLES.MODERATOR)) {
       return { error: "Moderators cannot delete posts of admins or moderators" };
     }
   }
 
+  // 4. Media Cleanup: Wipe files from Cloudinary storage
   await Promise.allSettled(
     post.media.map((m) =>
       cloudinary.uploader.destroy(m.publicId, {
@@ -63,8 +69,10 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     )
   );
 
+  // 5. Database Wipe
   await db.delete(posts).where(eq(posts.id, postId));
 
+  // 6. Staff Cleanup: Log action and notify author for administrative removals
   if (post.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
       actorUserId: session.user.id,
@@ -80,6 +88,7 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
       typeId: NOTIFICATION_TYPES.DELETE_POST,
       message: "Deleted for community guidelines violation",
     });
+    // Trigger real-time alert refresh
     chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
   }
 

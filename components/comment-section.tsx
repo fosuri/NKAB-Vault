@@ -24,6 +24,11 @@ type Comment = {
   } | null;
 };
 
+/**
+ * Comment Section Component.
+ * Manages the lifecycle of comments for a post: viewing, posting, and deleting.
+ * Features: Optimistic UI updates, role-based moderation, and relative time formatting.
+ */
 export function CommentSection({
   postId,
   initialComments,
@@ -45,6 +50,11 @@ export function CommentSection({
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  /**
+   * Submit Handler:
+   * Adds a new comment and applies an optimistic update to the local state 
+   * for immediate user feedback.
+   */
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = body.trim();
@@ -69,6 +79,11 @@ export function CommentSection({
     });
   }
 
+  /**
+   * Delete Handler:
+   * Removes a comment. Moderators can only delete comments from regular users, 
+   * while Admins have full deletion authority.
+   */
   function handleDelete(commentId: string) {
     setPendingDelete(commentId);
     startTransition(async () => {
@@ -91,6 +106,7 @@ export function CommentSection({
         </span>
       </h2>
 
+      {/* Post a new comment */}
       {currentUserId ? (
         <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
           <Textarea
@@ -120,6 +136,7 @@ export function CommentSection({
         </p>
       )}
 
+      {/* Comment List */}
       {comments.length ? (
         <ul className="flex flex-col gap-4">
           {comments.map((comment) => (
@@ -157,6 +174,7 @@ export function CommentSection({
                       })}
                     </span>
                   </div>
+                  {/* Action: Delete (Visible to author or moderators with appropriate role level) */}
                   {currentUserId && (comment.author?.id === currentUserId || (canModerateComments && (actorRoleId !== ROLES.MODERATOR || comment.author?.roleId === ROLES.USER))) && (
                     <Button
                       variant="ghost"
@@ -189,3 +207,4 @@ export function CommentSection({
     </div>
   );
 }
+

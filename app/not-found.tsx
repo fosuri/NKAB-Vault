@@ -1,8 +1,13 @@
 import Link from "next/link";
 
+/**
+ * Custom 404 Error Page.
+ * Displayed automatically by Next.js when a user attempts to access a non-existent route.
+ */
 export default function NotFound() {
   return (
     <main className="grid min-h-[70vh] place-items-center px-4 py-16">
+      {/* Centered Error Container */}
       <div className="w-full max-w-xl rounded-xl border border-border/60 bg-background/80 p-10 text-center shadow-[0_24px_90px_rgba(15,23,42,0.08)] backdrop-blur">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
           Error 404
@@ -13,6 +18,8 @@ export default function NotFound() {
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
           The page you requested does not exist or was moved.
         </p>
+        
+        {/* Navigation back to safety */}
         <div className="mt-8">
           <Link
             href="/"
@@ -24,4 +31,4 @@ export default function NotFound() {
       </div>
     </main>
   );
-}
+}

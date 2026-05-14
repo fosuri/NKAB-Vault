@@ -9,6 +9,10 @@ import { comments, user, ROLES, adminActionLog, posts, notifications, NOTIFICATI
 import { ensureCanCreateComment, getUserModerationState } from "@/lib/auth/moderation";
 import { chatEventEmitter } from "@/lib/events";
 
+/**
+ * Post Commenting and Moderation Actions.
+ */
+
 const bodySchema = z
   .string()
   .trim()
@@ -17,6 +21,9 @@ const bodySchema = z
 
 type ActionResult = { error?: string; success?: boolean; commentId?: string };
 
+/**
+ * Persists a new comment while enforcing active mutes or bans.
+ */
 export async function createComment(
   postId: string,
   body: string
@@ -27,23 +34,26 @@ export async function createComment(
     return { error: "You must be signed in to comment" };
   }
 
+  // 1. Moderation Check: Verify if user is currently banned or muted
   const permissions = await ensureCanCreateComment(session.user.id);
   if (!permissions.allowed) {
     return { error: permissions.error };
   }
 
+  // 2. Input validation
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid comment" };
   }
 
+  // 3. Database Persistence
   const [newComment] = await db.insert(comments).values({
     postId,
     userId: session.user.id,
     body: parsed.data,
   }).returning({ id: comments.id });
-  const newCommentId = newComment.id;
 
+  // 4. Notification Logic: Notify the author of the original post
   const post = await db.query.posts.findFirst({
     where: eq(posts.id, postId),
     columns: { userId: true },
@@ -55,16 +65,19 @@ export async function createComment(
       actorId: session.user.id,
       typeId: NOTIFICATION_TYPES.COMMENT,
       postId,
-      commentId: newCommentId,
+      commentId: newComment.id,
     });
+    // Trigger real-time alert refresh
     chatEventEmitter.emit(`notifications:${post.userId}`, { type: "update" });
   }
 
   revalidatePath(`/post/${postId}`);
-
-  return { success: true, commentId: newCommentId };
+  return { success: true, commentId: newComment.id };
 }
 
+/**
+ * Removes a comment while enforcing authorship or staff authority.
+ */
 export async function deleteComment(
   commentId: string,
   postId: string
@@ -75,6 +88,7 @@ export async function deleteComment(
     return { error: "Not authenticated" };
   }
 
+  // 1. Identity Check
   const moderationState = await getUserModerationState(session.user.id);
   if (moderationState?.activeBan) {
     return { error: "Your account is banned" };
@@ -88,31 +102,30 @@ export async function deleteComment(
     return { error: "Comment not found" };
   }
 
-  const actorRoleId = moderationState?.roleId;
-  const isAdmin = actorRoleId === ROLES.ADMIN;
-  const isModerator = actorRoleId === ROLES.MODERATOR;
+  // 2. Authority Check: Author vs Staff
+  const isAdmin = moderationState?.roleId === ROLES.ADMIN;
+  const isModerator = moderationState?.roleId === ROLES.MODERATOR;
 
   if (comment.userId !== session.user.id && !isAdmin && !isModerator) {
     return { error: "Not authorised" };
   }
 
+  // 3. Hierarchy Protection: Moderators cannot remove Staff/Admin content
   if (isModerator && comment.userId !== session.user.id) {
     const targetUser = await db.query.user.findFirst({
       where: eq(user.id, comment.userId),
       columns: { roleId: true },
     });
 
-    if (!targetUser) {
-      return { error: "Comment author not found" };
-    }
-
-    if (targetUser.roleId === ROLES.ADMIN || targetUser.roleId === ROLES.MODERATOR) {
+    if (targetUser && (targetUser.roleId === ROLES.ADMIN || targetUser.roleId === ROLES.MODERATOR)) {
       return { error: "Moderators cannot delete comments of admins or moderators" };
     }
   }
 
+  // 4. Persistence: Wipe from DB
   await db.delete(comments).where(eq(comments.id, commentId));
 
+  // 5. Staff Cleanup: Logging and user notification for administrative deletions
   if (comment.userId !== session.user.id && (isAdmin || isModerator)) {
     await db.insert(adminActionLog).values({
       actorUserId: session.user.id,
@@ -134,6 +147,5 @@ export async function deleteComment(
   }
 
   revalidatePath(`/post/${postId}`);
-
   return { success: true };
 }

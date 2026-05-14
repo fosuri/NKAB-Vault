@@ -6,6 +6,11 @@ import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
 
+/**
+ * Theme Toggle Component.
+ * 
+ * Provides a button to cycle between light and dark color modes.
+ */
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
 

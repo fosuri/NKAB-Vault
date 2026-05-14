@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+/**
+ * Global Proxy / Middleware Logic.
+ * 
+ * Intercepts incoming requests to enforce rate limiting and 
+ * perform session-based redirection for protected routes.
+ */
 export async function proxy(request: NextRequest) {
+  // Step 1: Rate Limiting Enforcement
   const limitResult = checkRateLimit(request);
 
   if (!limitResult.success) {
+    // Return standard 429 response with reset headers
     return NextResponse.json(
       { error: "Too many requests" },
       {
@@ -20,9 +28,11 @@ export async function proxy(request: NextRequest) {
     );
   }
 
+  // Step 2: Access Control for Profile Routes
   if (request.nextUrl.pathname.startsWith("/profile")) {
     const sessionCookie = getSessionCookie(request);
 
+    // Eject unauthenticated users to home page
     if (!sessionCookie) {
       return NextResponse.redirect(new URL("/", request.url));
     }

@@ -10,15 +10,20 @@ import { ensureDefaults } from "@/lib/db/ensure-defaults";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { eq } from "drizzle-orm";
 
+/**
+ * Server-side authentication engine for secure session and account management.
+ */
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 const resendFrom = process.env.RESEND_FROM || "nkab@resend.dev";
 
+// Ensure required roles and constants exist in the DB before starting
 await ensureDefaults();
 
 export const auth = betterAuth({
   advanced: {
     database: {
-      generateId: "uuid",
+      generateId: "uuid", // Use UUIDs for better relational security
     },
   },
   database: drizzleAdapter(db, {
@@ -26,9 +31,8 @@ export const auth = betterAuth({
     schema,
   }),
   session: {
-    expiresIn: 60 * 60 * 24 * 30, // 30 days
-    updateAge: 60 * 60 * 24, // 1 day
-    // disableSessionRefresh: true,
+    expiresIn: 60 * 60 * 24 * 30, // Session valid for 30 days
+    updateAge: 60 * 60 * 24, // Refresh session daily
   },
   user: {
     deleteUser: {
@@ -44,6 +48,7 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
+      // Brute-force protection fields
       failedLoginAttempts: {
         type: "number",
         required: false,
@@ -58,6 +63,7 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Automatically generate a random username for new OAuth users
         before: async (user) => {
           return {
             data: {
@@ -71,6 +77,7 @@ export const auth = betterAuth({
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // 1. Lockout Enforcement: Prevent sign-in if the account is currently locked
       if (ctx.path === "/sign-in/email") {
         const body = ctx.body as { email?: string };
         if (body?.email) {
@@ -87,6 +94,7 @@ export const auth = betterAuth({
       }
     }),
     after: createAuthMiddleware(async (ctx) => {
+      // 2. Security Tracking: Manage failed attempt counters after every sign-in attempt
       if (ctx.path === "/sign-in/email") {
         const body = ctx.body as { email?: string };
         if (body?.email) {
@@ -95,20 +103,23 @@ export const auth = betterAuth({
           });
 
           if (userRecord) {
+            // Determine if the attempt failed based on response context
             // @ts-ignore
             const returned = ctx.context.returned || ctx.returned;
             const isError = returned instanceof APIError || (returned && returned.status && returned.status !== 200) || (returned && returned.error);
 
             if (isError) {
+              // Increment failure counter and apply lockout if threshold (5) is met
               const newAttempts = (userRecord.failedLoginAttempts || 0) + 1;
               let newLockedUntil = userRecord.lockedUntil;
 
               if (newAttempts >= 5) {
-                newLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+                newLockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minute lockout
               }
 
               await db.update(schema.user).set({ failedLoginAttempts: newAttempts, lockedUntil: newLockedUntil }).where(eq(schema.user.id, userRecord.id));
             } else {
+              // Reset security counters upon successful login
               if ((userRecord.failedLoginAttempts || 0) > 0 || userRecord.lockedUntil) {
                 await db.update(schema.user).set({ failedLoginAttempts: 0, lockedUntil: null }).where(eq(schema.user.id, userRecord.id));
               }
@@ -126,6 +137,7 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    // Integration with Resend for transactional emails
     sendResetPassword: async ({ user, url }) => {
       const { error } = await resend.emails.send({
         from: resendFrom,
@@ -147,6 +159,9 @@ export const auth = betterAuth({
   plugins: [nextCookies()],
 });
 
+/**
+ * Retrieves the current authenticated session from request headers.
+ */
 export async function getSession() {
   return auth.api.getSession({
     headers: await headers(),

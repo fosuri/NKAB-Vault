@@ -19,6 +19,11 @@ interface CancelSubscriptionButtonProps {
   buttonVariant?: "default" | "outline" | "secondary" | "ghost" | "link" | "destructive";
 }
 
+/**
+ * Cancel Subscription Button.
+ * Provides a UI and confirmation workflow for users to end their Pro subscription.
+ * Integration: Stripe (via cancelSubscription server action).
+ */
 export function CancelSubscriptionButton({
   buttonText,
   buttonVariant = "default",
@@ -26,6 +31,10 @@ export function CancelSubscriptionButton({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * Cancel Handler:
+   * Triggers the Stripe cancellation logic and provides toast feedback.
+   */
   const handleCancel = async () => {
     setIsLoading(true);
     try {
@@ -45,11 +54,14 @@ export function CancelSubscriptionButton({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {/* Trigger Button: Configurable text and variant */}
       <DialogTrigger asChild>
         <Button className="w-full font-semibold" variant={buttonVariant} size="lg">
           {buttonText}
         </Button>
       </DialogTrigger>
+      
+      {/* Confirmation Dialog Overlay */}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Cancel Subscription</DialogTitle>
@@ -77,3 +89,4 @@ export function CancelSubscriptionButton({
     </Dialog>
   );
 }
+

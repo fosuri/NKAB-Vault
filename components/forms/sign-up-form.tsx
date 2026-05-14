@@ -30,6 +30,7 @@ import { signInWithGoogle, signUpWithEmail } from "@/lib/auth/auth-client"
 import { checkEmailAvailable } from "@/lib/actions/check-signup"
 import Link from "next/link"
 
+// Strict validation schema for registration
 const formSchema = z.object({
   email: z.email(),
   password: z.string()
@@ -43,11 +44,18 @@ const formSchema = z.object({
   path: ["confirmPassword"],
 })
 
+/**
+ * Utility: generateRandomName.
+ * Creates a unique placeholder display name for new email accounts.
+ */
 function generateRandomName() {
   return "user_" + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
 }
 
-
+/**
+ * Sign Up Form.
+ * Facilitates new user onboarding with real-time validation and OAuth support.
+ */
 export function SignUpForm({
   className,
   ...props
@@ -55,6 +63,7 @@ export function SignUpForm({
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,6 +73,12 @@ export function SignUpForm({
     },
   })
 
+  /**
+   * Submit Handler:
+   * 1. Validates email availability against the database.
+   * 2. Registers the user with a generated name.
+   * 3. Redirects to root on success.
+   */
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
@@ -108,6 +123,7 @@ export function SignUpForm({
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
+              {/* OAuth Integration */}
               <Field>
                 <Button variant="outline" type="button" onClick={signInWithGoogle}>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -119,10 +135,12 @@ export function SignUpForm({
                   Sign up with Google
                 </Button>
               </Field>
+              
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
               </FieldSeparator>
 
+              {/* Email Entry */}
               <Controller
                 name="email"
                 control={form.control}
@@ -145,6 +163,7 @@ export function SignUpForm({
                 )}
               />
 
+              {/* Password Entry with real-time feedback */}
               <Controller
                 name="password"
                 control={form.control}
@@ -156,6 +175,7 @@ export function SignUpForm({
                   const hasUpper = /[A-Z]/.test(password);
                   const hasSpecial = /[^a-zA-Z0-9]/.test(password);
 
+                  // Helper to render individual requirement status
                   const renderRequirement = (isValid: boolean, text: string) => {
                     const colorClass = !hasStartedTyping 
                       ? "text-muted-foreground" 
@@ -196,6 +216,7 @@ export function SignUpForm({
                         </Button>
                       )}
                     </div>
+                    {/* Visual Checklist for Password Strength */}
                     <div className="flex flex-col gap-1 mt-1 text-xs font-medium">
                       {renderRequirement(hasMinLength, "At least 8 characters")}
                       {renderRequirement(hasLower, "At least one lowercase letter")}
@@ -206,6 +227,7 @@ export function SignUpForm({
                 )}}
               />
 
+              {/* Confirmation Entry */}
               <Controller
                 name="confirmPassword"
                 control={form.control}
@@ -247,8 +269,6 @@ export function SignUpForm({
                 )}
               />
 
-
-
               <Field>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading ? <Loader2 className="size-4 animate-spin" /> : "Sign up"}
@@ -268,3 +288,4 @@ export function SignUpForm({
     </div>
   )
 }
+

@@ -1,16 +1,24 @@
+# NKAB-Vault Infrastructure Configuration
+# Defines the services for the local development environment.
 services:
+  # Primary relational database service
   postgres:
-    image: postgres:17
+    image: postgres:17 # Uses stable PostgreSQL version 17
     container_name: nkab-postgres
-    restart: unless-stopped
+    restart: unless-stopped # Automatically restarts the container unless manually stopped
     ports:
+      # Port mapping: host 5433 -> container 5432
+      # Prevents conflicts with local Postgres instances running on default 5432
       - "5433:5432"
     environment:
+      # Initial database setup and credentials
       POSTGRES_USER: nkab
       POSTGRES_PASSWORD: 123456
       POSTGRES_DB: nkab_vault
     volumes:
+      # Persistent data volume to preserve DB state across container lifecycles
       - postgres_data:/var/lib/postgresql/data
 
+# Defined volumes for the infrastructure
 volumes:
   postgres_data:

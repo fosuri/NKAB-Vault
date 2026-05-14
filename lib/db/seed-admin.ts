@@ -3,11 +3,18 @@ import { db } from "./db";
 import { ensureDefaults } from "./ensure-defaults";
 import { user, ROLES } from "./auth-schema";
 
+/**
+ * Administrative bootstrapping script for granting elevated privileges.
+ */
+
 type Input = {
   email?: string;
   username?: string;
 };
 
+/**
+ * Parses CLI arguments or Environment variables to identify the target user.
+ */
 function parseInput(): Input {
   const emailArg = process.argv.find((arg) => arg.startsWith("--email="));
   const usernameArg = process.argv.find((arg) => arg.startsWith("--username="));
@@ -21,6 +28,9 @@ function parseInput(): Input {
   };
 }
 
+/**
+ * Outputs a diagnostic list of recent users to aid in target selection.
+ */
 async function printUsers() {
   const users = await db.query.user.findMany({
     columns: {
@@ -45,7 +55,11 @@ async function printUsers() {
   }
 }
 
+/**
+ * Orchestrates the promotion of a user account to Admin status.
+ */
 async function main() {
+  // 1. Ensure core schema constants are populated
   await ensureDefaults();
 
   const { email, username } = parseInput();
@@ -56,6 +70,7 @@ async function main() {
     process.exit(1);
   }
 
+  // 2. Identify the target account
   const target = email
     ? await db.query.user.findFirst({ where: eq(user.email, email) })
     : await db.query.user.findFirst({ where: eq(user.name, username!) });
@@ -66,6 +81,7 @@ async function main() {
     process.exit(1);
   }
 
+  // 3. Elevate permissions in the database
   await db.update(user).set({ roleId: ROLES.ADMIN }).where(eq(user.id, target.id));
 
   const updated = await db.query.user.findFirst({

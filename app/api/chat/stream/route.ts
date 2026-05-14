@@ -7,6 +7,10 @@ import { chatEventEmitter } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Conversation-level Chat SSE Route.
+ * Streams real-time messages for a specific conversation to authorized participants.
+ */
 export async function GET(req: NextRequest) {
   const session = await getSession();
 
@@ -21,7 +25,10 @@ export async function GET(req: NextRequest) {
     return new Response("Missing conversationId", { status: 400 });
   }
 
-  // Verify access
+  /**
+   * Security Check:
+   * Verify that the current user is a participant in the requested conversation.
+   */
   const participant = await db.query.conversationParticipants.findFirst({
     where: and(
       eq(conversationParticipants.conversationId, conversationId),
@@ -33,6 +40,10 @@ export async function GET(req: NextRequest) {
     return new Response("Forbidden", { status: 403 });
   }
 
+  /**
+   * Initialize SSE Stream.
+   * Listens to the 'chat:{conversationId}' event for new messages.
+   */
   const stream = new ReadableStream({
     start(controller) {
       const listener = (message: any) => {
@@ -44,11 +55,13 @@ export async function GET(req: NextRequest) {
       const eventName = `chat:${conversationId}`;
       chatEventEmitter.on(eventName, listener);
 
+      // Cleanup: remove listener on connection abort
       req.signal.addEventListener("abort", () => {
         chatEventEmitter.off(eventName, listener);
         try {
           controller.close();
         } catch (e) {
+          // Ignore close errors
         }
       });
     },

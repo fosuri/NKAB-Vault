@@ -1,7 +1,12 @@
+/**
+ * Chat Landing Page (Empty State).
+ * Displays a placeholder message when no specific conversation is selected from the sidebar.
+ */
 export default function ChatPage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8 text-center h-full">
       <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+        {/* Chat Icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -24,3 +29,4 @@ export default function ChatPage() {
     </div>
   );
 }
+

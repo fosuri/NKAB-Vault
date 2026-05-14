@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/auth-server";
 
+// Validation schema for usernames (English letters only, 3-20 chars)
 const usernameSchema = z.object({
   username: z.string()
     .min(3, "Username must be at least 3 characters")
@@ -12,6 +13,10 @@ const usernameSchema = z.object({
     .regex(/^[a-zA-Z]+$/, "Username must contain only English letters and be a single word"),
 });
 
+/**
+ * Username Availability API.
+ * Checks if a username meets constraints and is not already taken by another user.
+ */
 export async function GET(request: Request) {
   try {
     const session = await getSession();
@@ -22,6 +27,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const username = searchParams.get("username");
 
+    // Validate username format
     const result = usernameSchema.safeParse({ username });
     if (!result.success) {
         return NextResponse.json({ 
@@ -30,10 +36,12 @@ export async function GET(request: Request) {
         });
     }
 
+    // Check if username exists in the database
     const existingUser = await db.query.user.findFirst({
       where: eq(user.name, result.data.username),
     });
 
+    // If username exists and belongs to another user, it's unavailable
     if (existingUser && existingUser.id !== session.user.id) {
         return NextResponse.json({ available: false, error: "Username is already taken" });
     }

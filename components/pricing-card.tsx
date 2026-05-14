@@ -24,6 +24,13 @@ interface PricingCardProps {
   isUpgrade?: boolean;
 }
 
+/**
+ * Pricing Card Component.
+ * 
+ * Renders a specific subscription tier with its feature set and action button.
+ * Dynamically switches between 'Upgrade', 'Cancel', and 'Select' states 
+ * based on the user's current subscription status.
+ */
 export function PricingCard({ 
   title, 
   price, 
@@ -36,6 +43,7 @@ export function PricingCard({
   isCancel,
   isUpgrade,
 }: PricingCardProps) {
+  // Stripe integration: Prefill email in checkout session if user is logged in
   const finalHref = paymentLink 
     ? (userEmail ? `${paymentLink}?prefilled_email=${encodeURIComponent(userEmail)}` : paymentLink)
     : "#";

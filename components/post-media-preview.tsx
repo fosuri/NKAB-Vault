@@ -4,13 +4,22 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Play } from "lucide-react";
 
+/**
+ * Post Media Preview Component.
+ * Displays a thumbnail for post media (images or videos).
+ * Features: Automatic video duration detection and file count indicators.
+ */
 export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: string; alt: string; isVideo: boolean; fileCount?: number }) {
   const [duration, setDuration] = useState<number | null>(null);
 
+  /**
+   * Video Metadata Effect:
+   * Dynamically loads video metadata to extract and display the duration.
+   */
   useEffect(() => {
     if (isVideo) {
       const video = document.createElement("video");
-      video.src = src.replace(/\.mov$/i, ".mp4");
+      video.src = src.replace(/\.mov$/i, ".mp4"); // Ensure compatible format for metadata extraction
       video.preload = "metadata";
       video.onloadedmetadata = () => {
         setDuration(video.duration);
@@ -18,6 +27,7 @@ export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: st
     }
   }, [src, isVideo]);
 
+  // Formats seconds into M:SS
   const formatDuration = (d: number) => {
     if (!Number.isFinite(d)) return "0:00";
     const m = Math.floor(d / 60);
@@ -25,6 +35,7 @@ export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: st
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  // Logic: For videos, use a static frame/thumbnail URL
   const imageUrl = isVideo ? src.replace(/\.[^/.]+$/, ".jpg") : src;
 
   return (
@@ -37,12 +48,14 @@ export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: st
         height={520}
       />
       
+      {/* File counter for multi-media posts */}
       {fileCount > 1 && (
         <div className="absolute right-2 top-2 z-10 rounded-md bg-black/65 px-2 py-1 text-xs font-bold tracking-wider text-white">
           1/{fileCount}
         </div>
       )}
 
+      {/* Video Overlay: centralized play icon and duration badge */}
       {isVideo && (
         <>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -60,3 +73,4 @@ export function PostMediaPreview({ src, alt, isVideo, fileCount = 1 }: { src: st
     </div>
   );
 }
+

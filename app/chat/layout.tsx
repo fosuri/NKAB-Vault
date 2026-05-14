@@ -12,16 +12,28 @@ export const metadata = {
   description: "View all your conversations",
 };
 
+/**
+ * Chat System Layout.
+ * Provides the core interface for the messaging system, including a persistent 
+ * sidebar with a list of all user conversations.
+ */
 export default async function ChatLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
 
+  // Protect the route: ensure the user is authenticated
   if (!session?.user?.id) {
     redirect("/sign-in");
   }
 
+  // Fetch all active conversations for the current user
   const result = await getUserConversationsAction();
   const conversations = result.success && result.conversations ? result.conversations : [];
 
+  /**
+   * Conversation Sidebar Content.
+   * Renders a list of chat cards, each showing the other participant, 
+   * the last message snippet, and an unread status indicator.
+   */
   const sidebar = (
     <>
       <div className="p-4 border-b border-border/50 bg-muted/20 font-semibold">
@@ -37,6 +49,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
             const otherUser = conv.otherUser;
             const lastMessage = conv.lastMessage;
 
+            // Determine if the last message is unread and was sent by the other person
             const isUnread = lastMessage &&
               !lastMessage.isRead &&
               lastMessage.senderId !== session.user.id;
@@ -75,6 +88,7 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
                     </p>
                   </div>
 
+                  {/* Unread dot indicator */}
                   {isUnread && (
                     <div className="w-2 h-2 rounded-full bg-red-500 shrink-0 ml-1"></div>
                   )}
@@ -91,9 +105,11 @@ export default async function ChatLayout({ children }: { children: React.ReactNo
     <div className="container max-w-6xl mx-auto md:py-8 md:px-4 h-[calc(100vh-4rem)]">
       <h1 className="text-2xl md:text-3xl font-bold p-4 md:p-0 md:mb-6 hidden md:block">Messages</h1>
 
+      {/* Main layout wrapper that handles mobile responsiveness and sidebar toggling */}
       <ChatLayoutWrapper sidebar={sidebar}>
         {children}
       </ChatLayoutWrapper>
     </div>
   );
 }
+

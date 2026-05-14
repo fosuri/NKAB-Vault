@@ -22,12 +22,22 @@ interface PostMediaCarouselProps {
   media: MediaItem[];
 }
 
+/**
+ * Post Media Carousel.
+ * Provides a paginated interface for viewing multiple media items (images/videos) in a post.
+ * Features: Native video controls and automatic resource management (pausing off-screen videos).
+ */
 export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
+  /**
+   * Carousel API Effect:
+   * 1. Synchronizes local state with carousel slide info (current/total).
+   * 2. Performance: Pauses any active video when the user slides to a different item.
+   */
   useEffect(() => {
     if (!api) return;
 
@@ -38,6 +48,7 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
 
     const onSelect = () => {
       updateSlideInfo();
+      // Ensure videos don't keep playing in the background when not visible
       videoRefs.current.forEach((video) => {
         if (video && !video.paused) {
           video.pause();
@@ -66,6 +77,7 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
           {media.map((item, index) => (
             <CarouselItem key={item.id}>
               <div className="relative aspect-video w-full overflow-hidden rounded-2xl border border-border/40 bg-black/5 flex items-center justify-center">
+                {/* Content: Video with native controls or Next.js optimized Image */}
                 {item.resourceType === "video" ? (
                   <video
                     ref={(el) => {
@@ -88,6 +100,7 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
             </CarouselItem>
           ))}
         </CarouselContent>
+        {/* Navigation: Visible only when multi-media content is present */}
         {media.length > 1 && (
           <>
             <CarouselPrevious className="left-4" />
@@ -95,6 +108,7 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
           </>
         )}
       </Carousel>
+      {/* Pagination Feedback */}
       {media.length > 1 && count > 0 && (
         <div className="mt-3 text-center text-sm font-medium text-muted-foreground">
           File {current} of {count}
@@ -103,3 +117,4 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
     </>
   );
 }
+

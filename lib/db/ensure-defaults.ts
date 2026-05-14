@@ -12,6 +12,11 @@ import {
   messageMediaTypes, MESSAGE_MEDIA_TYPES
 } from "@/lib/db/auth-schema";
 
+/**
+ * Synchronizes the database with required seed constants and lookup values.
+ */
+
+// Mapping of internal numeric constants to database rows
 const defaultRoles = Object.entries(ROLES).map(([name, id]) => ({ id, name: name.toLowerCase() }));
 const defaultAccessTypes = Object.entries(ACCESS_TYPES).map(([name, id]) => ({ id, name: name.toLowerCase() }));
 const defaultSubscriptionStatuses = Object.entries(SUBSCRIPTION_STATUSES).map(([name, id]) => ({ id, name: name.toLowerCase() }));
@@ -38,14 +43,22 @@ const seedData = [
 
 let defaultsEnsuredPromise: Promise<void> | null = null;
 
+/**
+ * Iterates through lookup tables and enforces presence of core constants.
+ */
 async function seedDefaults() {
   for (const { table, data } of seedData) {
     for (const row of data) {
+      // 1. Idempotent insertion: prevents duplicate key errors on subsequent runs
       await db.insert(table).values(row).onConflictDoNothing();
     }
   }
 }
 
+/**
+ * Ensures required seed data exists before application logic proceeds.
+ * Leverages a singleton promise to prevent concurrent execution.
+ */
 export async function ensureDefaults() {
   if (!defaultsEnsuredPromise) {
     defaultsEnsuredPromise = seedDefaults().catch((error) => {

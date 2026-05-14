@@ -14,6 +14,7 @@ type PostFilterControlsProps = {
   query?: string;
 };
 
+// Map internal filter values to user-friendly labels
 const TIME_LABELS: Record<string, string> = {
   "all": "Any time",
   "24h": "Last 24 hours",
@@ -29,17 +30,24 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
   "video": "Video",
 };
 
+/**
+ * Post Filter Controls.
+ * Provides a UI for narrowing down post results based on time and media type.
+ * Uses a form-based approach to trigger server-side filtering via URL query parameters.
+ */
 export function PostFilterControls({ actionPath, time, contentType, query }: PostFilterControlsProps) {
   const [selectedTime, setSelectedTime] = useState<PostTimeFilter>(time);
   const [selectedContentType, setSelectedContentType] = useState<PostContentFilter>(contentType);
 
   return (
     <form action={actionPath} className="rounded-2xl border border-border/60 bg-background/70 p-3 backdrop-blur">
+      {/* Hidden inputs ensure filter state is submitted with the form */}
       {query ? <input type="hidden" name="q" value={query} /> : null}
       <input type="hidden" name="time" value={selectedTime} />
       <input type="hidden" name="contentType" value={selectedContentType} />
       
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
+        {/* Time Filter Selection */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full justify-between font-normal text-foreground">
@@ -56,6 +64,7 @@ export function PostFilterControls({ actionPath, time, contentType, query }: Pos
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Content Type Filter Selection */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="w-full justify-between font-normal text-foreground">
@@ -76,6 +85,7 @@ export function PostFilterControls({ actionPath, time, contentType, query }: Pos
           Apply
         </Button>
 
+        {/* Clear all active filters */}
         <Button variant="outline" asChild className="font-medium text-foreground">
           <Link href={query ? `${actionPath}?q=${encodeURIComponent(query)}` : actionPath}>
             Reset
@@ -85,3 +95,4 @@ export function PostFilterControls({ actionPath, time, contentType, query }: Pos
     </form>
   );
 }
+

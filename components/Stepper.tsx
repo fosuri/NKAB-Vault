@@ -25,6 +25,12 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   }) => ReactNode;
 }
 
+/**
+ * Stepper Component.
+ * 
+ * A robust multi-step form engine that manages sequential navigation, 
+ * directional animations, and dynamic content height synchronization.
+ */
 export default function Stepper({
   children,
   initialStep = 1,
@@ -42,13 +48,17 @@ export default function Stepper({
   renderStepIndicator,
   ...rest
 }: StepperProps) {
+  // Navigation State
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
-  const [direction, setDirection] = useState<number>(0);
+  const [direction, setDirection] = useState<number>(0); // 1 for forward, -1 for backward
   const stepsArray = Children.toArray(children);
   const totalSteps = stepsArray.length;
   const isCompleted = currentStep > totalSteps;
   const isLastStep = currentStep === totalSteps;
 
+  /**
+   * Internal step updater that triggers external callbacks.
+   */
   const updateStep = (newStep: number) => {
     setCurrentStep(newStep);
     if (newStep > totalSteps) {
@@ -168,6 +178,12 @@ interface StepContentWrapperProps {
   className?: string;
 }
 
+/**
+ * Step Content Wrapper.
+ * 
+ * Orchestrates the height-aware container for step transitions. 
+ * Animates the height of the card to match the current step's content size.
+ */
 function StepContentWrapper({
   isCompleted,
   currentStep,
@@ -177,6 +193,7 @@ function StepContentWrapper({
 }: StepContentWrapperProps) {
   const [parentHeight, setParentHeight] = useState<number>(0);
 
+  // Updates the container height when a child slide signals its size is ready
   const handleHeightReady = React.useCallback((h: number) => {
     setParentHeight(h);
   }, []);

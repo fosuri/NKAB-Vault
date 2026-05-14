@@ -22,6 +22,11 @@ type HeaderProps = {
   isPro?: boolean;
 };
 
+/**
+ * Global Header Component.
+ * Orchestrates navigation, global search, notifications, and user session state.
+ * Features: Debounced search suggestion engine and responsive menu toggles.
+ */
 export default function Header({ userRoleId, isPro }: HeaderProps) {
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -37,6 +42,11 @@ export default function Header({ userRoleId, isPro }: HeaderProps) {
   const showAdminDashboardLink = userRoleId === ROLES.ADMIN;
   const showModeratorDashboardLink = userRoleId === ROLES.MODERATOR;
 
+  /**
+   * Search Suggestion Effect:
+   * Fetches matching posts as the user types, using an AbortController 
+   * to handle rapid input changes efficiently.
+   */
   useEffect(() => {
     if (!isSearchOpen) {
       return;
@@ -85,6 +95,10 @@ export default function Header({ userRoleId, isPro }: HeaderProps) {
     };
   }, [isSearchOpen, searchQuery]);
 
+  /**
+   * Navigation Handlers:
+   * Manage redirection for full search results and individual post selections.
+   */
   const submitSearch = () => {
     if (!searchQuery) {
       return;
@@ -107,6 +121,7 @@ export default function Header({ userRoleId, isPro }: HeaderProps) {
   return (
     <>
       <header className="flex items-center justify-between bg-background text-foreground px-4 h-16 border-b border-border">
+        {/* Branding and Action Section */}
         <div className="flex items-center gap-2">
           <Link href="/" className=" h-10 flex items-center gap-2">
             <div className="bg-transparent min-w-8 min-h-8 " >
@@ -129,6 +144,7 @@ export default function Header({ userRoleId, isPro }: HeaderProps) {
         </div>
 
 
+        {/* Global Navigation and Utility Section */}
         <div className="flex items-center gap-2 sm:gap-3">
           <HeaderSearch
             isSearchOpen={isSearchOpen}
@@ -169,3 +185,4 @@ export default function Header({ userRoleId, isPro }: HeaderProps) {
     </>
   );
 }
+

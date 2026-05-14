@@ -10,12 +10,18 @@ interface PostContentWrapperProps {
   children: React.ReactNode;
 }
 
+/**
+ * Post Content Wrapper.
+ * Acts as a security gateway for password-protected posts.
+ * Prevents children (comments, media, text) from rendering until the post is unlocked.
+ */
 export function PostContentWrapper({
   postId,
   hasPassword,
   isOwner,
   children,
 }: PostContentWrapperProps) {
+  // Logic: Owners and non-protected posts bypass the gate immediately.
   const [unlocked, setUnlocked] = useState(isOwner || !hasPassword);
 
   if (!unlocked) {
@@ -26,3 +32,4 @@ export function PostContentWrapper({
 
   return <>{children}</>;
 }
+

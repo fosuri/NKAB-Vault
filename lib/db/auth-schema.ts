@@ -1,5 +1,15 @@
+/**
+ * Comprehensive Database Architecture for NKAB Vault.
+ * Implements 3rd Normal Form (3NF) through lookup tables and relational constraints.
+ */
+
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, integer, unique, serial, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, integer, unique, serial, uuid, primaryKey } from "drizzle-orm/pg-core";
+
+// ============================================================================
+// LOOKUP TABLES & CONSTANTS
+// Standardized numeric identifiers for roles, types, and statuses.
+// ============================================================================
 
 export const ROLES = {
   USER: 1,
@@ -134,6 +144,11 @@ export const messageMediaTypes = pgTable("message_media_types", {
   name: text("name").notNull().unique(),
 });
 
+// ============================================================================
+// CORE IDENTITY & AUTHENTICATION
+// Better Auth compatible tables for user management and session tracking.
+// ============================================================================
+
 export const user = pgTable("user", {
   id: uuid("id").defaultRandom().primaryKey(),
   name: text("name").notNull().unique(),
@@ -156,24 +171,6 @@ export const user = pgTable("user", {
     .notNull(),
 });
 
-export const subscriptions = pgTable("subscriptions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
-    .references(() => user.id)
-    .notNull(),
-  stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
-  stripePriceId: text("stripe_price_id").notNull(),
-  statusId: integer("status_id")
-    .references(() => subscriptionStatuses.id)
-    .notNull(),
-  currentPeriodEnd: timestamp("current_period_end").notNull(),
-  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .$onUpdate(() => new Date())
-    .notNull(),
-});
-
 export const session = pgTable(
   "session",
   {
@@ -182,6 +179,7 @@ export const session = pgTable(
     token: text("token").notNull().unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
+      .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text("ip_address"),
@@ -211,6 +209,7 @@ export const account = pgTable(
     password: text("password"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
+      .defaultNow()
       .$onUpdate(() => new Date())
       .notNull(),
   },
@@ -233,7 +232,10 @@ export const verification = pgTable(
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
-
+// ============================================================================
+// CONTENT MANAGEMENT (Posts & Media)
+// Hierarchical storage for posts and their associated cloud assets.
+// ============================================================================
 
 export const posts = pgTable(
   "posts",
@@ -261,6 +263,39 @@ export const posts = pgTable(
   ]
 );
 
+export const postMedia = pgTable(
+  "post_media",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    publicId: text("public_id").notNull().unique(),
+    resourceTypeId: integer("resource_type_id")
+      .references(() => resourceTypes.id)
+      .notNull(),
+    formatId: integer("format_id")
+      .references(() => mediaFormats.id)
+      .notNull(),
+    secureUrl: text("secure_url").notNull(),
+    width: integer("width"),
+    height: integer("height"),
+    bytes: integer("bytes"),
+    originalFilename: text("original_filename"),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("post_media_postId_idx").on(table.postId),
+    index("post_media_resourceTypeId_idx").on(table.resourceTypeId),
+  ]
+);
+
+// ============================================================================
+// SOCIAL INTERACTIONS (Comments & Reactions)
+// Engagement metrics and discussion threads.
+// ============================================================================
+
 export const comments = pgTable(
   "comments",
   {
@@ -277,33 +312,6 @@ export const comments = pgTable(
   (table) => [
     index("comments_postId_idx").on(table.postId),
     index("comments_userId_idx").on(table.userId),
-  ]
-);
-
-export const postMedia = pgTable(
-  "post_media",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    postId: uuid("post_id")
-      .notNull()
-      .references(() => posts.id, { onDelete: "cascade" }),
-    publicId: text("public_id").notNull().unique(),
-    resourceTypeId: integer("resource_type_id")
-      .references(() => resourceTypes.id)
-      .notNull(),
-    formatId: integer("format_id")
-      .references(() => mediaFormats.id),
-    secureUrl: text("secure_url").notNull(),
-    width: integer("width"),
-    height: integer("height"),
-    bytes: integer("bytes"),
-    originalFilename: text("original_filename"),
-    sortOrder: integer("sort_order").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [
-    index("post_media_postId_idx").on(table.postId),
-    index("post_media_resourceTypeId_idx").on(table.resourceTypeId),
   ]
 );
 
@@ -347,6 +355,93 @@ export const postViews = pgTable(
     unique("post_views_user_post_unique").on(table.userId, table.postId),
   ]
 );
+
+// ============================================================================
+// COMMUNICATION (Chat & Real-time Messaging)
+// Direct messaging architecture with media support.
+// ============================================================================
+
+export const conversations = pgTable(
+  "conversations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }
+);
+
+export const conversationParticipants = pgTable(
+  "conversation_participants",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("conversation_participants_conversationId_idx").on(table.conversationId),
+    index("conversation_participants_userId_idx").on(table.userId),
+    unique("conversation_participants_user_conversation_unique").on(table.userId, table.conversationId),
+  ]
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    senderId: uuid("sender_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    mediaUrl: text("media_url"),
+    mediaTypeId: integer("media_type_id").references(() => messageMediaTypes.id),
+    mediaPublicId: text("media_public_id"),
+    isRead: boolean("is_read").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("messages_conversationId_idx").on(table.conversationId),
+    index("messages_senderId_idx").on(table.senderId),
+  ]
+);
+
+// ============================================================================
+// SYSTEM LOGS & AUDIT (Admin, Sanctions, Subscriptions)
+// Disciplinary records, administrative actions, and payment tracking.
+// ============================================================================
+
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .references(() => user.id)
+    .notNull(),
+  stripeSubscriptionId: text("stripe_subscription_id").unique().notNull(),
+  stripePriceId: text("stripe_price_id").notNull(),
+  statusId: integer("status_id")
+    .references(() => subscriptionStatuses.id)
+    .notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+});
 
 export const userSanctions = pgTable(
   "user_sanctions",
@@ -430,63 +525,10 @@ export const notifications = pgTable(
   ]
 );
 
-export const conversations = pgTable(
-  "conversations",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
-  }
-);
-
-export const conversationParticipants = pgTable(
-  "conversation_participants",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    conversationId: uuid("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    joinedAt: timestamp("joined_at").defaultNow().notNull(),
-  },
-  (table) => [
-    index("conversation_participants_conversationId_idx").on(table.conversationId),
-    index("conversation_participants_userId_idx").on(table.userId),
-    unique("conversation_participants_user_conversation_unique").on(table.userId, table.conversationId),
-  ]
-);
-
-export const messages = pgTable(
-  "messages",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    conversationId: uuid("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
-    senderId: uuid("sender_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    content: text("content"),
-    mediaUrl: text("media_url"),
-    mediaTypeId: integer("media_type_id").references(() => messageMediaTypes.id),
-    mediaPublicId: text("media_public_id"),
-    isRead: boolean("is_read").default(false).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at")
-      .defaultNow()
-      .$onUpdate(() => new Date())
-      .notNull(),
-  },
-  (table) => [
-    index("messages_conversationId_idx").on(table.conversationId),
-    index("messages_senderId_idx").on(table.senderId),
-  ]
-);
+// ============================================================================
+// RELATIONAL MAPPINGS
+// Virtual connections for type-safe query building.
+// ============================================================================
 
 export const userRelations = relations(user, ({ many, one }) => ({
   sessions: many(session),
@@ -625,8 +667,6 @@ export const commentsRelations = relations(comments, ({ one }) => ({
     references: [user.id],
   }),
 }));
-
-
 
 export const userSanctionsRelations = relations(userSanctions, ({ one }) => ({
   targetUser: one(user, {

@@ -8,6 +8,13 @@ import { Button } from "./ui/button";
 
 type ReactionType = "like" | "dislike";
 
+/**
+ * Post Reactions Component.
+ * 
+ * Manages like/dislike interactions for a post using an optimistic UI approach.
+ * Changes are reflected immediately in the local state while the server 
+ * request is processed in the background.
+ */
 export function PostReactions({
   postId,
   initialLikeCount,
@@ -21,39 +28,55 @@ export function PostReactions({
   initialUserReaction: ReactionType | null;
   currentUserId?: string;
 }) {
+  // UI transitions for non-blocking server interaction
   const [isPending, startTransition] = useTransition();
+  
+  // State mirroring the server data, updated optimistically
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [dislikeCount, setDislikeCount] = useState(initialDislikeCount);
   const [userReaction, setUserReaction] = useState<ReactionType | null>(initialUserReaction);
 
+  /**
+   * Main reaction handler.
+   * Orchestrates local state changes before committing to the server.
+   */
   const handleReaction = (type: ReactionType) => {
+    // Auth check: Reactions require an active session
     if (!currentUserId) {
       toast.error("You must be signed in to react");
       return;
     }
 
+    // Backup state for potential rollback on server failure
     const prevReaction = userReaction;
     const prevLike = likeCount;
     const prevDislike = dislikeCount;
 
+    // Step 1: Optimistic State Transition Logic
     if (prevReaction === type) {
+      // Toggle off if clicking the same reaction
       setUserReaction(null);
       if (type === "like") setLikeCount((c) => c - 1);
       else setDislikeCount((c) => c - 1);
     } else {
+      // Switch reaction or add new reaction
       setUserReaction(type);
       if (type === "like") {
         setLikeCount((c) => c + 1);
+        // Remove existing dislike if switching to like
         if (prevReaction === "dislike") setDislikeCount((c) => c - 1);
       } else {
         setDislikeCount((c) => c + 1);
+        // Remove existing like if switching to dislike
         if (prevReaction === "like") setLikeCount((c) => c - 1);
       }
     }
 
+    // Step 2: Server Synchronization
     startTransition(async () => {
       const result = await toggleReactionAction(postId, type);
       if (result.error) {
+        // Rollback to previous known good state if server request fails
         setUserReaction(prevReaction);
         setLikeCount(prevLike);
         setDislikeCount(prevDislike);

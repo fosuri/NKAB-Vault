@@ -40,7 +40,14 @@ interface ProfileContentProps {
   currentUserId?: string | null;
 }
 
+/**
+ * Profile Content Component.
+ * 
+ * Orchestrates user profile display, account management (edit/delete), 
+ * and peer-to-peer interaction (starting a chat).
+ */
 export function ProfileContent({ user, isOwner = true, currentUserId }: ProfileContentProps) {
+  // UI State: Controls for various modals and interactive elements
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -49,6 +56,10 @@ export function ProfileContent({ user, isOwner = true, currentUserId }: ProfileC
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const router = useRouter();
 
+  /**
+   * Self-service Account Deletion:
+   * Calls the auth client to purge the user session and data.
+   */
   const handleDeleteAccount = async () => {
     setDeleting(true);
     const { error } = await authClient.deleteUser();
@@ -58,10 +69,16 @@ export function ProfileContent({ user, isOwner = true, currentUserId }: ProfileC
       return;
     }
     toast.success("Account deleted successfully");
-    router.push("/");
+    router.push("/"); // Evict user to landing page after deletion
   };
 
+  /**
+   * Conversation Initiation Flow:
+   * Ensures a conversation exists between the current user and the profile subject,
+   * then redirects to the messaging interface.
+   */
   const handleStartChat = async () => {
+    // Guest protection: Redirect to sign-in if unauthenticated
     if (!currentUserId) {
       router.push("/sign-in");
       return;

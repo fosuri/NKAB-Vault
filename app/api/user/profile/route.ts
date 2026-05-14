@@ -8,6 +8,7 @@ import { cloudinary } from "@/lib/cloudinary";
 
 const DATA_IMAGE_REGEX = /^data:image\/[a-zA-Z0-9.+-]+;base64,/;
 
+// Schema for profile updates (username, description, and avatar URL/Base64)
 const updateProfileSchema = z.object({
   username: z.string()
     .min(3, "Username must be at least 3 characters")
@@ -21,9 +22,14 @@ const updateProfileSchema = z.object({
   ]).optional(),
 });
 
+/**
+ * Handles avatar URL resolution. 
+ * Uploads Base64 images to Cloudinary or removes the avatar if an empty string is provided.
+ */
 async function resolveAvatarUrl(avatar: string | undefined, userId: string): Promise<string | null | undefined> {
   if (avatar === undefined) return undefined;
   if (avatar === "") {
+    // Delete existing avatar from Cloudinary
     try {
       await cloudinary.uploader.destroy(`nkab-vault/avatars/${userId}/avatar`, {
         resource_type: "image",
@@ -34,6 +40,7 @@ async function resolveAvatarUrl(avatar: string | undefined, userId: string): Pro
     return null;
   }
 
+  // Upload new Base64 avatar to Cloudinary
   if (avatar.startsWith("data:image/")) {
     const uploadResult = await cloudinary.uploader.upload(avatar, {
       folder: `nkab-vault/avatars/${userId}`,
@@ -47,6 +54,10 @@ async function resolveAvatarUrl(avatar: string | undefined, userId: string): Pro
   return avatar;
 }
 
+/**
+ * User Profile Update API.
+ * Updates the authenticated user's name, description, and avatar.
+ */
 export async function PUT(request: Request) {
   try {
     const session = await getSession();
@@ -66,6 +77,7 @@ export async function PUT(request: Request) {
 
     const { username, description, avatar } = result.data;
 
+    // Ensure the new username is not taken by another user
     const existingUser = await db.query.user.findFirst({
       where: eq(user.name, username),
     });
@@ -74,6 +86,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, error: "Username is already taken" }, { status: 400 });
     }
 
+    // Prepare update data and resolve avatar logic
     const updateData: Partial<typeof user.$inferInsert> = {
       name: username,
       profileDescription: description || "",
@@ -83,6 +96,7 @@ export async function PUT(request: Request) {
       updateData.image = resolvedAvatar;
     }
 
+    // Update user record in the database
     await db.update(user)
       .set(updateData)
       .where(eq(user.id, session.user.id));

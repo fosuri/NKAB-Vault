@@ -8,6 +8,14 @@ import { deletePost } from "@/lib/actions/delete-post";
 import { ROLES, type RoleId } from "@/lib/db/auth-schema";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Delete Post Button.
+ * Handles post removal with a two-step confirmation to prevent accidental deletions.
+ * Permissions: 
+ * - Admins: Unrestricted deletion.
+ * - Moderators: Can only delete posts authored by regular users.
+ * - Authors: Can delete their own content.
+ */
 export function DeletePostButton({
   postId,
   redirectTo,
@@ -23,6 +31,7 @@ export function DeletePostButton({
   const [isPending, startTransition] = useTransition();
   const [confirming, setConfirming] = useState(false);
 
+  // Permission Gating: Enforce moderation hierarchy
   const canDelete =
     actorRoleId !== ROLES.MODERATOR || authorRoleId === ROLES.USER || !authorRoleId;
 
@@ -30,6 +39,10 @@ export function DeletePostButton({
     return null;
   }
 
+  /**
+   * Click Handler:
+   * First click enters 'confirming' state; second click executes the deletion.
+   */
   function handleClick() {
     if (!confirming) {
       setConfirming(true);
@@ -56,7 +69,7 @@ export function DeletePostButton({
       size="sm"
       disabled={isPending}
       onClick={handleClick}
-      onBlur={() => setConfirming(false)}
+      onBlur={() => setConfirming(false)} // Reset confirmation if focus is lost
     >
       {isPending ? (
         <Loader2 className="size-4 animate-spin" />
@@ -67,3 +80,4 @@ export function DeletePostButton({
     </Button>
   );
 }
+

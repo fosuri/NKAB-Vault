@@ -3,10 +3,18 @@ import { getSession } from "@/lib/auth/auth-server"
 import { db } from "@/lib/db/db"
 import { SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
 
+/**
+ * Subscription Pricing Page.
+ * Displays available plans (Free/Pro) and allows users to manage their subscription.
+ */
 export default async function PricingPage() {
   const session = await getSession();
   const userEmail = session?.user?.email;
   
+  /**
+   * Status Verification:
+   * Checks if the user has an active Stripe subscription to adjust the UI accordingly.
+   */
   let isPro = false;
   if (session?.user?.id) {
     const activeSub = await db.query.subscriptions.findFirst({
@@ -28,7 +36,9 @@ export default async function PricingPage() {
           </h1>
         </div>
 
+        {/* Pricing Table: Compares Free and Pro features */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-stretch max-w-4xl mx-auto pt-4">
+          {/* Free Tier Card */}
           <PricingCard
             title="Free"
             price="0€"
@@ -41,6 +51,8 @@ export default async function PricingPage() {
             buttonVariant={isPro ? "default" : "outline"}
             isCancel={isPro}
           />
+          
+          {/* Pro Tier Card (Integration with Stripe Checkout) */}
           <PricingCard
             title="Pro"
             price="5€"
@@ -59,3 +71,4 @@ export default async function PricingPage() {
     </div>
   )
 }
+

@@ -9,6 +9,10 @@ import { eq, and, inArray } from "drizzle-orm";
 import { ensureCanCreatePost } from "@/lib/auth/moderation";
 import { protectPassword } from "@/lib/post-password";
 
+/**
+ * Post Submission and Content Lifecycle Actions.
+ */
+
 const uploadedMediaSchema = z.object({
   publicId: z.string(),
   secureUrl: z.string(),
@@ -30,12 +34,11 @@ const createPostSchema = z.object({
 
 export type CreatePostPayload = z.infer<typeof createPostSchema>;
 
-type CreatePostResult = {
-  error?: string;
-  success?: boolean;
-  postId?: string;
-};
+type CreatePostResult = { error?: string; success?: boolean; postId?: string };
 
+/**
+ * Orchestrates the submission of new content and tiered storage enforcement.
+ */
 export async function createPost(payload: CreatePostPayload): Promise<CreatePostResult> {
   const session = await getSession();
 
@@ -43,22 +46,25 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
     return { error: "You must be signed in to create a post" };
   }
 
+  // 1. Moderation: Ensure the user is not currently banned or muted
   const permissions = await ensureCanCreatePost(session.user.id);
   if (!permissions.allowed) {
     return { error: permissions.error };
   }
 
+  // 2. Schema Validation
   const parsed = createPostSchema.safeParse(payload);
-
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid form data" };
   }
 
+  // 3. Security: Securely hash passwords for private content
   const effectivePassword =
     parsed.data.access === ACCESS_TYPES.PRIVATE && parsed.data.password?.trim()
       ? await protectPassword(parsed.data.password.trim())
       : null;
 
+  // 4. Tiered Enforcement: Apply storage limits based on subscription status (Free vs PRO)
   const hasPro = await db.query.subscriptions.findFirst({
     where: and(
       eq(subscriptions.userId, session.user.id),
@@ -66,7 +72,7 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
     ),
   });
 
-  const maxBytes = hasPro ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+  const maxBytes = hasPro ? 20 * 1024 * 1024 : 10 * 1024 * 1024; // 20MB for Pro, 10MB for Free
 
   for (const item of parsed.data.media) {
     if (item.bytes && item.bytes > maxBytes) {
@@ -74,8 +80,8 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
     }
   }
 
+  // 5. Atomic Persistence: Ensure Post and Media are created together or not at all
   const newPost = await db.transaction(async (tx) => {
-
     const [insertedPost] = await tx.insert(posts).values({
       userId: session.user.id,
       title: parsed.data.title,
@@ -86,6 +92,7 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
 
     const postId = insertedPost.id;
 
+    // Relate media records to the newly created post ID
     await tx.insert(postMedia).values(
       parsed.data.media.map((item, index) => ({
         postId,
@@ -104,9 +111,6 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
     return insertedPost;
   });
 
-  const postId = newPost.id;
-
   revalidatePath("/");
-
-  return { success: true, postId };
+  return { success: true, postId: newPost.id };
 }

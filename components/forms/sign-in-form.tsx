@@ -30,18 +30,23 @@ import { signInWithGoogle, signInWithEmail } from "@/lib/auth/auth-client"
 import { checkIsGoogleOnlyAccount } from "@/lib/actions/check-signup"
 import Link from "next/link"
 
+// Validation schema for credentials
 const formSchema = z.object({
   email: z.email(),
   password: z.string().min(8),
 })
 
-
+/**
+ * Sign In Form.
+ * Handles user authentication via traditional email/password or Google OAuth.
+ */
 export function SignInForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -50,6 +55,11 @@ export function SignInForm({
     },
   })
 
+  /**
+   * Submit Handler:
+   * 1. Checks if the account was created via Google to prevent credential mismatch.
+   * 2. Executes the sign-in action and redirects to root on success.
+   */
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true);
 
@@ -69,7 +79,7 @@ export function SignInForm({
       toast.error(error.message || "An error occurred");
     } else {
       toast.success("Signed in successfully");
-      window.location.assign("/");
+      window.location.assign("/"); // Full page reload to reset auth state
     }
     setIsLoading(false);
   }
@@ -86,6 +96,7 @@ export function SignInForm({
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <FieldGroup>
+              {/* Social Login Section */}
               <Field>
                 <Button variant="outline" type="button" onClick={signInWithGoogle}>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -97,10 +108,12 @@ export function SignInForm({
                   Login with Google
                 </Button>
               </Field>
+              
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
               </FieldSeparator>
 
+              {/* Email Field */}
               <Controller
                 name="email"
                 control={form.control}
@@ -123,6 +136,7 @@ export function SignInForm({
                 )}
               />
 
+              {/* Password Field with visibility toggle */}
               <Controller
                 name="password"
                 control={form.control}
@@ -185,3 +199,4 @@ export function SignInForm({
     </div>
   )
 }
+

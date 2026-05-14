@@ -23,6 +23,10 @@ interface DetailsSectionProps {
   isPro?: boolean;
 }
 
+/**
+ * Post Details Section.
+ * Handles the metadata of a post: title, description, visibility, and security.
+ */
 export function DetailsSection({
   entriesLength,
   access,
@@ -40,6 +44,7 @@ export function DetailsSection({
 
   return (
     <FieldGroup className="gap-4 p-0">
+      {/* Post Title */}
       <Field>
         <FieldLabel htmlFor="title">Title</FieldLabel>
         <Input
@@ -55,6 +60,7 @@ export function DetailsSection({
         </FieldDescription>
       </Field>
 
+      {/* Post Description */}
       <Field>
         <FieldLabel htmlFor="description">Description</FieldLabel>
         <Textarea
@@ -71,6 +77,7 @@ export function DetailsSection({
         </FieldDescription>
       </Field>
 
+      {/* Access Type (Public, Private, Paid) */}
       <Field>
         <FieldLabel htmlFor="access">Access type</FieldLabel>
         <Input type="hidden" name="access" value={access} />
@@ -86,6 +93,7 @@ export function DetailsSection({
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {POST_ACCESS_OPTIONS.map((option) => {
+              // Paid access restriction: Only PRO subscribers can create Paid posts
               const isDisabledPaid = option.value === ACCESS_TYPES.PAID && !isPro;
 
               return (
@@ -129,7 +137,8 @@ export function DetailsSection({
         </FieldDescription>
       </Field>
 
-      {access === 2 && ( // ACCESS_TYPES.PRIVATE
+      {/* Password Protection for Private Posts */}
+      {access === ACCESS_TYPES.PRIVATE && (
         <Field>
           <div className="flex items-center gap-2">
             <Input
@@ -180,6 +189,7 @@ export function DetailsSection({
         </Field>
       )}
 
+      {/* Media Requirement Check */}
       {entriesLength === 0 && (
         <p className="rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
           Add at least one media file to publish your post.
@@ -204,3 +214,4 @@ export function DetailsSection({
     </FieldGroup>
   );
 }
+

@@ -13,6 +13,15 @@ import { deletePost } from "@/lib/actions/delete-post";
 import { POST_ACCESS_OPTIONS } from "@/lib/config/post-access";
 import { ACCESS_TYPES } from "@/lib/db/auth-schema";
 
+/**
+ * Post Side Menu Component.
+ * 
+ * Provides administrative tools for the post owner, including:
+ * - Link sharing and copying.
+ * - Access control management (Public/Unlisted/Private).
+ * - Password protection orchestration.
+ * - Post deletion.
+ */
 export function PostSideMenu({
   postId,
   initialAccess,
@@ -27,22 +36,29 @@ export function PostSideMenu({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  // "Saved" state represents the current configuration on the server
   const [savedAccess, setSavedAccess] = useState(initialAccess);
   const [savedPassword, setSavedPassword] = useState(initialPassword ?? "");
 
+  // "Draft" state tracks pending UI changes before they are committed
   const [draftAccess, setDraftAccess] = useState(initialAccess);
   const [addPassword, setAddPassword] = useState(Boolean(initialPassword));
   const [draftPassword, setDraftPassword] = useState(initialPassword ?? "");
   const [showPassword, setShowPassword] = useState(false);
 
+  // Safety state for destructive actions
   const [confirmDelete, setConfirmDelete] = useState(false);
-
   const [postUrl, setPostUrl] = useState("");
 
+  // Construct sharing URL on client-side mount
   useEffect(() => {
     setPostUrl(`${window.location.origin}/post/${postId}`);
   }, [postId]);
 
+  /**
+   * Dirty Check: 
+   * Determines if the draft state differs from the saved state to enable/disable Save button.
+   */
   const isDirty =
     draftAccess !== savedAccess ||
     (draftAccess === ACCESS_TYPES.PRIVATE && (
@@ -51,6 +67,9 @@ export function PostSideMenu({
         : savedPassword !== ""
     ));
 
+  /**
+   * Updates access type and resets password state if moving away from Private.
+   */
   const handleAccessChange = (newAccess: number) => {
     setDraftAccess(newAccess);
     if (newAccess !== ACCESS_TYPES.PRIVATE) {
@@ -59,6 +78,9 @@ export function PostSideMenu({
     }
   };
 
+  /**
+   * Commits draft settings to the server using the updatePostAccess action.
+   */
   const handleSave = () => {
     const effectivePassword =
       draftAccess === ACCESS_TYPES.PRIVATE && addPassword && draftPassword.trim()
@@ -71,12 +93,16 @@ export function PostSideMenu({
         toast.error(result.error);
       } else {
         toast.success("Post settings saved!");
+        // Synchronize saved state with draft state upon success
         setSavedAccess(draftAccess);
         setSavedPassword(effectivePassword ?? "");
       }
     });
   };
 
+  /**
+   * Utility for copying the post URL to the system clipboard.
+   */
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(postUrl);
@@ -86,6 +112,10 @@ export function PostSideMenu({
     }
   };
 
+  /**
+   * Deletion Flow:
+   * Requires a secondary click (confirmation) before executing the deletePost action.
+   */
   const handleDeletePost = () => {
     if (!confirmDelete) {
       setConfirmDelete(true);
@@ -99,7 +129,7 @@ export function PostSideMenu({
         setConfirmDelete(false);
       } else {
         toast.success("Post deleted");
-        router.push("/");
+        router.push("/"); // Redirect to home on success
       }
     });
   };
@@ -130,114 +160,114 @@ export function PostSideMenu({
           <div className="flex flex-col gap-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post settings</h3>
 
-        <div className="flex flex-col gap-2">
-          <span className="text-xs text-muted-foreground">Access Type</span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-between bg-background/50 backdrop-blur" disabled={isPending}>
-                <span className="flex items-center gap-2">
-                  <selectedAccess.icon className="size-4" />
-                  {selectedAccess.label}
-                </span>
-                <ChevronDown className="size-4 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {POST_ACCESS_OPTIONS.map((option) => (
-                <DropdownMenuItem
-                  key={option.value}
-                  onClick={() => handleAccessChange(option.value)}
-                  className="flex items-center justify-between cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <option.icon className="size-4" />
-                    {option.label}
-                  </span>
-                  {draftAccess === option.value && <Check className="size-4 text-emerald-500" />}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {draftAccess === ACCESS_TYPES.PRIVATE && (
-          <Field className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <Input
-                id="side-add-password"
-                type="checkbox"
-                checked={addPassword}
-                onChange={(e) => {
-                  setAddPassword(e.target.checked);
-                  if (!e.target.checked) setDraftPassword("");
-                }}
-                className="size-4 rounded border-input accent-primary cursor-pointer w-auto h-auto min-w-0"
-              />
-              <FieldLabel
-                htmlFor="side-add-password"
-                className="text-sm cursor-pointer select-none flex items-center gap-1.5"
-              >
-                <KeyRound className="size-3.5 text-muted-foreground" />
-                Password protect
-              </FieldLabel>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-muted-foreground">Access Type</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between bg-background/50 backdrop-blur" disabled={isPending}>
+                    <span className="flex items-center gap-2">
+                      <selectedAccess.icon className="size-4" />
+                      {selectedAccess.label}
+                    </span>
+                    <ChevronDown className="size-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {POST_ACCESS_OPTIONS.map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() => handleAccessChange(option.value)}
+                      className="flex items-center justify-between cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <option.icon className="size-4" />
+                        {option.label}
+                      </span>
+                      {draftAccess === option.value && <Check className="size-4 text-emerald-500" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
-            {addPassword && (
-              <div className="relative">
-                <Input
-                  id="side-post-password"
-                  type={showPassword ? "text" : "password"}
-                  value={draftPassword}
-                  onChange={(e) => setDraftPassword(e.target.value)}
-                  maxLength={100}
-                  placeholder="Enter a password"
-                  className="h-9 pr-10 text-sm"
-                  required={addPassword}
-                />
-                {draftPassword && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    type="button"
-                    tabIndex={-1}
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
+            {draftAccess === ACCESS_TYPES.PRIVATE && (
+              <Field className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="side-add-password"
+                    type="checkbox"
+                    checked={addPassword}
+                    onChange={(e) => {
+                      setAddPassword(e.target.checked);
+                      if (!e.target.checked) setDraftPassword("");
+                    }}
+                    className="size-4 rounded border-input accent-primary cursor-pointer w-auto h-auto min-w-0"
+                  />
+                  <FieldLabel
+                    htmlFor="side-add-password"
+                    className="text-sm cursor-pointer select-none flex items-center gap-1.5"
                   >
-                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </Button>
+                    <KeyRound className="size-3.5 text-muted-foreground" />
+                    Password protect
+                  </FieldLabel>
+                </div>
+
+                {addPassword && (
+                  <div className="relative">
+                    <Input
+                      id="side-post-password"
+                      type={showPassword ? "text" : "password"}
+                      value={draftPassword}
+                      onChange={(e) => setDraftPassword(e.target.value)}
+                      maxLength={100}
+                      placeholder="Enter a password"
+                      className="h-9 pr-10 text-sm"
+                      required={addPassword}
+                    />
+                    {draftPassword && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        type="button"
+                        tabIndex={-1}
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute right-1 top-0 bottom-0 my-auto h-7 w-7 text-muted-foreground hover:bg-transparent hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
+                    )}
+                  </div>
                 )}
-              </div>
+              </Field>
             )}
-          </Field>
-        )}
 
-        <Button
-          onClick={handleSave}
-          disabled={isPending || !isDirty}
-          className="w-full gap-2 hover:bg-primary/80"
-          size="sm"
-        >
-          <Save className="size-4" />
-          Save settings
-        </Button>
-      </div>
+            <Button
+              onClick={handleSave}
+              disabled={isPending || !isDirty}
+              className="w-full gap-2 hover:bg-primary/80"
+              size="sm"
+            >
+              <Save className="size-4" />
+              Save settings
+            </Button>
+          </div>
 
-      <div className="flex flex-col gap-3">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post tools</h3>
-        <div className="flex flex-col">
-          <Button
-            variant="ghost"
-            className="flex px-0 items-center gap-3 py-2 text-muted-foreground hover:bg-transparent dark:hover:bg-transparent hover:text-destructive transition-colors text-sm font-medium w-fit disabled:opacity-50"
-            disabled={isPending}
-            onClick={handleDeletePost}
-            onBlur={() => setConfirmDelete(false)}
-          >
-            <Trash2 className="size-4" />
-            {confirmDelete ? "Confirm delete" : "Delete post"}
-          </Button>
-        </div>
-      </div>
-      </>
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Post tools</h3>
+            <div className="flex flex-col">
+              <Button
+                variant="ghost"
+                className="flex px-0 items-center gap-3 py-2 text-muted-foreground hover:bg-transparent dark:hover:bg-transparent hover:text-destructive transition-colors text-sm font-medium w-fit disabled:opacity-50"
+                disabled={isPending}
+                onClick={handleDeletePost}
+                onBlur={() => setConfirmDelete(false)}
+              >
+                <Trash2 className="size-4" />
+                {confirmDelete ? "Confirm delete" : "Delete post"}
+              </Button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

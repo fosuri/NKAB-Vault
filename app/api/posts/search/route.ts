@@ -4,10 +4,15 @@ import { getUserModerationState } from "@/lib/auth/moderation";
 import { getSearchSuggestions } from "@/lib/posts";
 import { parsePostContentFilter, parsePostTimeFilter } from "@/lib/post-filters";
 
+/**
+ * Post Search Suggestions API.
+ * Provides real-time search results based on a query string and optional filters.
+ */
 export async function GET(request: Request) {
   try {
     const session = await getSession();
 
+    // Security check: Block banned users from using the search API
     if (session?.user?.id) {
       const moderationState = await getUserModerationState(session.user.id);
       if (moderationState?.activeBan) {
@@ -17,6 +22,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
 
+    // Parse search parameters and filters
     const q = (searchParams.get("q") ?? "").trim();
     const time = parsePostTimeFilter(searchParams.get("time"));
     const contentType = parsePostContentFilter(searchParams.get("contentType"));
@@ -27,6 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ suggestions: [] });
     }
 
+    // Fetch matching post suggestions from the database
     const suggestions = await getSearchSuggestions({
       viewerUserId: session?.user?.id,
       query: q,

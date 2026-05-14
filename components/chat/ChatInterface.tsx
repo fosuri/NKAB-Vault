@@ -51,6 +51,11 @@ type ChatInterfaceProps = {
   };
 };
 
+/**
+ * Chat Interface Component.
+ * Manages the real-time messaging flow between two users, including 
+ * text messages, media attachments, and conversation management.
+ */
 export function ChatInterface({ conversationId, initialMessages, currentUserId, otherUser }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputValue, setInputValue] = useState("");
@@ -60,6 +65,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  // Scroll to the latest message automatically
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -68,6 +74,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     scrollToBottom();
   }, [messages, isSending]);
 
+  // Read Status Management: Marks messages as read when the component mounts or updates
   useEffect(() => {
     const markAsRead = async () => {
       const hasUnread = messages.some(m => !m.isRead && m.senderId !== currentUserId);
@@ -83,6 +90,11 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     markAsRead();
   }, [conversationId, messages, currentUserId]);
 
+  /**
+   * Real-Time Synchronization:
+   * Establishes a Server-Sent Events (SSE) connection to receive instant 
+   * updates for new messages, deletions, and read receipts.
+   */
   useEffect(() => {
     const eventSource = new EventSource(`/api/chat/stream?conversationId=${conversationId}`);
 
@@ -97,22 +109,21 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
             m.senderId !== data.readerId && !m.isRead ? { ...m, isRead: true } : m
           ));
         } else {
-          // Assume it's a new message
+          // New Message Handling with duplicate prevention
           setMessages((prev) => {
-            if (prev.some((m) => m.id === data.id)) {
-              return prev;
-            }
+            if (prev.some((m) => m.id === data.id)) return prev;
+            // Remove optimistic placeholder if it matches the incoming message
             const withoutTemp = prev.filter(m => !(m.id.startsWith('temp-') && m.senderId === data.senderId && m.content === data.content));
             return [...withoutTemp, data];
           });
         }
       } catch (error) {
-        console.error(error);
+        console.error("SSE Parse Error:", error);
       }
     };
 
     eventSource.onerror = (error) => {
-      console.error("SSE error:", error);
+      console.error("SSE connection lost, retrying...", error);
     };
 
     return () => {
@@ -120,6 +131,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     };
   }, [conversationId]);
 
+  // Sync state when initial props change (e.g., during navigation)
   useEffect(() => {
     if (
       initialMessages.length !== messages.length ||
@@ -129,6 +141,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     }
   }, [initialMessages]);
 
+  // Handle local file selection with size limit validation
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -140,6 +153,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     }
   };
 
+  // Upload media directly to Cloudinary using signed requests
   const uploadToCloudinary = async (file: File) => {
     try {
       const { signature, timestamp, folder, apiKey, cloudName } = await getCloudinarySignature();
@@ -164,11 +178,16 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
         resourceType: data.resource_type,
       };
     } catch (e) {
-      console.error(e);
+      console.error("Cloudinary Upload Error:", e);
       return null;
     }
   };
 
+  /**
+   * Message Submission:
+   * Implements Optimistic UI — adds the message to the local list immediately 
+   * while the server-side action processes in the background.
+   */
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!inputValue.trim() && !selectedFile) || isSending) return;
@@ -189,6 +208,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     setInputValue("");
     setSelectedFile(null);
 
+    // Optimistic placeholder
     const optimisticMessage: Message = {
       id: `temp-${Date.now()}`,
       conversationId,
@@ -235,7 +255,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
       const result = await deleteMessageAction(messageId);
       if (!result.success) {
         toast.error(result.error || "Failed to delete message");
-        router.refresh(); // Refresh to restore deleted msg
+        router.refresh(); 
       }
     } catch {
       toast.error("Failed to delete message");
@@ -260,6 +280,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
 
   return (
     <div className="flex flex-col h-full bg-background relative overflow-hidden">
+      {/* Chat Header: User info and management options */}
       <div className="flex items-center justify-between p-2 sm:p-4 border-b border-border/50 bg-muted/20 shrink-0">
         <div className="flex items-center gap-2 md:gap-3 min-w-0">
           <Button 
@@ -295,6 +316,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
         </DropdownMenu>
       </div>
 
+      {/* Message List Area */}
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm italic">
@@ -325,6 +347,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
                         : "bg-muted text-foreground rounded-tl-sm"
                       }`}
                   >
+                    {/* Media Display (Image/Video) */}
                     {message.mediaUrl && (
                       <div className="mb-2 max-w-[200px] sm:max-w-sm rounded-lg overflow-hidden">
                         {message.mediaTypeId === MESSAGE_MEDIA_TYPES.VIDEO ? (
@@ -334,6 +357,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
                         )}
                       </div>
                     )}
+                    {/* Text Content */}
                     {message.content && <p className="break-words text-sm sm:text-base">{message.content}</p>}
                   </div>
                 </div>
@@ -344,6 +368,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
             );
           })
         )}
+        {/* Loading Indicator for outgoing messages */}
         {isSending && (
           <div className="self-end items-end text-muted-foreground mt-1 flex items-center gap-1 text-xs px-2">
             Sending... <Loader2 className="h-3 w-3 animate-spin" />
@@ -352,6 +377,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
         <div ref={messagesEndRef} />
       </div>
 
+      {/* File Attachment Preview */}
       {selectedFile && (
         <div className="px-2 py-2 sm:px-4 bg-muted/30 border-t border-border/50 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 text-sm text-foreground max-w-[80%] truncate">
@@ -364,6 +390,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
         </div>
       )}
 
+      {/* Message Input Form */}
       <form
         onSubmit={handleSendMessage}
         className="p-2 sm:p-4 border-t border-border/50 bg-background flex items-center gap-1 sm:gap-2 shrink-0 mt-auto"
@@ -408,3 +435,4 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     </div>
   );
 }
+

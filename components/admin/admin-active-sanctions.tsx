@@ -8,6 +8,11 @@ import { Input } from "@/components/ui/input";
 import { revokeSanctionAction } from "@/lib/actions/admin";
 import { SanctionRow } from "./types";
 
+/**
+ * Active Sanctions Monitor.
+ * Displays a real-time list of all active bans and mutes.
+ * Allows administrators to search, sort, and revoke current penalties.
+ */
 export function AdminActiveSanctions({
   activeSanctions,
 }: {
@@ -15,6 +20,8 @@ export function AdminActiveSanctions({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  
+  // State for filtering and UI navigation
   const [sanctionSearchQuery, setSanctionSearchQuery] = useState("");
   const [sanctionsPage, setSanctionsPage] = useState(1);
   const [sanctionSort, setSanctionSort] = useState<{
@@ -23,6 +30,7 @@ export function AdminActiveSanctions({
   }>({ key: "expiresAt", direction: "desc" });
   const [expandedReasons, setExpandedReasons] = useState<Set<string>>(new Set());
   
+  // Expand/collapse logic for long sanction reasons
   const toggleReason = (id: string) => {
     setExpandedReasons((prev) => {
       const next = new Set(prev);
@@ -37,6 +45,7 @@ export function AdminActiveSanctions({
   
   const pageSize = 8;
   
+  // Filter sanctions based on search query across user, reason, and type
   const filteredSanctions = useMemo(() => {
     const normalizedQuery = sanctionSearchQuery.trim().toLowerCase();
 
@@ -51,6 +60,7 @@ export function AdminActiveSanctions({
     });
   }, [activeSanctions, sanctionSearchQuery]);
 
+  // Sort sanctions based on user selection
   const sortedSanctions = useMemo(() => {
     const sorted = [...filteredSanctions];
 
@@ -58,20 +68,11 @@ export function AdminActiveSanctions({
       const aValue = a[sanctionSort.key];
       const bValue = b[sanctionSort.key];
 
-      if (aValue === bValue) {
-        return 0;
-      }
-
-      if (aValue === null) {
-        return sanctionSort.direction === "asc" ? -1 : 1;
-      }
-
-      if (bValue === null) {
-        return sanctionSort.direction === "asc" ? 1 : -1;
-      }
+      if (aValue === bValue) return 0;
+      if (aValue === null) return sanctionSort.direction === "asc" ? -1 : 1;
+      if (bValue === null) return sanctionSort.direction === "asc" ? 1 : -1;
 
       let comparison = 0;
-
       if (aValue instanceof Date && bValue instanceof Date) {
         comparison = aValue.getTime() - bValue.getTime();
       } else {
@@ -86,12 +87,14 @@ export function AdminActiveSanctions({
     return sorted;
   }, [filteredSanctions, sanctionSort]);
 
+  // Pagination logic
   const sanctionsTotalPages = Math.max(1, Math.ceil(sortedSanctions.length / pageSize));
   const safeSanctionsPage = Math.min(sanctionsPage, sanctionsTotalPages);
   const pagedSanctions = useMemo(() => {
     const start = (safeSanctionsPage - 1) * pageSize;
     return sortedSanctions.slice(start, start + pageSize);
   }, [safeSanctionsPage, sortedSanctions]);
+  
   const emptySanctionRows = Math.max(0, pageSize - pagedSanctions.length);
 
   const toggleSanctionSort = (key: "type" | "targetUserName" | "reason" | "createdByName" | "expiresAt") => {
@@ -103,6 +106,7 @@ export function AdminActiveSanctions({
     });
   };
 
+  // Execute sanction revocation with UI feedback
   const runAction = (callback: () => Promise<{ success?: boolean; error?: string }>, successMessage: string) => {
     startTransition(async () => {
       const result = await callback();
@@ -129,6 +133,8 @@ export function AdminActiveSanctions({
           placeholder="Search sanctions"
         />
       </div>
+
+      {/* Active Penalties Table */}
       <div className="mt-3 overflow-x-auto">
         <table className="min-w-[1000px] w-full table-fixed text-sm">
           <thead>
@@ -187,6 +193,7 @@ export function AdminActiveSanctions({
                 </td>
               </tr>
             ))}
+            {/* Visual padding to maintain table height */}
             {Array.from({ length: emptySanctionRows }).map((_, index) => (
               <tr key={`empty-sanction-${index}`} className="border-t border-border/40">
                 <td className="py-2 pr-4" colSpan={6}>&nbsp;</td>
@@ -194,7 +201,10 @@ export function AdminActiveSanctions({
             ))}
           </tbody>
         </table>
+
         {!sortedSanctions.length ? <p className="py-2 text-sm text-muted-foreground">No active sanctions.</p> : null}
+        
+        {/* Pagination Controls */}
         {sortedSanctions.length ? (
           <div className="mt-3 flex items-center justify-between gap-3 text-sm text-muted-foreground">
             <p>
@@ -227,3 +237,4 @@ export function AdminActiveSanctions({
     </section>
   );
 }
+

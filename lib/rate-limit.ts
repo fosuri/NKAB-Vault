@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
 
+/**
+ * Implements a global request throttling mechanism to prevent API abuse.
+ * Uses an in-memory sliding window algorithm for high-performance rate limiting.
+ */
+
 type RateLimitResult = {
   success: boolean;
   limit: number;
@@ -17,16 +22,20 @@ declare global {
   var __nkabRateLimitStore: Map<string, StoreValue> | undefined;
 }
 
-const WINDOW_MS = 60_000;
-const MAX_REQUESTS = 100;
+const WINDOW_MS = 60_000; // 1-minute tracking window
+const MAX_REQUESTS = 100; // Threshold before throttling
 const KEY_PREFIX = "global";
 
+// 1. Maintain a persistent store across hot reloads in development
 const store = globalThis.__nkabRateLimitStore ?? new Map<string, StoreValue>();
 
 if (!globalThis.__nkabRateLimitStore) {
   globalThis.__nkabRateLimitStore = store;
 }
 
+/**
+ * Periodically purges stale tracking entries to maintain memory efficiency.
+ */
 function cleanupExpiredEntries(now: number) {
   for (const [key, value] of store.entries()) {
     if (value.resetAt <= now) {
@@ -35,6 +44,9 @@ function cleanupExpiredEntries(now: number) {
   }
 }
 
+/**
+ * Extracts the most reliable client IP address from proxy headers.
+ */
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
@@ -42,13 +54,14 @@ function getClientIp(request: NextRequest): string {
   }
 
   const realIp = request.headers.get("x-real-ip");
-  if (realIp) {
-    return realIp;
-  }
+  if (realIp) return realIp;
 
   return "unknown";
 }
 
+/**
+ * Evaluates the current request against throttling thresholds.
+ */
 export function checkRateLimit(request: NextRequest): RateLimitResult {
   const now = Date.now();
   cleanupExpiredEntries(now);
@@ -56,6 +69,7 @@ export function checkRateLimit(request: NextRequest): RateLimitResult {
   const key = `${KEY_PREFIX}:${getClientIp(request)}`;
   const current = store.get(key);
 
+  // 1. Initialization: Start a new tracking window for a first-time or expired requester
   if (!current || now > current.resetAt) {
     const resetAt = now + WINDOW_MS;
     store.set(key, { count: 1, resetAt });
@@ -68,6 +82,7 @@ export function checkRateLimit(request: NextRequest): RateLimitResult {
     };
   }
 
+  // 2. Increment: update counters for active tracking windows
   current.count += 1;
   const remaining = Math.max(MAX_REQUESTS - current.count, 0);
   const success = current.count <= MAX_REQUESTS;

@@ -16,12 +16,18 @@ interface CropModalProps {
   handleCropApplied: (dataUrl: string) => void;
 }
 
+/**
+ * Image Crop Modal.
+ * Provides a UI for users to crop their images before final upload.
+ * Uses client-side processing to generate the cropped version as a data URL.
+ */
 export function CropModal({
   cropIndex,
   setCropIndex,
   entryToCrop,
   handleCropApplied,
 }: CropModalProps) {
+  // Only allow cropping for valid image files
   if (!entryToCrop || !entryToCrop.original.type.startsWith("image/")) {
     return null;
   }
@@ -38,11 +44,13 @@ export function CropModal({
           <DialogTitle>Crop image</DialogTitle>
         </DialogHeader>
 
+        {/* ImageCrop provider from Kibo UI */}
         <ImageCrop file={entryToCrop.original} onCrop={handleCropApplied}>
           <div className="flex flex-col items-center gap-4">
             <ImageCropContent className="max-h-[50vh] sm:max-h-[400px] w-full rounded-md object-contain" />
           </div>
 
+          {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-3 pt-4">
             <ImageCropReset asChild>
               <Button type="button" variant="outline" className="gap-1.5 w-full sm:w-auto order-2 sm:order-1">
@@ -70,3 +78,4 @@ export function CropModal({
     </Dialog>
   );
 }
+

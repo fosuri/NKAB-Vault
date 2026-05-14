@@ -29,12 +29,18 @@ type FeedPost = {
   }>;
 };
 
+// Metadata for different post access levels
 const ACCESS_META: Record<number, { label: string; Icon: React.ElementType; className: string }> = {
   [ACCESS_TYPES.PUBLIC]: { label: "Public", Icon: Globe, className: "text-emerald-600 dark:text-emerald-400" },
   [ACCESS_TYPES.PRIVATE]: { label: "Private", Icon: Lock, className: "text-amber-600 dark:text-amber-400" },
   [ACCESS_TYPES.PAID]: { label: "Paid", Icon: BadgeDollarSign, className: "text-violet-600 dark:text-violet-400" },
 };
 
+/**
+ * Feed Post Card Component.
+ * Displays a visual summary of a post in the feed, including author info, 
+ * engagement metrics, and access restrictions.
+ */
 export function FeedPostCard({
   post,
   currentUserId,
@@ -52,10 +58,12 @@ export function FeedPostCard({
 
   return (
     <Card className="group relative flex h-fit flex-col overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur transition-colors hover:bg-card/90">
+      {/* Clickable Overlay: Links the entire card to the post detail page */}
       <Link href={`/post/${post.id}`} className="absolute inset-0 z-10" aria-label="View post" />
       
       <CardHeader className="gap-2 border-b border-border/50 pb-4">
         <div className="flex items-center justify-between gap-3">
+          {/* Author Attribution */}
           <div className="flex min-w-0 items-center gap-2">
             <Avatar size="sm" className="relative z-20">
               {post.author?.image ? (
@@ -86,6 +94,7 @@ export function FeedPostCard({
       </CardHeader>
 
       <CardContent className="mt-auto grid gap-4 pt-0">
+        {/* Media Preview: Displays the primary image/video thumbnail */}
         {firstMedia && (
           <PostMediaPreview
             src={firstMedia.secureUrl}
@@ -95,6 +104,7 @@ export function FeedPostCard({
           />
         )}
         <div className="flex items-center justify-between">
+          {/* Access Level Badge (Public is hidden for cleaner UI) */}
           <div className="flex items-center">
             {post.accessTypeId !== ACCESS_TYPES.PUBLIC && (
               <span className={`flex items-center gap-1.5 text-xs font-medium ${className}`}>
@@ -103,6 +113,7 @@ export function FeedPostCard({
               </span>
             )}
           </div>
+          {/* engagement Metrics */}
           <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
             <Eye className="size-3" />
             {post.viewCount.toLocaleString()}
@@ -110,6 +121,7 @@ export function FeedPostCard({
         </div>
       </CardContent>
 
+      {/* Owner Actions */}
       {isOwner && showDeleteButton && (
         <CardFooter className="relative z-20 flex justify-end pb-4 pt-4">
           <DeletePostButton postId={post.id} />
@@ -117,4 +129,4 @@ export function FeedPostCard({
       )}
     </Card>
   );
-}
+}

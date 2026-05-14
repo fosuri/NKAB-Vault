@@ -6,23 +6,35 @@ import { getUserModerationState } from "@/lib/auth/moderation";
 import { adminActionLog, user, userSanctions, ROLES, SANCTION_TYPES, ADMIN_ACTION_TYPES } from "@/lib/db/auth-schema";
 import { db } from "@/lib/db/db";
 
+/**
+ * Moderator Dashboard Page.
+ * Secure route for users with Moderator or Admin roles to manage user sanctions.
+ */
 export default async function ModeratorPage() {
   const session = await getSession();
+  
+  // Authentication check
   if (!session) {
     redirect("/");
   }
 
+  // Authorization check: Verify if the user has moderator/admin permissions and is not banned
   const moderationState = await getUserModerationState(session.user.id);
   if (moderationState?.activeBan) {
     redirect("/banned");
   }
 
+  // Allow only moderators and admins
   if (!moderationState || (moderationState.roleId !== ROLES.MODERATOR && moderationState.roleId !== ROLES.ADMIN)) {
     redirect("/");
   }
 
   const now = new Date();
 
+  /**
+   * Data Aggregation:
+   * Fetches users, active sanctions, and personal action history in parallel.
+   */
   const [users, activeSanctions, myActionHistory] = await Promise.all([
     db.query.user.findMany({
       orderBy: [desc(user.createdAt)],
@@ -42,12 +54,8 @@ export default async function ModeratorPage() {
       ),
       orderBy: [desc(userSanctions.createdAt)],
       with: {
-        targetUser: {
-          columns: { name: true, email: true },
-        },
-        actorUser: {
-          columns: { name: true, email: true },
-        },
+        targetUser: { columns: { name: true, email: true } },
+        actorUser: { columns: { name: true, email: true } },
       },
       limit: 100,
     }),
@@ -55,9 +63,7 @@ export default async function ModeratorPage() {
       where: eq(adminActionLog.actorUserId, session.user.id),
       orderBy: [desc(adminActionLog.createdAt)],
       with: {
-        targetUser: {
-          columns: { name: true, email: true },
-        },
+        targetUser: { columns: { name: true, email: true } },
       },
       limit: 120,
     }),
@@ -73,6 +79,7 @@ export default async function ModeratorPage() {
           </p>
         </div>
 
+        {/* Reuse AdminDashboard component with moderator-specific permissions */}
         <AdminDashboard
           users={users}
           actorRole="moderator"
@@ -98,3 +105,4 @@ export default async function ModeratorPage() {
     </div>
   );
 }
+
