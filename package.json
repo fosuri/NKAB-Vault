@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
+    "dev:all": "concurrently \"bun dev\" \"bun worker\"",
+    "worker": "bun utils/cleanup-worker.ts",
     "build": "bun --bun next build",
     "start": "bun --bun next start"
   },
