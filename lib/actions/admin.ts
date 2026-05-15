@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cloudinary } from "@/lib/cloudinary";
 import { getSession } from "@/lib/auth/auth-server";
@@ -531,8 +531,29 @@ export async function recoverPostAction(postId: string): Promise<AdminActionResu
       moderationState?.roleId === ROLES.MODERATOR;
     if (!isStaff) return { error: "Not authorized" };
 
-    // Single UPDATE — set deleted_by_staff_at = NULL
-    await db.update(posts).set({ deletedByStaffAt: null }).where(eq(posts.id, postId));
+    // Restore the post and convert the existing delete log into a recover log.
+    await db.transaction(async (tx) => {
+      await tx.update(posts).set({ deletedByStaffAt: null }).where(eq(posts.id, postId));
+
+      const [deleteLog] = await tx
+        .select({ id: adminActionLog.id })
+        .from(adminActionLog)
+        .where(
+          and(
+            eq(adminActionLog.targetPostId, postId),
+            eq(adminActionLog.actionTypeId, ADMIN_ACTION_TYPES.DELETE_POST)
+          )
+        )
+        .orderBy(desc(adminActionLog.createdAt))
+        .limit(1);
+
+      if (deleteLog) {
+        await tx
+          .update(adminActionLog)
+          .set({ actionTypeId: ADMIN_ACTION_TYPES.RECOVER_POST })
+          .where(eq(adminActionLog.id, deleteLog.id));
+      }
+    });
 
     revalidatePath("/");
     revalidatePath("/search");
@@ -565,8 +586,29 @@ export async function recoverCommentAction(commentId: string): Promise<AdminActi
       columns: { postId: true },
     });
 
-    // Single UPDATE — set deleted_by_staff_at = NULL
-    await db.update(comments).set({ deletedByStaffAt: null }).where(eq(comments.id, commentId));
+    // Restore the comment and convert the existing delete log into a recover log.
+    await db.transaction(async (tx) => {
+      await tx.update(comments).set({ deletedByStaffAt: null }).where(eq(comments.id, commentId));
+
+      const [deleteLog] = await tx
+        .select({ id: adminActionLog.id })
+        .from(adminActionLog)
+        .where(
+          and(
+            eq(adminActionLog.targetCommentId, commentId),
+            eq(adminActionLog.actionTypeId, ADMIN_ACTION_TYPES.DELETE_COMMENT)
+          )
+        )
+        .orderBy(desc(adminActionLog.createdAt))
+        .limit(1);
+
+      if (deleteLog) {
+        await tx
+          .update(adminActionLog)
+          .set({ actionTypeId: ADMIN_ACTION_TYPES.RECOVER_COMMENT })
+          .where(eq(adminActionLog.id, deleteLog.id));
+      }
+    });
 
     if (comment?.postId) {
       revalidatePath(`/post/${comment.postId}`);
