@@ -6,6 +6,8 @@
     "dev": "next dev --turbo",
     "dev:all": "concurrently \"bun dev\" \"bun worker\"",
     "worker": "bun utils/cleanup-worker.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "build": "bun --bun next build",
     "start": "bun --bun next start"
   },
