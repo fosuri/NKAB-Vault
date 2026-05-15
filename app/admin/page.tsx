@@ -67,6 +67,8 @@ export default async function AdminPage(props: { searchParams: Promise<SearchPar
       orderBy: [desc(adminActionLog.createdAt)],
       with: {
         targetUser: { columns: { name: true, email: true } },
+        targetPost: { columns: { id: true } },
+        targetComment: { columns: { id: true, postId: true } },
       },
       limit: 120,
     }),
@@ -104,6 +106,8 @@ export default async function AdminPage(props: { searchParams: Promise<SearchPar
             details: item.details,
             createdAt: item.createdAt,
             targetUserName: item.targetUser?.name ?? item.targetUser?.email ?? null,
+            targetPostId: item.targetPost?.id ?? item.targetPostId ?? null,
+            targetCommentId: item.targetComment?.id ?? item.targetCommentId ?? null,
           }))}
         />
       </div>

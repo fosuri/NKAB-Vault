@@ -516,3 +516,66 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
     return { error: error instanceof Error ? error.message : "Failed to delete comment" };
   }
 }
+
+/**
+ * Recovers a soft-deleted post by setting deleted_by_staff_at to NULL.
+ */
+export async function recoverPostAction(postId: string): Promise<AdminActionResult> {
+  try {
+    const session = await getSession();
+    if (!session?.user?.id) return { error: "Not authenticated" };
+
+    const moderationState = await getUserModerationState(session.user.id);
+    const isStaff =
+      moderationState?.roleId === ROLES.ADMIN ||
+      moderationState?.roleId === ROLES.MODERATOR;
+    if (!isStaff) return { error: "Not authorized" };
+
+    // Single UPDATE — set deleted_by_staff_at = NULL
+    await db.update(posts).set({ deletedByStaffAt: null }).where(eq(posts.id, postId));
+
+    revalidatePath("/");
+    revalidatePath("/search");
+    revalidatePath(`/staff/review/${postId}`);
+    revalidateModerationDashboards();
+
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Failed to recover post" };
+  }
+}
+
+/**
+ * Recovers a soft-deleted comment by setting deleted_by_staff_at to NULL.
+ */
+export async function recoverCommentAction(commentId: string): Promise<AdminActionResult> {
+  try {
+    const session = await getSession();
+    if (!session?.user?.id) return { error: "Not authenticated" };
+
+    const moderationState = await getUserModerationState(session.user.id);
+    const isStaff =
+      moderationState?.roleId === ROLES.ADMIN ||
+      moderationState?.roleId === ROLES.MODERATOR;
+    if (!isStaff) return { error: "Not authorized" };
+
+    // Look up postId so we can revalidate the right path
+    const comment = await db.query.comments.findFirst({
+      where: eq(comments.id, commentId),
+      columns: { postId: true },
+    });
+
+    // Single UPDATE — set deleted_by_staff_at = NULL
+    await db.update(comments).set({ deletedByStaffAt: null }).where(eq(comments.id, commentId));
+
+    if (comment?.postId) {
+      revalidatePath(`/post/${comment.postId}`);
+      revalidatePath(`/staff/review/${comment.postId}`);
+    }
+    revalidateModerationDashboards();
+
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Failed to recover comment" };
+  }
+}

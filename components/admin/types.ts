@@ -41,6 +41,8 @@ export type LogRow = {
   details: string | null;
   createdAt: Date;
   targetUserName: string | null;
+  targetPostId: string | null;
+  targetCommentId: string | null;
 };
 
 // Defines the current viewer's administrative capacity

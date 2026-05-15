@@ -3,12 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { clearMyAdminHistoryAction } from "@/lib/actions/admin";
-import { ROLES } from "@/lib/db/auth-schema";
+import { ROLES, ADMIN_ACTION_TYPES } from "@/lib/db/auth-schema";
 import { ROLE_NAMES, UserRow, LogRow, ActorRole } from "./types";
 
 /**
@@ -206,7 +206,7 @@ export function AdminActionHistory({
 
       {/* Action Logs Table */}
       <div className="mt-3 overflow-x-auto">
-        <table className="min-w-[1000px] w-full table-fixed text-sm">
+        <table className="min-w-[1100px] w-full table-fixed text-sm">
           <thead>
             <tr className="text-left text-muted-foreground">
               <th className="w-52 pb-2 pr-4">
@@ -229,27 +229,56 @@ export function AdminActionHistory({
                   Details {historySort.key === "details" ? (historySort.direction === "asc" ? "↑" : "↓") : ""}
                 </Button>
               </th>
+              <th className="w-24 pb-2 text-center font-semibold text-muted-foreground">Review</th>
             </tr>
           </thead>
           <tbody>
-            {pagedHistory.map((item) => (
-              <tr key={item.id} className="border-t border-border/40">
-                <td className="py-2 pr-4 whitespace-nowrap">{item.createdAt.toLocaleString()}</td>
-                <td className="py-2 pr-4 whitespace-nowrap">{item.actionType}</td>
-                <td className="py-2 pr-4 truncate" title={item.targetUserName ?? "-"}>{item.targetUserName ?? "-"}</td>
-                <td 
-                  className={`py-2 pr-4 cursor-pointer ${expandedDetails.has(item.id) ? "" : "truncate"}`} 
-                  title={item.details ?? "-"}
-                  onClick={() => toggleDetails(item.id)}
-                >
-                  {item.details ?? "-"}
-                </td>
-              </tr>
-            ))}
+            {pagedHistory.map((item) => {
+              // Build the staff review link for deleted posts / comments
+              const isDeletePost = item.actionType === "DELETE_POST";
+              const isDeleteComment = item.actionType === "DELETE_COMMENT";
+              let reviewHref: string | null = null;
+              if (isDeletePost && item.targetPostId) {
+                reviewHref = `/staff/review/${item.targetPostId}`;
+              } else if (isDeleteComment && item.targetCommentId && item.targetPostId) {
+                reviewHref = `/staff/review/${item.targetPostId}?comment=${item.targetCommentId}`;
+              }
+
+              return (
+                <tr key={item.id} className="border-t border-border/40">
+                  <td className="py-2 pr-4 whitespace-nowrap">{item.createdAt.toLocaleString()}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap">{item.actionType}</td>
+                  <td className="py-2 pr-4 truncate" title={item.targetUserName ?? "-"}>{item.targetUserName ?? "-"}</td>
+                  <td 
+                    className={`py-2 pr-4 cursor-pointer ${expandedDetails.has(item.id) ? "" : "truncate"}`} 
+                    title={item.details ?? "-"}
+                    onClick={() => toggleDetails(item.id)}
+                  >
+                    {item.details ?? "-"}
+                  </td>
+                  <td className="py-2 text-center">
+                    {reviewHref ? (
+                      <a
+                        href={reviewHref}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Review deleted content"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
+                      >
+                        <ExternalLink className="size-3.5" />
+                        View
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground/40">—</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {/* Visual padding to maintain table height */}
             {Array.from({ length: emptyHistoryRows }).map((_, index) => (
               <tr key={`empty-history-${index}`} className="border-t border-border/40">
-                <td className="py-2 pr-4" colSpan={4}>&nbsp;</td>
+                <td className="py-2 pr-4" colSpan={5}>&nbsp;</td>
               </tr>
             ))}
           </tbody>
