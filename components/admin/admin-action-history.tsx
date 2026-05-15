@@ -234,13 +234,13 @@ export function AdminActionHistory({
           </thead>
           <tbody>
             {pagedHistory.map((item) => {
-              // Build the staff review link for deleted posts / comments
-              const isDeletePost = item.actionType === "DELETE_POST";
-              const isDeleteComment = item.actionType === "DELETE_COMMENT";
+              // Build the staff review link for deleted/recovered posts and comments.
+              const isPostReviewAction = item.actionType === "DELETE_POST" || item.actionType === "RECOVER_POST";
+              const isCommentReviewAction = item.actionType === "DELETE_COMMENT" || item.actionType === "RECOVER_COMMENT";
               let reviewHref: string | null = null;
-              if (isDeletePost && item.targetPostId) {
+              if (isPostReviewAction && item.targetPostId) {
                 reviewHref = `/staff/review/${item.targetPostId}`;
-              } else if (isDeleteComment && item.targetCommentId && item.targetPostId) {
+              } else if (isCommentReviewAction && item.targetCommentId && item.targetPostId) {
                 reviewHref = `/staff/review/${item.targetPostId}?comment=${item.targetCommentId}`;
               }
 
@@ -262,7 +262,7 @@ export function AdminActionHistory({
                         href={reviewHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title="Review deleted content"
+                        title="Review content"
                         className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-500 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
                       >
                         <ExternalLink className="size-3.5" />

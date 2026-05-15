@@ -125,7 +125,7 @@ export default async function StaffReviewPage({
         </div>
 
         {/* Post Card */}
-        <Card className={`min-w-0 w-full overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur ${isPostDeleted ? "ring-2 ring-red-400/60 dark:ring-red-500/40" : ""}`}>
+        <Card className={`min-w-0 w-full gap-0 overflow-hidden border-border/60 bg-card/85 py-0 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur ${isPostDeleted ? "ring-2 ring-red-400/60 dark:ring-red-500/40" : ""}`}>
           {isPostDeleted && (
             <div className="flex items-center gap-2 border-b border-red-200 bg-red-50/80 px-5 py-2.5 text-xs font-medium text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-400">
               <AlertTriangle className="size-3.5" />
@@ -133,7 +133,7 @@ export default async function StaffReviewPage({
             </div>
           )}
 
-          <CardHeader className="gap-2 border-b border-border/50 pb-4">
+          <CardHeader className="gap-2 border-b border-border/50 px-5 pb-4 pt-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <Avatar className="shrink-0">
@@ -170,7 +170,7 @@ export default async function StaffReviewPage({
             <p className="text-sm leading-6 text-foreground/90">{post.description}</p>
           </CardHeader>
 
-          <CardContent className="pt-4">
+          <CardContent className="px-5 pb-4 pt-4">
             <PostMediaCarousel media={post.media.map(m => ({ ...m, resourceType: m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : ("image" as const) }))} />
 
             <div className="mt-4 flex items-center justify-between">
