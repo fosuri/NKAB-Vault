@@ -43,6 +43,7 @@ describe("getCloudinarySignature", () => {
     jest.clearAllMocks();
   });
 
+  // Ensures that anonymous users cannot get permission to upload files.
   it("throws when the user is not authenticated", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -50,6 +51,7 @@ describe("getCloudinarySignature", () => {
     expect(signMock).not.toHaveBeenCalled();
   });
 
+  // Checks that an authenticated user receives the correct secure credentials for uploading their files to Cloudinary.
   it("returns a signed upload payload scoped to the current user", async () => {
     await expect(getCloudinarySignature()).resolves.toEqual({
       apiKey: "api-key",

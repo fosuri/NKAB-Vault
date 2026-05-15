@@ -15,6 +15,7 @@ describe("post password protection", () => {
     }
   });
 
+  // Verifies that passwords are securely hashed before storage, and cannot be easily read.
   it("stores an encrypted bundle and can recover the original password", async () => {
     const stored = await protectPassword("correct horse battery staple");
     const parsed = JSON.parse(stored);
@@ -29,6 +30,7 @@ describe("post password protection", () => {
     expect(getActualPassword(stored)).toBe("correct horse battery staple");
   });
 
+  // Checks that an entered password correctly unlocks the vault if it matches the hash.
   it("verifies a protected password with Argon2", async () => {
     const stored = await protectPassword("vault-password");
 
@@ -36,12 +38,14 @@ describe("post password protection", () => {
     await expect(verifyPostPassword("wrong-password", stored)).resolves.toBe(false);
   });
 
+  // Ensures compatibility with older posts that had their passwords saved in plain-text.
   it("supports legacy plain-text passwords", async () => {
     expect(getActualPassword("legacy-password")).toBe("legacy-password");
     await expect(verifyPostPassword("legacy-password", "legacy-password")).resolves.toBe(true);
     await expect(verifyPostPassword("wrong-password", "legacy-password")).resolves.toBe(false);
   });
 
+  // Handles cases where a locked post somehow has no password stored.
   it("handles missing stored values safely", async () => {
     expect(getActualPassword(null)).toBeNull();
     await expect(verifyPostPassword("anything", null)).resolves.toBe(false);

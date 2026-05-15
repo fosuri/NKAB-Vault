@@ -127,6 +127,7 @@ describe("comment actions", () => {
   });
 
   describe("createComment", () => {
+    // Verifies that anonymous users cannot leave comments.
     it("requires authentication", async () => {
       getSessionMock.mockResolvedValue(null);
 
@@ -136,6 +137,7 @@ describe("comment actions", () => {
       expect(insertMock).not.toHaveBeenCalled();
     });
 
+    // Prevents banned or muted users from commenting.
     it("returns moderation permission errors", async () => {
       ensureCanCreateCommentMock.mockResolvedValue({
         allowed: false,
@@ -148,6 +150,7 @@ describe("comment actions", () => {
       expect(insertMock).not.toHaveBeenCalled();
     });
 
+    // Ensures that comments consisting of only whitespace are rejected.
     it("validates empty comments after trimming", async () => {
       await expect(createComment("post-1", "   ")).resolves.toEqual({
         error: "Comment cannot be empty",
@@ -155,6 +158,7 @@ describe("comment actions", () => {
       expect(insertMock).not.toHaveBeenCalled();
     });
 
+    // Ensures that extremely long comments are not saved.
     it("rejects comments longer than the maximum length", async () => {
       await expect(createComment("post-1", "a".repeat(1001))).resolves.toEqual({
         error: "Comment is too long",
@@ -162,6 +166,7 @@ describe("comment actions", () => {
       expect(insertMock).not.toHaveBeenCalled();
     });
 
+    // Confirms a valid comment is saved and the post author gets a notification.
     it("creates a trimmed comment and notifies the post owner", async () => {
       const commentInsert = createInsertBuilder([{ id: "comment-1" }]);
       const notificationInsert = createMutationBuilder();
@@ -189,6 +194,7 @@ describe("comment actions", () => {
       expect(revalidatePathMock).toHaveBeenCalledWith("/post/post-1");
     });
 
+    // Ensures users don't receive notifications for commenting on their own posts.
     it("does not notify when commenting on own post", async () => {
       const commentInsert = createInsertBuilder([{ id: "comment-1" }]);
       insertMock.mockReturnValue(commentInsert);
@@ -205,6 +211,7 @@ describe("comment actions", () => {
   });
 
   describe("deleteComment", () => {
+    // Verifies that anonymous users cannot delete comments.
     it("requires authentication", async () => {
       getSessionMock.mockResolvedValue(null);
 
@@ -214,6 +221,7 @@ describe("comment actions", () => {
       expect(findCommentMock).not.toHaveBeenCalled();
     });
 
+    // Prevents banned users from deleting comments.
     it("blocks banned users", async () => {
       getModerationMock.mockResolvedValue({ activeBan: { id: "ban-1" } } as never);
 
@@ -223,6 +231,7 @@ describe("comment actions", () => {
       expect(findCommentMock).not.toHaveBeenCalled();
     });
 
+    // Handles cases where the comment is already deleted or missing.
     it("returns an error when the comment does not exist", async () => {
       findCommentMock.mockResolvedValue(undefined);
 
@@ -231,6 +240,7 @@ describe("comment actions", () => {
       });
     });
 
+    // Ensures you can only delete your own comments (unless you are staff).
     it("prevents regular users from deleting someone else's comment", async () => {
       findCommentMock.mockResolvedValue({ id: "comment-1", userId: "author-1" });
 
@@ -240,6 +250,7 @@ describe("comment actions", () => {
       expect(deleteMock).not.toHaveBeenCalled();
     });
 
+    // Confirms that users can successfully delete their own comments.
     it("deletes the user's own comment", async () => {
       const deleteBuilder = createMutationBuilder();
       findCommentMock.mockResolvedValue({ id: "comment-1", userId: "user-1" });
@@ -255,6 +266,7 @@ describe("comment actions", () => {
       expect(revalidatePathMock).toHaveBeenCalledWith("/post/post-1");
     });
 
+    // Prevents moderators from deleting comments left by other staff members.
     it("prevents moderators from deleting staff comments", async () => {
       getModerationMock.mockResolvedValue({ activeBan: null, roleId: 2 } as never);
       findCommentMock.mockResolvedValue({ id: "comment-1", userId: "staff-1" });
@@ -266,6 +278,7 @@ describe("comment actions", () => {
       expect(updateMock).not.toHaveBeenCalled();
     });
 
+    // Checks that an admin can remove any comment and the action is logged.
     it("soft deletes another user's comment when performed by admin", async () => {
       const logInsert = createMutationBuilder();
       const notificationInsert = createMutationBuilder();

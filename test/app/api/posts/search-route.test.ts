@@ -30,6 +30,7 @@ describe("posts search API", () => {
     jest.clearAllMocks();
   });
 
+  // If the search query is empty, it should return nothing without asking the database.
   it("returns an empty suggestions array for a blank query", async () => {
     const response = await GET(new Request("http://localhost/api/posts/search?q=%20%20"));
 
@@ -38,6 +39,7 @@ describe("posts search API", () => {
     expect(getSearchSuggestions).not.toHaveBeenCalled();
   });
 
+  // Banned users are not allowed to search and will receive an access error.
   it("blocks banned users", async () => {
     jest.mocked(getSession).mockResolvedValue({ user: { id: "user-1" } } as never);
     jest.mocked(getUserModerationState).mockResolvedValue({ activeBan: true } as never);
@@ -49,6 +51,7 @@ describe("posts search API", () => {
     expect(getSearchSuggestions).not.toHaveBeenCalled();
   });
 
+  // Makes sure that valid search settings (like filters and the maximum number of results) are correctly used.
   it("passes normalized filters and clamps the search limit", async () => {
     const suggestions = [{ id: "post-1", title: "Vault post" }];
     jest.mocked(getSession).mockResolvedValue({ user: { id: "user-1" } } as never);
@@ -71,6 +74,7 @@ describe("posts search API", () => {
     });
   });
 
+  // If wrong settings are provided (like text instead of a number), it falls back to safe default values.
   it("defaults invalid filters and non-numeric limits", async () => {
     await GET(
       new Request(
@@ -87,6 +91,7 @@ describe("posts search API", () => {
     });
   });
 
+  // If something goes wrong on the server (like the database being down), it returns a server error message.
   it("returns a 500 response when search fails", async () => {
     jest.spyOn(console, "error").mockImplementation(() => {});
     jest.mocked(getSearchSuggestions).mockRejectedValue(new Error("db down"));

@@ -46,6 +46,7 @@ describe("getOrCreateConversationAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Ensures you must be logged in to start or find a chat.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
     await expect(getOrCreateConversationAction("user-2")).resolves.toEqual({
@@ -53,6 +54,7 @@ describe("getOrCreateConversationAction", () => {
     });
   });
 
+  // If a chat already exists between the two users, it simply returns that chat's ID.
   it("returns an existing shared conversation", async () => {
     findManyMock
       .mockResolvedValueOnce([{ conversationId: "conversation-1" }])
@@ -65,6 +67,7 @@ describe("getOrCreateConversationAction", () => {
     expect(transactionMock).not.toHaveBeenCalled();
   });
 
+  // If no chat exists, it creates a new one and notifies both users so it appears on their screens.
   it("creates a conversation and emits refresh events", async () => {
     const tx = txBuilder();
     findManyMock.mockResolvedValueOnce([]).mockResolvedValueOnce([]);

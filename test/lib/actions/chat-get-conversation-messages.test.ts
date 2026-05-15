@@ -36,6 +36,7 @@ describe("getConversationMessagesAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Prevents users from reading messages in chats they are not part of.
   it("rejects non-participants", async () => {
     findParticipantMock.mockResolvedValue(undefined);
 
@@ -45,6 +46,7 @@ describe("getConversationMessagesAction", () => {
     expect(findMessagesMock).not.toHaveBeenCalled();
   });
 
+  // Confirms that valid chat participants receive the message history correctly.
   it("returns conversation messages for participants", async () => {
     const messages = [{ id: "message-1" }];
     findParticipantMock.mockResolvedValue({ id: "participant-1" });

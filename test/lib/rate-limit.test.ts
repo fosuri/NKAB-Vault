@@ -22,6 +22,7 @@ describe("checkRateLimit", () => {
     globalThis.__nkabRateLimitStore?.clear();
   });
 
+  // Verifies that a normal request goes through and returns the updated quota limit.
   it("allows the first request and reports the remaining quota", () => {
     const result = checkRateLimit(requestWithHeaders({ "x-forwarded-for": "203.0.113.10" }));
 
@@ -34,6 +35,7 @@ describe("checkRateLimit", () => {
     });
   });
 
+  // Ensures that one user spamming requests doesn't block another user from accessing the site.
   it("tracks each client IP independently", () => {
     const firstClient = requestWithHeaders({ "x-forwarded-for": "203.0.113.10" });
     const secondClient = requestWithHeaders({ "x-forwarded-for": "203.0.113.20" });
@@ -45,6 +47,7 @@ describe("checkRateLimit", () => {
     expect(checkRateLimit(secondClient).remaining).toBe(99);
   });
 
+  // Accurately finds the real user's IP even if they are connecting through intermediate proxies.
   it("uses the first forwarded IP when a proxy chain is present", () => {
     const proxiedRequest = requestWithHeaders({
       "x-forwarded-for": "203.0.113.10, 198.51.100.2",
@@ -56,6 +59,7 @@ describe("checkRateLimit", () => {
     expect(checkRateLimit(directRequest).remaining).toBe(98);
   });
 
+  // Supports alternative header formats for reading the user's IP.
   it("falls back to x-real-ip when x-forwarded-for is absent", () => {
     const realIpRequest = requestWithHeaders({ "x-real-ip": "198.51.100.15" });
 
@@ -64,6 +68,7 @@ describe("checkRateLimit", () => {
     expect(checkRateLimit(realIpRequest).remaining).toBe(98);
   });
 
+  // Checks that requests are properly blocked and a retry time is given once the limit is hit.
   it("rejects requests after the quota is exhausted", () => {
     const request = requestWithHeaders({ "x-forwarded-for": "203.0.113.10" });
 
@@ -79,6 +84,7 @@ describe("checkRateLimit", () => {
     });
   });
 
+  // Confirms that the user's limit is refreshed and they can connect again after waiting.
   it("starts a new window after the reset time passes", () => {
     const request = requestWithHeaders({ "x-forwarded-for": "203.0.113.10" });
 

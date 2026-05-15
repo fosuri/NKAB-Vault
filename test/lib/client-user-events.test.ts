@@ -30,6 +30,7 @@ describe("subscribeToUserEvents", () => {
     jest.restoreAllMocks();
   });
 
+  // Checks that only a single connection is opened, but all listeners receive the incoming messages.
   it("opens one user event stream and sends parsed events to subscribers", async () => {
     const { subscribeToUserEvents } = await import("../../lib/client-user-events");
     const firstListener = jest.fn();
@@ -49,6 +50,7 @@ describe("subscribeToUserEvents", () => {
     expect(secondListener).toHaveBeenCalledWith({ type: "message", id: "event-1" });
   });
 
+  // Ensures the live connection stays active as long as at least one listener is still listening.
   it("unsubscribes a listener without closing the stream while others remain", async () => {
     const { subscribeToUserEvents } = await import("../../lib/client-user-events");
     const firstListener = jest.fn();
@@ -67,6 +69,7 @@ describe("subscribeToUserEvents", () => {
     expect(MockEventSource.instances[0].close).not.toHaveBeenCalled();
   });
 
+  // Verifies that the connection is properly closed to save resources when everyone stops listening.
   it("closes the stream after the last listener unsubscribes", async () => {
     const { subscribeToUserEvents } = await import("../../lib/client-user-events");
 
@@ -76,6 +79,7 @@ describe("subscribeToUserEvents", () => {
     expect(MockEventSource.instances[0].close).toHaveBeenCalledTimes(1);
   });
 
+  // Safely handles corrupted or invalid data without crashing the app.
   it("ignores invalid JSON messages", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const { subscribeToUserEvents } = await import("../../lib/client-user-events");
@@ -91,6 +95,7 @@ describe("subscribeToUserEvents", () => {
     );
   });
 
+  // Makes sure connection errors are captured in the console for debugging.
   it("logs stream errors", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const { subscribeToUserEvents } = await import("../../lib/client-user-events");

@@ -16,6 +16,7 @@ describe("fetchUserStatsAction", () => {
     jest.clearAllMocks();
   });
 
+  // Confirms that the profile dashboard accurately combines and returns the user's statistics.
   it("returns account statistics with the user's post count", async () => {
     const stats = { views: 12, likes: 3, dislikes: 1, comments: 4 };
     getStatsMock.mockResolvedValue(stats);

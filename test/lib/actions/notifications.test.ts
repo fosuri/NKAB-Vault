@@ -72,6 +72,7 @@ describe("notification actions", () => {
     jest.clearAllMocks();
   });
 
+  // Stops unauthenticated users from accessing the notifications feed.
   it("requires authentication before fetching notifications", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -82,6 +83,7 @@ describe("notification actions", () => {
     expect(findManyMock).not.toHaveBeenCalled();
   });
 
+  // Confirms that the user successfully receives their notification history.
   it("fetches notifications for the current user", async () => {
     const notifications = [{ id: "notification-1", message: "hello" }];
     findManyMock.mockResolvedValue(notifications);
@@ -101,6 +103,7 @@ describe("notification actions", () => {
     );
   });
 
+  // Checks that the "Mark all as read" button successfully updates the database.
   it("marks all notifications as read for the current user", async () => {
     const builder = createMutationBuilder();
     updateMock.mockReturnValue(builder);
@@ -111,6 +114,7 @@ describe("notification actions", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/");
   });
 
+  // Prevents unauthenticated users from triggering the "Mark all as read" action.
   it("requires authentication before marking notifications as read", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -120,6 +124,7 @@ describe("notification actions", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that a user can dismiss a single specific notification.
   it("deletes a single notification", async () => {
     const builder = createMutationBuilder();
     deleteMock.mockReturnValue(builder);
@@ -133,6 +138,7 @@ describe("notification actions", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/");
   });
 
+  // Checks that the user can clear their entire notification history at once.
   it("clears all notifications for the current user", async () => {
     const builder = createMutationBuilder();
     deleteMock.mockReturnValue(builder);

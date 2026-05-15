@@ -92,6 +92,7 @@ describe("toggleReactionAction", () => {
     jest.clearAllMocks();
   });
 
+  // Prevents anonymous users from liking or disliking posts.
   it("requires authentication before reacting", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -101,6 +102,7 @@ describe("toggleReactionAction", () => {
     expect(findReactionMock).not.toHaveBeenCalled();
   });
 
+  // Checks that liking a post correctly saves the reaction and notifies the author.
   it("creates a new reaction and notifies the post owner", async () => {
     const reactionInsert = createMutationBuilder();
     const notificationInsert = createMutationBuilder();
@@ -124,6 +126,7 @@ describe("toggleReactionAction", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/post/post-1");
   });
 
+  // Ensures users don't get notifications if they like their own posts.
   it("does not notify when the user reacts to their own post", async () => {
     const reactionInsert = createMutationBuilder();
     findReactionMock.mockResolvedValue(undefined);
@@ -141,6 +144,7 @@ describe("toggleReactionAction", () => {
     expect(emitMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that clicking "like" again removes the existing like.
   it("removes an existing matching reaction", async () => {
     const deleteBuilder = createMutationBuilder();
     findReactionMock.mockResolvedValue({ id: "reaction-1", typeId: 1 });
@@ -156,6 +160,7 @@ describe("toggleReactionAction", () => {
     });
   });
 
+  // Checks that changing a reaction (e.g. like -> dislike) updates it correctly and notifies the author.
   it("switches an existing reaction and notifies the post owner", async () => {
     const updateBuilder = createMutationBuilder();
     const notificationInsert = createMutationBuilder();

@@ -52,12 +52,14 @@ describe("sendMessageAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Stops the user from sending a completely blank message (if there is no picture or file attached).
   it("rejects empty messages without media", async () => {
     await expect(sendMessageAction("conversation-1", "   ")).resolves.toEqual({
       error: "Message cannot be empty",
     });
   });
 
+  // Ensures you cannot send messages to a chat that you are not a part of.
   it("rejects users outside the conversation", async () => {
     findParticipantsMock.mockResolvedValue([{ userId: "user-2" }]);
 
@@ -66,6 +68,7 @@ describe("sendMessageAction", () => {
     });
   });
 
+  // Checks that a valid message is saved, the live chat updates, and the chat screen refreshes.
   it("stores a message, emits events, and revalidates chat paths", async () => {
     const tx = txBuilder();
     transactionMock.mockImplementation(async (callback) => callback(tx));

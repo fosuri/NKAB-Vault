@@ -42,6 +42,7 @@ describe("createCheckoutSession", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Prevents anonymous users from generating a checkout link.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -49,6 +50,7 @@ describe("createCheckoutSession", () => {
     expect(createCheckoutMock).not.toHaveBeenCalled();
   });
 
+  // Confirms that a logged-in user receives a valid URL to the Stripe payment page.
   it("returns a checkout URL for a valid user", async () => {
     await expect(createCheckoutSession()).resolves.toEqual({
       url: "https://stripe.example.com/session",

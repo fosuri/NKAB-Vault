@@ -73,6 +73,7 @@ describe("user setup API", () => {
     jest.clearAllMocks();
   });
 
+  // Ensures that only logged-in users can complete their profile setup.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -91,6 +92,7 @@ describe("user setup API", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Prevents a user from choosing a username that is already taken.
   it("rejects usernames already owned by another user", async () => {
     findUserMock.mockResolvedValue({ id: "user-2" });
 
@@ -109,6 +111,7 @@ describe("user setup API", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Checks that the profile setup finishes successfully: saving the avatar, updating the name, and marking the setup as complete.
   it("marks setup as completed and stores the resolved avatar", async () => {
     const updateBuilder = createUpdateBuilder();
     updateMock.mockReturnValue(updateBuilder);

@@ -77,6 +77,7 @@ describe("profile update API", () => {
     jest.clearAllMocks();
   });
 
+  // Ensures that only logged-in users can update their profiles.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -95,6 +96,7 @@ describe("profile update API", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Stops the profile from updating if the provided data is wrong (like a name that is too short).
   it("rejects invalid profile data", async () => {
     const response = await PUT(
       new Request("http://localhost/api/user/profile", {
@@ -111,6 +113,7 @@ describe("profile update API", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Checks that the new profile picture is uploaded and the user's details are saved successfully.
   it("uploads a base64 avatar and updates the current profile", async () => {
     const updateBuilder = createUpdateBuilder();
     updateMock.mockReturnValue(updateBuilder);
@@ -141,6 +144,7 @@ describe("profile update API", () => {
     });
   });
 
+  // If the user removes their picture, it deletes the old image and updates the profile without one.
   it("removes an avatar when an empty avatar value is provided", async () => {
     const updateBuilder = createUpdateBuilder();
     updateMock.mockReturnValue(updateBuilder);

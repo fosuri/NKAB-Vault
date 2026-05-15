@@ -26,6 +26,7 @@ describe("getUserConversationsAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Makes sure that an anonymous user cannot fetch a list of conversations.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -34,6 +35,7 @@ describe("getUserConversationsAction", () => {
     });
   });
 
+  // Checks that the user's chats are returned in the correct format, sorted with the newest ones at the top.
   it("formats and sorts conversations by latest activity", async () => {
     getSessionMock.mockResolvedValue({ user: { id: "user-1" } } as never);
     findManyMock.mockResolvedValue([

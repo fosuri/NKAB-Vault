@@ -46,6 +46,7 @@ describe("deleteConversationAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Ensures that users cannot delete a conversation they are not a part of.
   it("rejects users who are not participants", async () => {
     findParticipantMock.mockResolvedValue(undefined);
 
@@ -53,6 +54,7 @@ describe("deleteConversationAction", () => {
     expect(deleteMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that deleting a conversation also removes its media files, notifies the other user, and deletes the record.
   it("destroys media, notifies participants, and deletes the conversation", async () => {
     await expect(deleteConversationAction("conversation-1")).resolves.toEqual({ success: true });
     expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("media-1", { resource_type: "image" });

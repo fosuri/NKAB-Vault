@@ -48,6 +48,7 @@ describe("verifyPostPassword action", () => {
     jest.clearAllMocks();
   });
 
+  // Handles errors if the locked post does not exist.
   it("returns an error when the post does not exist", async () => {
     findPost.mockResolvedValue(undefined);
 
@@ -57,6 +58,7 @@ describe("verifyPostPassword action", () => {
     });
   });
 
+  // Bypasses the password check entirely if the post is actually public.
   it("allows access when the post is not private", async () => {
     findPost.mockResolvedValue(post({ accessTypeId: 1, password: "stored-password" }));
 
@@ -64,6 +66,7 @@ describe("verifyPostPassword action", () => {
     expect(verifyPasswordValue).not.toHaveBeenCalled();
   });
 
+  // Allows entry if the post is marked private but the author forgot to set a password.
   it("allows access when a private post has no password stored", async () => {
     findPost.mockResolvedValue(post({ accessTypeId: 2, password: null }));
 
@@ -71,6 +74,7 @@ describe("verifyPostPassword action", () => {
     expect(verifyPasswordValue).not.toHaveBeenCalled();
   });
 
+  // Verifies that spaces accidentally typed around the password are ignored before checking.
   it("trims the entered password before verifying private posts", async () => {
     findPost.mockResolvedValue(post({ accessTypeId: 2, password: "hashed-password" }));
     jest.mocked(verifyPasswordValue).mockResolvedValue(true);
@@ -81,6 +85,7 @@ describe("verifyPostPassword action", () => {
     expect(verifyPasswordValue).toHaveBeenCalledWith("secret", "hashed-password");
   });
 
+  // Correctly rejects access if the typed password does not match the stored hash.
   it("returns an incorrect password error when verification fails", async () => {
     findPost.mockResolvedValue(post({ accessTypeId: 2, password: "hashed-password" }));
     jest.mocked(verifyPasswordValue).mockResolvedValue(false);

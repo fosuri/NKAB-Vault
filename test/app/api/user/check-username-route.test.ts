@@ -42,6 +42,7 @@ describe("check username API", () => {
     jest.clearAllMocks();
   });
 
+  // Ensures that only logged-in users can check if a username is available.
   it("requires an authenticated session", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -57,6 +58,7 @@ describe("check username API", () => {
     expect(findUserMock).not.toHaveBeenCalled();
   });
 
+  // Rejects usernames that are invalid (too short, too long, or contain forbidden characters).
   it.each([
     ["", "Username must be at least 3 characters"],
     ["ab", "Username must be at least 3 characters"],
@@ -75,6 +77,7 @@ describe("check username API", () => {
     expect(findUserMock).not.toHaveBeenCalled();
   });
 
+  // If the username is not taken by anyone, it marks it as available for use.
   it("marks a username as available when no user exists", async () => {
     findUserMock.mockResolvedValue(undefined);
 
@@ -86,6 +89,7 @@ describe("check username API", () => {
     await expect(readJson(response)).resolves.toEqual({ available: true });
   });
 
+  // A user is allowed to keep their current username; it won't be considered taken by them.
   it("allows the current user to keep their own username", async () => {
     findUserMock.mockResolvedValue({ id: "user-1" });
 
@@ -97,6 +101,7 @@ describe("check username API", () => {
     await expect(readJson(response)).resolves.toEqual({ available: true });
   });
 
+  // If another person is already using the username, it shows an error message.
   it("marks a username as unavailable when another user owns it", async () => {
     findUserMock.mockResolvedValue({ id: "user-2" });
 
@@ -111,6 +116,7 @@ describe("check username API", () => {
     });
   });
 
+  // Returns a proper error message if an unexpected server issue happens.
   it("returns a server error response when lookup fails", async () => {
     jest.spyOn(console, "error").mockImplementation(() => {});
     findUserMock.mockRejectedValue(new Error("db down"));

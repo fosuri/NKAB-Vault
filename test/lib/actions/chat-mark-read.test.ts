@@ -41,6 +41,7 @@ describe("markConversationMessagesAsReadAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Prevents random users from marking someone else's messages as read.
   it("returns forbidden when the user is not a participant", async () => {
     findParticipantMock.mockResolvedValue(undefined);
 
@@ -50,6 +51,7 @@ describe("markConversationMessagesAsReadAction", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that messages are marked as read in the database and the "read receipts" are synced to the chat instantly.
   it("marks unread messages as read and emits sync events", async () => {
     findParticipantMock.mockResolvedValue({ id: "participant-1" });
 

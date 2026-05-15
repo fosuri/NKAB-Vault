@@ -128,6 +128,7 @@ describe("deletePost", () => {
     jest.clearAllMocks();
   });
 
+  // Ensures that an anonymous user cannot delete any posts.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -135,6 +136,7 @@ describe("deletePost", () => {
     expect(findPostMock).not.toHaveBeenCalled();
   });
 
+  // Prevents users with an active ban from deleting posts.
   it("blocks banned users", async () => {
     getModerationMock.mockResolvedValue({ activeBan: { id: "ban-1" } } as never);
 
@@ -142,12 +144,14 @@ describe("deletePost", () => {
     expect(findPostMock).not.toHaveBeenCalled();
   });
 
+  // Handles cases where the target post does not exist.
   it("returns an error when the post does not exist", async () => {
     findPostMock.mockResolvedValue(undefined);
 
     await expect(deletePost("missing-post")).resolves.toEqual({ error: "Post not found" });
   });
 
+  // Ensures users can only delete their own posts.
   it("prevents regular users from deleting someone else's post", async () => {
     findPostMock.mockResolvedValue(post({ userId: "author-1" }));
 
@@ -155,6 +159,7 @@ describe("deletePost", () => {
     expect(deleteMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that deleting a post also securely removes its attached media from Cloudinary.
   it("deletes own post and destroys attached Cloudinary assets", async () => {
     const deleteBuilder = createMutationBuilder();
     findPostMock.mockResolvedValue(
@@ -181,6 +186,7 @@ describe("deletePost", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/profile");
   });
 
+  // Stops moderators from deleting posts created by admins or other moderators.
   it("prevents moderators from deleting staff posts", async () => {
     getModerationMock.mockResolvedValue({ roleId: 2, activeBan: null } as never);
     findPostMock.mockResolvedValue(post({ userId: "staff-1" }));
@@ -192,6 +198,7 @@ describe("deletePost", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Checks that an admin can securely soft-delete a post and record the moderation action.
   it("soft deletes another user's post when performed by admin", async () => {
     const logInsert = createMutationBuilder();
     const notificationInsert = createMutationBuilder();

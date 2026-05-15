@@ -10,6 +10,7 @@ describe("getRelativeTime", () => {
     jest.useRealTimers();
   });
 
+  // Checks that different timestamps correctly format into human-friendly phrases like "5 minutes ago".
   it.each([
     ["Just now", "2026-05-15T11:59:31.000Z"],
     ["1 minute ago", "2026-05-15T11:58:30.000Z"],

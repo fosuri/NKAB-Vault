@@ -47,6 +47,7 @@ describe("incrementPostViewsAction", () => {
     jest.clearAllMocks();
   });
 
+  // Ensures that views from logged-out users are not counted.
   it("does nothing for anonymous users", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -55,6 +56,7 @@ describe("incrementPostViewsAction", () => {
     expect(transactionMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that when a logged-in user views a post for the first time, it is tracked.
   it("inserts a unique post view for authenticated users", async () => {
     const tx = createInsertBuilder([{ id: "view-1" }]);
     getSessionMock.mockResolvedValue({ user: { id: "user-1" } } as never);
@@ -78,6 +80,7 @@ describe("incrementPostViewsAction", () => {
     expect(tx.returning).toHaveBeenCalledWith({ id: "postViews.id" });
   });
 
+  // Prevents the view count from incrementing if the user refreshes the page or views it again.
   it("handles an already-recorded view without throwing", async () => {
     const tx = createInsertBuilder([]);
     getSessionMock.mockResolvedValue({ user: { id: "user-1" } } as never);

@@ -40,12 +40,14 @@ describe("deleteMessageAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Stops users from deleting messages that belong to someone else or don't exist.
   it("returns forbidden when the message is missing or owned by another user", async () => {
     findMessageMock.mockResolvedValue({ senderId: "user-2" });
 
     await expect(deleteMessageAction("message-1")).resolves.toEqual({ error: "Forbidden" });
   });
 
+  // Checks that deleting a message successfully removes its attached media and updates the chat live.
   it("deletes owned message media and emits a delete event", async () => {
     findMessageMock.mockResolvedValue({
       conversationId: "conversation-1",

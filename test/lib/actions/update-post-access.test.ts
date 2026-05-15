@@ -81,6 +81,7 @@ describe("updatePostAccess", () => {
     jest.clearAllMocks();
   });
 
+  // Stops unauthenticated users from changing post settings.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -90,6 +91,7 @@ describe("updatePostAccess", () => {
     expect(findPostMock).not.toHaveBeenCalled();
   });
 
+  // Prevents banned users from altering post privacy.
   it("blocks banned users", async () => {
     getModerationMock.mockResolvedValue({ activeBan: { id: "ban-1" } } as never);
 
@@ -99,6 +101,7 @@ describe("updatePostAccess", () => {
     expect(findPostMock).not.toHaveBeenCalled();
   });
 
+  // Handles errors if the post does not exist.
   it("returns an error when the post does not exist", async () => {
     findPostMock.mockResolvedValue(undefined);
 
@@ -107,6 +110,7 @@ describe("updatePostAccess", () => {
     });
   });
 
+  // Ensures you can only change the privacy settings of your own posts.
   it("prevents non-authors from changing access", async () => {
     findPostMock.mockResolvedValue({ userId: "author-1" });
 
@@ -116,6 +120,7 @@ describe("updatePostAccess", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Prevents assigning an invalid privacy level (e.g. neither public, private, nor paid).
   it("rejects invalid access types", async () => {
     await expect(updatePostAccess("post-1", 999)).resolves.toEqual({
       error: "Invalid access type",
@@ -123,6 +128,7 @@ describe("updatePostAccess", () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that setting a post to "private" securely hashes the provided password.
   it("protects trimmed password for private posts", async () => {
     const updateBuilder = createUpdateBuilder();
     updateMock.mockReturnValue(updateBuilder);
@@ -138,6 +144,7 @@ describe("updatePostAccess", () => {
     });
   });
 
+  // Prevents saving a private post with an empty password by treating it as no password.
   it("clears password when private access is saved with a blank password", async () => {
     const updateBuilder = createUpdateBuilder();
     updateMock.mockReturnValue(updateBuilder);
@@ -153,6 +160,7 @@ describe("updatePostAccess", () => {
     });
   });
 
+  // Ensures that switching a post from private back to public/paid removes the password securely.
   it("clears password for public and paid posts", async () => {
     const updateBuilder = createUpdateBuilder();
     updateMock.mockReturnValue(updateBuilder);

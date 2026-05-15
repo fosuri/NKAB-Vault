@@ -47,6 +47,7 @@ describe("cancelSubscription", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Ensures you must be logged in to cancel a subscription.
   it("requires authentication", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -54,6 +55,7 @@ describe("cancelSubscription", () => {
     expect(listMock).not.toHaveBeenCalled();
   });
 
+  // Verifies that the cancellation request is successfully sent to Stripe.
   it("cancels the active Stripe subscription", async () => {
     await expect(cancelSubscription()).resolves.toEqual({ success: true });
     expect(listMock).toHaveBeenCalledWith({

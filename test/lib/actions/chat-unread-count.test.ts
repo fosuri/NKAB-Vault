@@ -28,6 +28,7 @@ describe("getUnreadMessageCountAction", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // If the user isn't logged in, they simply have zero unread messages.
   it("returns zero for unauthenticated users", async () => {
     getSessionMock.mockResolvedValue(null);
 
@@ -37,6 +38,7 @@ describe("getUnreadMessageCountAction", () => {
     });
   });
 
+  // If the user hasn't started any chats, the unread count should be zero without checking the messages table.
   it("returns zero when the user has no conversations", async () => {
     getSessionMock.mockResolvedValue({ user: { id: "user-1" } } as never);
     findParticipantsMock.mockResolvedValue([]);
@@ -45,6 +47,7 @@ describe("getUnreadMessageCountAction", () => {
     expect(findMessagesMock).not.toHaveBeenCalled();
   });
 
+  // Properly counts how many messages the user has received but hasn't read yet.
   it("counts unread messages from other users", async () => {
     getSessionMock.mockResolvedValue({ user: { id: "user-1" } } as never);
     findParticipantsMock.mockResolvedValue([{ conversationId: "conversation-1" }]);

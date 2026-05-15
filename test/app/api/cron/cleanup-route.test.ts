@@ -60,6 +60,7 @@ describe("cleanup cron route", () => {
 
   afterEach(() => jest.clearAllMocks());
 
+  // Ensures that the cleanup process cannot be run without the correct secret key.
   it("rejects missing or invalid cron secrets", async () => {
     const response = await GET(request(null));
 
@@ -67,6 +68,7 @@ describe("cleanup cron route", () => {
     await expect(response.json()).resolves.toEqual({ error: "Unauthorized" });
   });
 
+  // Checks that old or deleted posts, comments, logs, and media files are successfully removed.
   it("deletes expired posts, comments, logs, and media", async () => {
     findPostsMock.mockResolvedValue([
       { id: "post-1", media: [{ publicId: "video-1", resourceTypeId: 2 }] },
