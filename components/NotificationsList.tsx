@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { X, Trash2 } from "lucide-react";
 import { deleteNotification, clearAllNotifications, getNotifications } from "@/lib/actions/notifications";
+import { subscribeToUserEvents } from "@/lib/client-user-events";
 
 import { NOTIFICATION_TYPES } from "@/lib/db/auth-schema";
 
@@ -49,24 +50,17 @@ export function NotificationsList({ initialNotifications }: { initialNotificatio
       fetchNotifications();
     };
 
-    // Listen for local UI events and real-time SSE updates
     window.addEventListener("notificationsUpdated", handleUpdate);
 
-    const eventSource = new EventSource("/api/notifications/stream");
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "update") {
-          fetchNotifications();
-        }
-      } catch (err) {
-        console.error("Failed to parse notification SSE:", err);
+    const unsubscribe = subscribeToUserEvents((event) => {
+      if (event.type === "notifications_update") {
+        fetchNotifications();
       }
-    };
+    });
 
     return () => {
       window.removeEventListener("notificationsUpdated", handleUpdate);
-      eventSource.close();
+      unsubscribe();
     };
   }, []);
 

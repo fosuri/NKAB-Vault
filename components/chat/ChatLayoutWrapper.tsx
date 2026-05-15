@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect } from "react";
+import { subscribeToUserEvents } from "@/lib/client-user-events";
 
 /**
  * Chat Layout Wrapper.
@@ -27,30 +28,22 @@ export function ChatLayoutWrapper({
    * that affect the user's overall chat state.
    */
   useEffect(() => {
-    const eventSource = new EventSource("/api/chat/stream/user");
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        // Force redirect if the active conversation is deleted by the other participant
-        if (data.type === "delete_conversation" && pathname === `/chat/${data.conversationId}`) {
-          router.push("/chat");
-        } else {
-          // Refresh data for new messages or conversation list updates
-          router.refresh();
-        }
-      } catch (e) {
-        router.refresh();
+    return subscribeToUserEvents((event) => {
+      if (event.type === "notifications_update") {
+        return;
       }
-    };
 
-    eventSource.onerror = (error) => {
-      console.error("User chat stream error:", error);
-    };
+      if (
+        event.type === "delete_conversation" &&
+        typeof event.conversationId === "string" &&
+        pathname === `/chat/${event.conversationId}`
+      ) {
+        router.push("/chat");
+        return;
+      }
 
-    return () => {
-      eventSource.close();
-    };
+      router.refresh();
+    });
   }, [router, pathname]);
 
   return (

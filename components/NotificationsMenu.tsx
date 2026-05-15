@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import { subscribeToUserEvents } from "@/lib/client-user-events";
 
 import { NOTIFICATION_TYPES } from "@/lib/db/auth-schema";
 
@@ -58,21 +59,15 @@ export function NotificationsMenu() {
     // Listen for local and remote updates
     window.addEventListener("notificationsUpdated", handleUpdate);
 
-    const eventSource = new EventSource("/api/notifications/stream");
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "update") {
-          fetchNotifications();
-        }
-      } catch (err) {
-        console.error("Failed to parse notification SSE:", err);
+    const unsubscribe = subscribeToUserEvents((event) => {
+      if (event.type === "notifications_update") {
+        fetchNotifications();
       }
-    };
+    });
 
     return () => {
       window.removeEventListener("notificationsUpdated", handleUpdate);
-      eventSource.close();
+      unsubscribe();
     };
   }, []);
 
