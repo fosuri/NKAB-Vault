@@ -40,7 +40,7 @@ const formSchema = z.object({
     .regex(/[^a-zA-Z0-9]/, "Must contain a special character"),
   confirmPassword: z.string().min(8),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
+  message: "Password don't match",
   path: ["confirmPassword"],
 })
 
@@ -232,43 +232,66 @@ export function SignUpForm({
               <Controller
                 name="confirmPassword"
                 control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <div className="flex items-center">
-                      <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+                render={({ field, fieldState }) => {
+                  const password = form.watch("password");
+                  const confirmPassword = field.value || "";
+                  const passwordsMatch = confirmPassword.length > 0 && confirmPassword === password;
+                  const passwordsMismatch = confirmPassword.length > 0 && confirmPassword !== password;
+                  const errorId = "confirm-password-error";
+                  const statusId = "confirm-password-status";
+                  const confirmPasswordStatus = passwordsMatch
+                    ? "Passwords match"
+                    : passwordsMismatch
+                      ? "Password don't match"
+                      : "Must match the password above.";
 
-                    </div>
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        aria-invalid={fieldState.invalid}
-                        id="confirm-password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder=""
-                        className="text-sm"
-                        required
-                      />
-                      {field.value && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
-                          onClick={() => setShowConfirmPassword((v) => !v)}
-                        >
-                          {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </Button>
+                  return (
+                    <Field data-invalid={fieldState.invalid}>
+                      <div className="flex items-center">
+                        <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
+
+                      </div>
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          aria-describedby={cn(statusId, fieldState.invalid && errorId)}
+                          aria-errormessage={fieldState.invalid ? errorId : undefined}
+                          aria-invalid={fieldState.invalid}
+                          id="confirm-password"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder=""
+                          className="text-sm"
+                          required
+                        />
+                        {field.value && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                            onClick={() => setShowConfirmPassword((v) => !v)}
+                          >
+                            {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          </Button>
+                        )}
+                      </div>
+                      {fieldState.invalid && (
+                        <FieldError id={errorId} className="sr-only" errors={[fieldState.error]} />
                       )}
-                    </div>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                    <FieldDescription>
-                      Must match the password above.
-                    </FieldDescription>
-                  </Field>
-                )}
+                      <FieldDescription
+                        id={statusId}
+                        aria-live="polite"
+                        className={cn(
+                          passwordsMatch && "text-green-500",
+                          passwordsMismatch && "text-destructive"
+                        )}
+                      >
+                        {confirmPasswordStatus}
+                      </FieldDescription>
+                    </Field>
+                  )
+                }}
               />
 
               <Field>

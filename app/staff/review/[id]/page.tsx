@@ -16,6 +16,8 @@ import { db } from "@/lib/db/db";
 import { sql } from "drizzle-orm";
 import { StaffRecoverPostButton } from "@/components/staff/staff-recover-post-button";
 import { StaffRecoverCommentButton } from "@/components/staff/staff-recover-comment-button";
+import { StaffDeletePostButton } from "@/components/staff/staff-delete-post-button";
+import { StaffDeleteCommentButton } from "@/components/staff/staff-delete-comment-button";
 import { ScrollToComment } from "@/components/staff/scroll-to-comment";
 
 /**
@@ -104,7 +106,7 @@ export default async function StaffReviewPage({
         <div className="flex items-center gap-3 rounded-xl border border-amber-400/50 bg-amber-50/80 px-4 py-3 text-sm font-medium text-amber-800 shadow-sm backdrop-blur dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-300">
           <AlertTriangle className="size-4 shrink-0" />
           <span>
-            Staff Review Mode — This content may be soft-deleted. Use the recover buttons to restore it.
+            Staff Review Mode
           </span>
         </div>
 
@@ -118,9 +120,11 @@ export default async function StaffReviewPage({
             Back to dashboard
           </Link>
 
-          {/* Recover post button — shown if post is soft-deleted */}
-          {isPostDeleted && (
+          {/* Staff post action */}
+          {isPostDeleted ? (
             <StaffRecoverPostButton postId={post.id} />
+          ) : (
+            <StaffDeletePostButton postId={post.id} />
           )}
         </div>
 
@@ -254,9 +258,11 @@ export default async function StaffReviewPage({
                           )}
                         </div>
 
-                        {/* Recover comment button — only for deleted comments */}
-                        {isCommentDeleted && (
+                        {/* Staff comment action */}
+                        {isCommentDeleted ? (
                           <StaffRecoverCommentButton commentId={comment.id} />
+                        ) : (
+                          <StaffDeleteCommentButton commentId={comment.id} />
                         )}
                       </div>
 

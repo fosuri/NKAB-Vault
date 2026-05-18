@@ -53,6 +53,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const moderationState = currentUserId ? await getUserModerationState(currentUserId) : null;
   const isOwner = currentUserId === post.userId;
   const canModerateContent = moderationState?.roleId === ROLES.ADMIN || moderationState?.roleId === ROLES.MODERATOR;
+  const canStaffDeletePost = !isOwner && canModerateContent;
 
   // Restrict access to Paid posts to only authorized users
   if (post.accessTypeId === ACCESS_TYPES.PAID && !isOwner && !canModerateContent) {
@@ -80,21 +81,24 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
       
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
         {/* Navigation and Moderation Header */}
-        <div className="flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="size-4" />
-            Back to feed
-          </Link>
-          {(!isOwner && canModerateContent) && <DeletePostButton postId={post.id} redirectTo="/" authorRoleId={post.author?.roleId as RoleId | undefined} actorRoleId={moderationState?.roleId as RoleId | undefined} />}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_288px] lg:gap-8">
+          <div className="flex items-center justify-between gap-4">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="size-4" />
+              Back to feed
+            </Link>
+            {canStaffDeletePost && (
+              <DeletePostButton postId={post.id} redirectTo="/" authorRoleId={post.author?.roleId as RoleId | undefined} actorRoleId={moderationState?.roleId as RoleId | undefined} />
+            )}
+          </div>
         </div>
 
         {/* Wrapper handling password protection and blur logic */}
         <PostContentWrapper postId={post.id} hasPassword={hasPassword} isOwner={isOwner}>
           <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_288px] gap-8 items-start">
-            
             {/* Main Post Content Card */}
             <Card className="min-w-0 w-full overflow-hidden border-border/60 bg-card/85 shadow-[0_24px_90px_rgba(12,18,28,0.08)] backdrop-blur lg:col-start-1 lg:row-start-1">
                 <CardHeader className="gap-2 border-b border-border/50 pb-4">

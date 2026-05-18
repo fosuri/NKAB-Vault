@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Check, Loader2, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { createComment, deleteComment } from "@/lib/actions/comments";
@@ -47,6 +47,7 @@ export function CommentSection({
   const [comments, setComments] = useState<Comment[]>(initialComments);
   const [body, setBody] = useState("");
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -85,6 +86,11 @@ export function CommentSection({
    * while Admins have full deletion authority.
    */
   function handleDelete(commentId: string) {
+    if (confirmDelete !== commentId) {
+      setConfirmDelete(commentId);
+      return;
+    }
+
     setPendingDelete(commentId);
     startTransition(async () => {
       const result = await deleteComment(commentId, postId);
@@ -94,6 +100,7 @@ export function CommentSection({
         setComments((prev) => prev.filter((c) => c.id !== commentId));
       }
       setPendingDelete(null);
+      setConfirmDelete(null);
     });
   }
 
@@ -180,12 +187,19 @@ export function CommentSection({
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(comment.id)}
+                      onBlur={() => setConfirmDelete((current) => current === comment.id ? null : current)}
                       disabled={pendingDelete === comment.id}
-                      className="ml-auto size-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                      aria-label="Delete comment"
+                      className={`ml-auto size-8 transition-colors ${
+                        confirmDelete === comment.id
+                          ? "text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          : "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      }`}
+                      aria-label={confirmDelete === comment.id ? "Confirm delete comment" : "Delete comment"}
                     >
                       {pendingDelete === comment.id ? (
                         <Loader2 className="size-3.5 animate-spin" />
+                      ) : confirmDelete === comment.id ? (
+                        <Check className="size-3.5" />
                       ) : (
                         <Trash2 className="size-3.5" />
                       )}

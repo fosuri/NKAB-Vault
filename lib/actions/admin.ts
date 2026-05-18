@@ -446,6 +446,7 @@ export async function adminDeletePostAction(postId: string): Promise<AdminAction
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath("/profile");
+    revalidatePath(`/staff/review/${postId}`);
     revalidateModerationDashboards();
 
     return { success: true };
@@ -509,6 +510,7 @@ export async function adminDeleteCommentAction(commentId: string): Promise<Admin
     await db.update(comments).set({ deletedByStaffAt: new Date() }).where(eq(comments.id, commentId));
 
     revalidatePath(`/post/${comment.postId}`);
+    revalidatePath(`/staff/review/${comment.postId}`);
     revalidateModerationDashboards();
 
     return { success: true };
