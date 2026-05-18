@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import type { PostContentFilter, PostTimeFilter } from "@/lib/posts";
@@ -38,6 +38,11 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
 export function PostFilterControls({ actionPath, time, contentType, query }: PostFilterControlsProps) {
   const [selectedTime, setSelectedTime] = useState<PostTimeFilter>(time);
   const [selectedContentType, setSelectedContentType] = useState<PostContentFilter>(contentType);
+
+  useEffect(() => {
+    setSelectedTime(time);
+    setSelectedContentType(contentType);
+  }, [time, contentType]);
 
   return (
     <form action={actionPath} className="rounded-2xl border border-border/60 bg-background/70 p-3 backdrop-blur">

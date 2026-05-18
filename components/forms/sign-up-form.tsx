@@ -209,6 +209,7 @@ export function SignUpForm({
                           type="button"
                           variant="ghost"
                           size="icon"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
                           onClick={() => setShowPassword((v) => !v)}
                         >
@@ -234,7 +235,7 @@ export function SignUpForm({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <div className="flex items-center">
-                      <FieldLabel htmlFor="password">Confirm Password</FieldLabel>
+                      <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
 
                     </div>
                     <div className="relative">
@@ -252,6 +253,7 @@ export function SignUpForm({
                           type="button"
                           variant="ghost"
                           size="icon"
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
                           onClick={() => setShowConfirmPassword((v) => !v)}
                         >

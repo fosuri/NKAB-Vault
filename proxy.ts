@@ -10,9 +10,10 @@ import { checkRateLimit } from "@/lib/rate-limit";
  */
 export async function proxy(request: NextRequest) {
   // Step 1: Rate Limiting Enforcement
-  const limitResult = checkRateLimit(request);
+  const skipRateLimit = process.env.PLAYWRIGHT_TEST === "true";
+  const limitResult = skipRateLimit ? null : checkRateLimit(request);
 
-  if (!limitResult.success) {
+  if (limitResult && !limitResult.success) {
     // Return standard 429 response with reset headers
     return NextResponse.json(
       { error: "Too many requests" },

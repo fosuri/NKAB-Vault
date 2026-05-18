@@ -43,6 +43,7 @@ export function HeaderSearch({
       <DialogTrigger asChild>
         <Button
           variant="outline"
+          aria-label="Search posts"
           className="group flex h-8 w-8 sm:w-44 items-center justify-center sm:justify-start gap-2 rounded-md border-input bg-transparent px-0 sm:px-2 text-sm text-muted-foreground transition-colors hover:bg-muted md:w-64 lg:w-80"
         >
           <Search className="size-4 shrink-0 sm:mx-1" />
@@ -132,4 +133,4 @@ export function HeaderSearch({
       </DialogContent>
     </Dialog>
   );
-}
+}
