@@ -68,6 +68,13 @@ RESEND_FROM="nkab@resend.dev"
 CLOUDINARY_CLOUD_NAME=teie_cloud_name
 CLOUDINARY_API_KEY=teie_api_key
 CLOUDINARY_API_SECRET=teie_api_secret
+
+# Stripe (Maksete jaoks)
+# Saate aadressilt: https://dashboard.stripe.com/apikeys
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=teie_stripe_publishable_key
+STRIPE_SECRET_KEY=teie_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=teie_stripe_webhook_secret
+STRIPE_PRO_PRICE_ID=teie_stripe_pro_price_id
 ```
 
 ---
