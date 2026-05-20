@@ -6,7 +6,7 @@ Põhjalik juhend NKAB-Vault projekti allalaadimiseks, seadistamiseks ja käivita
 
 ## Eeltingimused
 
-Enne alustamist veendu, et sinu arvutisse on installitud järgmised programmid. Kui sul neid pole, kasuta allalaadimiseks ja installimiseks allolevaid linke:
+Enne alustamist veenduge, et Teie arvutisse on installitud järgmised programmid. Kui Teil neid pole, kasutage allalaadimiseks ja installimiseks allolevaid linke:
 
 - **[Bun](https://bun.sh/)** (Soovitatav) või **[Node.js](https://nodejs.org/)**: JavaScripti käituskeskkond ja paketikaldur. See projekt kasutab laialdaselt `bun`'i kiireks käivitamiseks ja pakettide haldamiseks.
 - **[Docker](https://www.docker.com/products/docker-desktop/)**: Vajalik PostgreSQL andmebaasi lokaalseks käivitamiseks Docker Compose'i abil.
@@ -14,25 +14,25 @@ Enne alustamist veendu, et sinu arvutisse on installitud järgmised programmid. 
 - **[Stripe CLI](https://docs.stripe.com/stripe-cli)**: Vajalik maksete/tellimuste lokaalsete webhook'ide testimiseks.
 
 > **Mida teha, kui mul ei ole Bun'i ega Node'i?**
-> Selle Next.js projekti käivitamiseks **pead** installima vähemalt Node.js'i. Kuid soovitame tungivalt installida **Bun**'i, kuna kõik projekti skriptid on selle jaoks optimeeritud. Kui kasutad Node'i, võid asendada `bun run` käskudega `npm run` või `npx`, kuid mõned skriptid, nagu `bun ./lib/db/seed-defaults.ts`, vajavad Node'iga õigeks käivitamiseks `tsx`'i või `ts-node`'i.
+> Selle Next.js projekti käivitamiseks **peate** installima vähemalt Node.js'i. Kuid soovitame tungivalt installida **Bun**'i, kuna kõik projekti skriptid on selle jaoks optimeeritud. Kui kasutate Node'i, võite asendada `bun run` käskudega `npm run` või `npx`, kuid mõned skriptid, nagu `bun ./lib/db/seed-defaults.ts`, vajavad Node'iga õigeks käivitamiseks `tsx`'i või `ts-node`'i.
 
 ---
 
 ## Installimine ja seadistamine
 
-### 1. Laadi projekt alla
-Klooni repositoorium oma arvutisse:
+### 1. Laadige projekt alla
+Kloonige repositoorium oma arvutisse:
 ```bash
 git clone <repository-url>
 cd NKAB-Vault
 ```
 
-### 2. Installi sõltuvused
-Installi kõik vajalikud paketid, kasutades Bun'i:
+### 2. Installige sõltuvused
+Installige kõik vajalikud paketid, kasutades Bun'i:
 ```bash
 bun install
 ```
-*(Kui kasutad Node/NPM-i: `npm install`)*
+*(Kui kasutate Node/NPM-i: `npm install`)*
 
 ---
 
@@ -40,34 +40,34 @@ bun install
 
 Projekti juurkataloogi on vaja luua `.env` fail. Selles failis hoitakse kõiki tundlikke võtmeid ja konfiguratsioone, mida rakendus vajab töötamiseks.
 
-1. Loo oma projekti juurkataloogi fail nimega `.env`.
-2. Lisa `.env` faili järgmised muutujad:
+1. Looge oma projekti juurkataloogi fail nimega `.env`.
+2. Lisage `.env` faili järgmised muutujad:
 
 ```env
 # Andmebaasi ühendus (Kattub docker-compose seadistusega)
 DATABASE_URL=postgresql://nkab:123456@localhost:5433/nkab_vault
 
 # Autentimine (Better Auth)
-# Loo salajane võti (võib olla mis tahes pikk suvaline string)
+# Looge salajane võti (võib olla mis tahes pikk suvaline string)
 BETTER_AUTH_SECRET=supersecretkey_supersecretkey_supersecretkey_supersecretkey_supersecretkey
 BETTER_AUTH_URL=http://localhost:3000
 NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 
 # Google OAuth (Google'iga sisselogimiseks)
-# Saad aadressilt: https://console.cloud.google.com/
-GOOGLE_CLIENT_ID=sinu_google_client_id
-GOOGLE_CLIENT_SECRET=sinu_google_client_secret
+# Saate aadressilt: https://console.cloud.google.com/
+GOOGLE_CLIENT_ID=teie_google_client_id
+GOOGLE_CLIENT_SECRET=teie_google_client_secret
 
 # Resend (E-kirjade saatmiseks)
-# Saad aadressilt: https://resend.com/
-RESEND_API_KEY=sinu_resend_api_key
+# Saate aadressilt: https://resend.com/
+RESEND_API_KEY=teie_resend_api_key
 RESEND_FROM="nkab@resend.dev"
 
 # Cloudinary (Piltide üleslaadimiseks)
-# Saad aadressilt: https://cloudinary.com/
-CLOUDINARY_CLOUD_NAME=sinu_cloud_name
-CLOUDINARY_API_KEY=sinu_api_key
-CLOUDINARY_API_SECRET=sinu_api_secret
+# Saate aadressilt: https://cloudinary.com/
+CLOUDINARY_CLOUD_NAME=teie_cloud_name
+CLOUDINARY_API_KEY=teie_api_key
+CLOUDINARY_API_SECRET=teie_api_secret
 ```
 
 ---
@@ -76,28 +76,28 @@ CLOUDINARY_API_SECRET=sinu_api_secret
 
 Kasutame Dockerit, et lihtsalt luua PostgreSQL andmebaas.
 
-### 1. Käivita andmebaas
-Käivita järgmine käsk andmebaasi konteineri taustal käivitamiseks:
+### 1. Käivitage andmebaas
+Käivitage järgmine käsk andmebaasi konteineri taustal käivitamiseks:
 ```bash
 docker compose up -d
 ```
 See käivitab Postgresi instantsi pordil `5433`, kasutades `.env` failis määratletud mandaate.
 
-### 2. Lükka skeem andmebaasi
-Päevita andmebaas praeguse Drizzle ORM skeemiga:
+### 2. Lükake skeem andmebaasi
+Uuendage andmebaasi praeguse Drizzle ORM skeemiga:
 ```bash
 bunx drizzle-kit push
 ```
 
-### 3. Asusta andmebaas andmetega (Seed)
-Täida andmebaas vaikeväärtustega (rollid, juurdepääsutüübid jne):
+### 3. Asustage andmebaas andmetega (Seed)
+Täitke andmebaas vaikeväärtustega (rollid, juurdepääsutüübid jne):
 ```bash
 bun ./lib/db/seed-defaults.ts
 ```
 
-Loo administraatori kasutaja (asenda e-posti aadress oma tegeliku aadressiga, et anda administraatori õigused):
+Looge administraatori kasutaja (asendage e-posti aadress oma tegeliku aadressiga, et anda administraatori õigused):
 ```bash
-bun ./lib/db/seed-admin.ts --email=sinu-email@example.com
+bun ./lib/db/seed-admin.ts --email=teie-email@example.com
 ```
 
 ---
@@ -118,33 +118,50 @@ bun run dev:all
 ```
 
 ### Stripe Webhooks (Vajalik maksete tegemiseks)
-Kui testid makseid või tellimusi, pead Stripe webhooke kuulama lokaalselt. 
-Kõigepealt logi sisse Stripe CLI-sse:
+Kui testite makseid või tellimusi, peate Stripe webhooke kuulama lokaalselt. 
+Kõigepealt logige sisse Stripe CLI-sse:
 ```bash
 stripe login
 ```
-Seejärel suuna sündmused oma lokaalsesse serverisse:
+Seejärel suunake sündmused oma lokaalsesse serverisse:
 ```bash
 stripe listen --forward-to localhost:3000/api/webhook/stripe
 ```
 
 ---
 
-## Saadaolevad lehed / Navigeerimine
+## Saadaolevad lehed ja juurdepääs (Access Control)
 
-Kui rakendus töötab, saad külastada järgmisi peamisi marsruute:
+Rakendus kasutab rollipõhist juurdepääsukontrolli (RBAC). Allpool on toodud ülevaade saadaolevatest marsruutidest ja tegevustest vastavalt kasutaja rollile:
 
-- **`/`** - Kodu / Maandumisleht
-- **`/sign-in`** & **`/sign-up`** - Autentimise lehed (Sisselogimine ja registreerimine)
-- **`/chat`** - Reaalajas vestluse (chat) liides
-- **`/profile`** - Kasutajaprofiili haldamine
-- **`/admin`** - Administraatori töölaud (Nõuab administraatori rolli)
-- **`/staff`** & **`/moderator`** - Rollikohased töölauad
-- **`/new-post`** - Uue sisu loomine
-- **`/notifications`** - Kasutaja teavituste vaatamine
-- **`/subscription`** - Arvelduse ja Stripe'i plaanide haldamine
-- **`/search`** - Otsingufunktsioon
-- **`/rules`**, **`/privacy`**, **`/terms`** - Juriidiline ja platvormi puudutav info
+### Avalik / Külaline (Guest)
+Need lehed on kättesaadavad kõigile, isegi ilma kontota.
+- **`/`** - **Kodu / Maandumisleht:** Saate vaadata peamist voogu, populaarseid postitusi ja üldist platvormi teavet.
+- **`/sign-in`**, **`/sign-up`** - **Autentimine:** Saate sisse logida olemasolevale kontole või luua uue.
+- **`/forgot-password`**, **`/reset-password`** - **Konto taastamine:** Saate taastada juurdepääsu oma kontole.
+- **`/[username]`** - **Avalik profiil:** Saate vaadata teise kasutaja avalikku profiili, tema postitusi ja jälgijaid.
+- **`/post/[id]`** - **Postituse detailvaade:** Saate lugeda konkreetset postitust üksikasjalikult, näha selle kommentaare ja metaandmeid.
+- **`/search`** - **Otsing:** Saate otsida postitusi, silte (täge) või teisi kasutajaid.
+- **`/rules`**, **`/privacy`**, **`/terms`** - **Juriidiline ja info:** Saate lugeda platvormi teenusetingimusi, privaatsuspoliitikat ja kogukonna reegleid.
+
+### Sisselogitud kasutaja
+Nõuab aktiivset kontot. Kasutajad saavad teha kõike seda, mida külaline, ja lisaks:
+- **`/chat`** - **Vestluste keskus:** Saate näha kõiki oma aktiivseid otsesõnumeid ja vestlusi.
+- **`/chat/[id]`** - **Otsesõnumid:** Saate reaalajas privaatselt vestelda konkreetse kasutajaga.
+- **`/profile`** - **Profiili haldamine:** Saate muuta oma isikuandmeid, avatari, bännerit ja konto seadeid.
+- **`/new-post`** - **Uue postituse loomine:** Saate juurdepääsu redaktorile uue sisu kirjutamiseks, vormindamiseks ja avaldamiseks.
+- **`/notifications`** - **Teavitused:** Saate kontrollida meeldimisi, kommentaare, mainimisi ja süsteemiteavitusi.
+- **`/subscription`** - **Arveldus ja plaanid:** Saate hallata oma tasulisi tellimusi ja Stripe'i maksemeetodeid.
+
+### Töötaja (Staff) ja Moderaator
+Nõuab `staff` või `moderator` rolli. Saavad teha kõike seda, mida tavakasutaja, ja lisaks:
+- **`/staff`** - **Töötaja töölaud:** Saate juurdepääsu sisemistele töötajate juhistele, tööriistadele ja esmasele platvormi analüütikale.
+- **`/moderator`** - **Moderaatori töölaud:** Saate üle vaadata raporteeritud postitusi, lahendada kasutajate vaidlusi, kustutada sobimatut sisu ja väljastada hoiatusi.
+
+### Administraator
+Nõuab `admin` rolli. Omab piiramatut juurdepääsu kogu platvormile.
+- **`/admin`** - **Administraatori töölaud:** Täielik süsteemi kontroll. Saate hallata kasutajate rolle, kasutajaid blokeerida (ban) ja blokeeringuid eemaldada, vaadata üksikasjalikku platvormi analüütikat, konfigureerida globaalseid seadeid ja teostada järelevalvet kõigi modereerimistegevuste üle.
+- **`/banned`** - Spetsiaalne marsruut, kuhu suunatakse blokeeritud kasutajad, takistades neil juurdepääsu ülejäänud rakendusele.
 
 ---
 
@@ -152,7 +169,7 @@ Kui rakendus töötab, saad külastada järgmisi peamisi marsruute:
 
 Siin on kõik projektis saadaolevad skriptid ja käsud:
 
-### Paketi skriptid (käivita käskudega `bun run <script>`)
+### Paketi skriptid (käivitage käskudega `bun run <script>`)
 - `dev` - Käivitab Next.js arendusserveri Turbopackiga.
 - `dev:all` - Käivitab nii Next.js serveri kui ka taustal puhastusprotsessi (cleanup worker).
 - `worker` - Käivitab iseseisva taustal puhastusprotsessi (`bun utils/cleanup-worker.ts`).

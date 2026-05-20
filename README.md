@@ -130,21 +130,38 @@ stripe listen --forward-to localhost:3000/api/webhook/stripe
 
 ---
 
-## Available Pages / Navigation
+## Available Pages & Access Control
 
-Once the app is running, you can visit the following key routes:
+The application uses role-based access control (RBAC). Here is a breakdown of the available routes and what you can do on them based on your role:
 
-- **`/`** - Home / Landing Page
-- **`/sign-in`** & **`/sign-up`** - Authentication pages
-- **`/chat`** - Real-time chat interface
-- **`/profile`** - User profile management
-- **`/admin`** - Admin dashboard (Requires admin role)
-- **`/staff`** & **`/moderator`** - Role-specific dashboards
-- **`/new-post`** - Create new content
-- **`/notifications`** - View user alerts
-- **`/subscription`** - Manage billing and Stripe plans
-- **`/search`** - Search functionality
-- **`/rules`**, **`/privacy`**, **`/terms`** - Legal and platform information
+### Public / Guest
+These pages are accessible to anyone, even without an account.
+- **`/`** - **Home / Landing Page:** View the main feed, trending posts, and general platform info.
+- **`/sign-in`**, **`/sign-up`** - **Authentication:** Log in to an existing account or create a new one.
+- **`/forgot-password`**, **`/reset-password`** - **Account Recovery:** Restore access to your account.
+- **`/[username]`** - **Public Profile:** View a specific user's public profile, their posts, and followers.
+- **`/post/[id]`** - **Detailed Post View:** Read a specific post in detail, view its comments, and see its metadata.
+- **`/search`** - **Search:** Find posts, tags, or other users.
+- **`/rules`**, **`/privacy`**, **`/terms`** - **Legal & Info:** Read the platform's terms of service, privacy policy, and community rules.
+
+### Logged-in User
+Requires an active account. Users can do everything a Guest can, plus:
+- **`/chat`** - **Chat Hub:** View all your active direct messages and conversations.
+- **`/chat/[id]`** - **Direct Messaging:** Chat privately with a specific user in real-time.
+- **`/profile`** - **Profile Management:** Edit your personal information, avatar, banner, and account settings.
+- **`/new-post`** - **Create Post:** Access the editor to write, format, and publish new content.
+- **`/notifications`** - **Alerts:** Check likes, comments, mentions, and system notifications.
+- **`/subscription`** - **Billing & Plans:** Manage your premium subscriptions and Stripe payment methods.
+
+### Staff & Moderator
+Requires `staff` or `moderator` role. Can do everything a User can, plus:
+- **`/staff`** - **Staff Dashboard:** Access internal staff guidelines, tools, and basic platform analytics.
+- **`/moderator`** - **Moderator Dashboard:** Review reported posts, handle user disputes, delete inappropriate content, and issue warnings.
+
+### Admin
+Requires the `admin` role. Has unrestricted access to the entire platform.
+- **`/admin`** - **Admin Dashboard:** Full system control. Manage user roles, ban/unban users, view detailed platform analytics, configure global settings, and oversee all moderation actions.
+- **`/banned`** - A special route where banned users are redirected, preventing them from accessing the rest of the application.
 
 ---
 
