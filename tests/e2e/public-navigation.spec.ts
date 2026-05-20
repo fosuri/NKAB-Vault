@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("public navigation", () => {
+  // Verifies that the public feed layout renders correctly and that the search modal can be opened.
   test("renders the public feed shell and opens search", async ({ page }) => {
     await page.goto("/");
 
@@ -14,6 +15,7 @@ test.describe("public navigation", () => {
     await expect(page.getByText("Start typing to see matching posts.")).toBeVisible();
   });
 
+  // Checks that users can perform a search from the header dialog and navigate to the full search results page.
   test("submits a search from the header dialog", async ({ page }) => {
     await page.route("**/api/posts/search?**", async (route) => {
       await route.fulfill({
@@ -32,6 +34,7 @@ test.describe("public navigation", () => {
     await expect(page).toHaveURL(/\/search\?q=vault$/);
   });
 
+  // Ensures that the sign in page links to the Privacy Policy and Terms of Service, and that these pages render correctly.
   test("shows public legal pages from auth form links", async ({ page }) => {
     await page.goto("/sign-in");
 

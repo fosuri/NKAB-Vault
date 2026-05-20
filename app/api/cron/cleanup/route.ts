@@ -10,19 +10,11 @@ import {
 } from "@/lib/db/auth-schema";
 
 /**
- * Automated Cleanup Cron Job — runs every 6 hours via Vercel Cron.
- *
- * Responsibilities:
- *  1. Find posts soft-deleted by staff more than 30 days ago.
- *  2. Delete their associated Cloudinary media assets.
- *  3. Delete their admin_action_log entries (targetPostId or targetCommentId).
- *  4. Hard-delete the post records (cascades to post_media, comments, reactions, views, notifications).
- *  5. Find comments soft-deleted by staff more than 30 days ago (not already cascade-deleted).
- *  6. Delete their admin_action_log entries.
- *  7. Hard-delete the comment records.
+ * Automated Cleanup API.
+ * Hard-deletes content soft-deleted over 30 days ago and cleans up associated resources.
  */
 export async function GET(request: NextRequest) {
-  // Security: validate the cron secret so only Vercel (or authorised callers) can trigger this
+  // Validate cron secret
   const authHeader = request.headers.get("authorization");
   const expectedSecret = process.env.CRON_SECRET;
 
@@ -33,11 +25,7 @@ export async function GET(request: NextRequest) {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   try {
-    // =========================================================================
-    // PHASE 1 — Expired soft-deleted POSTS
-    // =========================================================================
-
-    // 1a. Fetch expired posts and their media in one query
+    // Fetch expired posts and their media
     const expiredPosts = await db.query.posts.findMany({
       where: and(
         isNotNull(posts.deletedByStaffAt),
@@ -58,7 +46,7 @@ export async function GET(request: NextRequest) {
     if (expiredPosts.length > 0) {
       const expiredPostIds = expiredPosts.map((p) => p.id);
 
-      // 1b. Delete Cloudinary assets for all expired posts
+      // Delete Cloudinary assets for expired posts
       const allMediaItems = expiredPosts.flatMap((p) => p.media);
       if (allMediaItems.length > 0) {
         const cloudinaryResults = await Promise.allSettled(
@@ -74,16 +62,14 @@ export async function GET(request: NextRequest) {
         ).length;
       }
 
-      // 1c. Delete admin_action_log rows linked to these posts
-      //     (targetPostId foreign key is SET NULL on post deletion, so we must clean first)
+      // Delete admin action logs linked to expired posts
       const deletedPostLogs = await db
         .delete(adminActionLog)
         .where(inArray(adminActionLog.targetPostId, expiredPostIds))
         .returning({ id: adminActionLog.id });
       deletedPostLogsCount = deletedPostLogs.length;
 
-      // 1d. Hard-delete the posts — cascades to:
-      //     post_media, comments, post_reactions, post_views, notifications (postId cascade)
+      // Hard-delete the posts
       const deletedPosts = await db
         .delete(posts)
         .where(inArray(posts.id, expiredPostIds))
@@ -95,11 +81,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // =========================================================================
-    // PHASE 2 — Expired soft-deleted COMMENTS
-    // (posts cascade-delete their comments, so only orphaned ones remain here)
-    // =========================================================================
-
+    // Fetch orphaned expired comments
     const expiredComments = await db
       .select({ id: comments.id })
       .from(comments)
@@ -116,15 +98,14 @@ export async function GET(request: NextRequest) {
     if (expiredComments.length > 0) {
       const expiredCommentIds = expiredComments.map((c) => c.id);
 
-      // 2a. Delete admin_action_log rows linked to these comments
+      // Delete admin action logs linked to expired comments
       const deletedCommentLogs = await db
         .delete(adminActionLog)
         .where(inArray(adminActionLog.targetCommentId, expiredCommentIds))
         .returning({ id: adminActionLog.id });
       deletedCommentLogsCount = deletedCommentLogs.length;
 
-      // 2b. Hard-delete the comment records
-      //     (cascades to notifications that reference them via commentId)
+      // Hard-delete the comment records
       const deletedComments = await db
         .delete(comments)
         .where(inArray(comments.id, expiredCommentIds))
