@@ -1,8 +1,10 @@
-# NKAB-Vault 🚀
+# NKAB-Vault
+
+*Loe seda teistes keeltes: [English](README.md), [Eesti](README.et.md)*
 
 Põhjalik juhend NKAB-Vault projekti allalaadimiseks, seadistamiseks ja käivitamiseks.
 
-## 📋 Eeltingimused
+## Eeltingimused
 
 Enne alustamist veendu, et sinu arvutisse on installitud järgmised programmid. Kui sul neid pole, kasuta allalaadimiseks ja installimiseks allolevaid linke:
 
@@ -16,7 +18,7 @@ Enne alustamist veendu, et sinu arvutisse on installitud järgmised programmid. 
 
 ---
 
-## 🛠️ Installimine ja seadistamine
+## Installimine ja seadistamine
 
 ### 1. Laadi projekt alla
 Klooni repositoorium oma arvutisse:
@@ -34,7 +36,7 @@ bun install
 
 ---
 
-## ⚙️ Keskkonnamuutujad (Environment Variables)
+## Keskkonnamuutujad (Environment Variables)
 
 Projekti juurkataloogi on vaja luua `.env` fail. Selles failis hoitakse kõiki tundlikke võtmeid ja konfiguratsioone, mida rakendus vajab töötamiseks.
 
@@ -70,7 +72,7 @@ CLOUDINARY_API_SECRET=sinu_api_secret
 
 ---
 
-## 🗄️ Andmebaasi seadistamine
+## Andmebaasi seadistamine
 
 Kasutame Dockerit, et lihtsalt luua PostgreSQL andmebaas.
 
@@ -100,7 +102,7 @@ bun ./lib/db/seed-admin.ts --email=sinu-email@example.com
 
 ---
 
-## 🚀 Projekti käivitamine
+## Projekti käivitamine
 
 ### Arendusserver (Development Server)
 Next.js arendusserveri käivitamiseks:
@@ -128,7 +130,7 @@ stripe listen --forward-to localhost:3000/api/webhook/stripe
 
 ---
 
-## 🗺️ Saadaolevad lehed / Navigeerimine
+## Saadaolevad lehed / Navigeerimine
 
 Kui rakendus töötab, saad külastada järgmisi peamisi marsruute:
 
@@ -146,7 +148,7 @@ Kui rakendus töötab, saad külastada järgmisi peamisi marsruute:
 
 ---
 
-## 📜 Täielik skriptide viide
+## Täielik skriptide viide
 
 Siin on kõik projektis saadaolevad skriptid ja käsud:
 
@@ -167,7 +169,7 @@ Siin on kõik projektis saadaolevad skriptid ja käsud:
 
 ---
 
-## 🔗 Kasulikud lingid ja ressursid
+## Kasulikud lingid ja ressursid
 
 Kust saada kõik kolmanda osapoole tööriistad ja API võtmed:
 
@@ -183,4 +185,4 @@ Kust saada kõik kolmanda osapoole tööriistad ja API võtmed:
 - **Better Auth Dokumentatsioon**: [https://better-auth.com/](https://better-auth.com/)
 - **Drizzle ORM**: [https://orm.drizzle.team/](https://orm.drizzle.team/)
 
-Nautige ehitamist NKAB-Vaultiga! 🎉
+Nautige ehitamist NKAB-Vaultiga!

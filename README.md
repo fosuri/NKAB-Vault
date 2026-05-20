@@ -1,8 +1,10 @@
-# NKAB-Vault 🚀
+# NKAB-Vault
+
+*Read this in other languages: [English](README.md), [Eesti](README.et.md)*
 
 A comprehensive guide on how to download, set up, and run the NKAB-Vault project.
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you start, make sure you have the following installed on your machine. If you don't have them, use the links below to download and install them:
 
@@ -16,7 +18,7 @@ Before you start, make sure you have the following installed on your machine. If
 
 ---
 
-## 🛠️ Installation & Setup
+## Installation & Setup
 
 ### 1. Download the Project
 Clone the repository to your local machine:
@@ -34,7 +36,7 @@ bun install
 
 ---
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 You need to create a `.env` file in the root directory of the project. This file will store all the sensitive keys and configuration needed to run the app.
 
@@ -70,7 +72,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 
 ---
 
-## 🗄️ Database Setup
+## Database Setup
 
 We use Docker to easily spin up a PostgreSQL database.
 
@@ -100,7 +102,7 @@ bun ./lib/db/seed-admin.ts --email=your-email@example.com
 
 ---
 
-## 🚀 Running the Project
+## Running the Project
 
 ### Development Server
 To start the Next.js development server:
@@ -128,7 +130,7 @@ stripe listen --forward-to localhost:3000/api/webhook/stripe
 
 ---
 
-## 🗺️ Available Pages / Navigation
+## Available Pages / Navigation
 
 Once the app is running, you can visit the following key routes:
 
@@ -146,7 +148,7 @@ Once the app is running, you can visit the following key routes:
 
 ---
 
-## 📜 Complete Script Reference
+## Complete Script Reference
 
 Here are all the scripts and commands available in the project:
 
@@ -167,7 +169,7 @@ Here are all the scripts and commands available in the project:
 
 ---
 
-## 🔗 Useful Links & Resources
+## Useful Links & Resources
 
 Where to get all the third-party tools and API keys:
 
@@ -183,4 +185,4 @@ Where to get all the third-party tools and API keys:
 - **Better Auth Documentation**: [https://better-auth.com/](https://better-auth.com/)
 - **Drizzle ORM**: [https://orm.drizzle.team/](https://orm.drizzle.team/)
 
-Enjoy building with NKAB-Vault! 🎉
+Enjoy building with NKAB-Vault!
