@@ -1,188 +1,188 @@
 # NKAB-Vault
 
-*Read this in other languages: [English](README.md), [Eesti](README.et.md)*
+*Loe seda teistes keeltes: [English](README.en.md), [Eesti](README.md)*
 
-A comprehensive guide on how to download, set up, and run the NKAB-Vault project.
+Põhjalik juhend NKAB-Vault projekti allalaadimiseks, seadistamiseks ja käivitamiseks.
 
-## Prerequisites
+## Eeltingimused
 
-Before you start, make sure you have the following installed on your machine. If you don't have them, use the links below to download and install them:
+Enne alustamist veendu, et sinu arvutisse on installitud järgmised programmid. Kui sul neid pole, kasuta allalaadimiseks ja installimiseks allolevaid linke:
 
-- **[Bun](https://bun.sh/)** (Recommended) or **[Node.js](https://nodejs.org/)**: The JavaScript runtime and package manager. This project uses `bun` extensively for fast execution and package management.
-- **[Docker](https://www.docker.com/products/docker-desktop/)**: Required to run the PostgreSQL database locally via Docker Compose.
-- **[Git](https://git-scm.com/downloads)**: To clone the repository.
-- **[Stripe CLI](https://docs.stripe.com/stripe-cli)**: Required for testing local webhooks for payments/subscriptions.
+- **[Bun](https://bun.sh/)** (Soovitatav) või **[Node.js](https://nodejs.org/)**: JavaScripti käituskeskkond ja paketikaldur. See projekt kasutab laialdaselt `bun`'i kiireks käivitamiseks ja pakettide haldamiseks.
+- **[Docker](https://www.docker.com/products/docker-desktop/)**: Vajalik PostgreSQL andmebaasi lokaalseks käivitamiseks Docker Compose'i abil.
+- **[Git](https://git-scm.com/downloads)**: Repositooriumi kloonimiseks.
+- **[Stripe CLI](https://docs.stripe.com/stripe-cli)**: Vajalik maksete/tellimuste lokaalsete webhook'ide testimiseks.
 
-> **What if I don't have Bun or Node?**
-> You **must** install at least Node.js to run this Next.js project. However, we highly recommend installing **Bun** since all project scripts are optimized for it. If you use Node, you can swap `bun run` with `npm run` or `npx`, but some scripts like `bun ./lib/db/seed-defaults.ts` will need `tsx` or `ts-node` to run properly with Node.
+> **Mida teha, kui mul ei ole Bun'i ega Node'i?**
+> Selle Next.js projekti käivitamiseks **pead** installima vähemalt Node.js'i. Kuid soovitame tungivalt installida **Bun**'i, kuna kõik projekti skriptid on selle jaoks optimeeritud. Kui kasutad Node'i, võid asendada `bun run` käskudega `npm run` või `npx`, kuid mõned skriptid, nagu `bun ./lib/db/seed-defaults.ts`, vajavad Node'iga õigeks käivitamiseks `tsx`'i või `ts-node`'i.
 
 ---
 
-## Installation & Setup
+## Installimine ja seadistamine
 
-### 1. Download the Project
-Clone the repository to your local machine:
+### 1. Laadi projekt alla
+Klooni repositoorium oma arvutisse:
 ```bash
 git clone <repository-url>
 cd NKAB-Vault
 ```
 
-### 2. Install Dependencies
-Install all required packages using Bun:
+### 2. Installi sõltuvused
+Installi kõik vajalikud paketid, kasutades Bun'i:
 ```bash
 bun install
 ```
-*(If using Node/NPM: `npm install`)*
+*(Kui kasutad Node/NPM-i: `npm install`)*
 
 ---
 
-## Environment Variables
+## Keskkonnamuutujad (Environment Variables)
 
-You need to create a `.env` file in the root directory of the project. This file will store all the sensitive keys and configuration needed to run the app.
+Projekti juurkataloogi on vaja luua `.env` fail. Selles failis hoitakse kõiki tundlikke võtmeid ja konfiguratsioone, mida rakendus vajab töötamiseks.
 
-1. In the root of your project, create a file named `.env`.
-2. Add the following variables into the `.env` file:
+1. Loo oma projekti juurkataloogi fail nimega `.env`.
+2. Lisa `.env` faili järgmised muutujad:
 
 ```env
-# Database Connection (Matches the docker-compose setup)
+# Andmebaasi ühendus (Kattub docker-compose seadistusega)
 DATABASE_URL=postgresql://nkab:123456@localhost:5433/nkab_vault
 
-# Authentication (Better Auth)
-# Generate a secret key (can be any long random string)
+# Autentimine (Better Auth)
+# Loo salajane võti (võib olla mis tahes pikk suvaline string)
 BETTER_AUTH_SECRET=supersecretkey_supersecretkey_supersecretkey_supersecretkey_supersecretkey
 BETTER_AUTH_URL=http://localhost:3000
 NEXT_PUBLIC_BETTER_AUTH_URL=http://localhost:3000
 
-# Google OAuth (For Google Sign-in)
-# Get from: https://console.cloud.google.com/
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+# Google OAuth (Google'iga sisselogimiseks)
+# Saad aadressilt: https://console.cloud.google.com/
+GOOGLE_CLIENT_ID=sinu_google_client_id
+GOOGLE_CLIENT_SECRET=sinu_google_client_secret
 
-# Resend (For sending emails)
-# Get from: https://resend.com/
-RESEND_API_KEY=your_resend_api_key
+# Resend (E-kirjade saatmiseks)
+# Saad aadressilt: https://resend.com/
+RESEND_API_KEY=sinu_resend_api_key
 RESEND_FROM="nkab@resend.dev"
 
-# Cloudinary (For image uploads)
-# Get from: https://cloudinary.com/
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+# Cloudinary (Piltide üleslaadimiseks)
+# Saad aadressilt: https://cloudinary.com/
+CLOUDINARY_CLOUD_NAME=sinu_cloud_name
+CLOUDINARY_API_KEY=sinu_api_key
+CLOUDINARY_API_SECRET=sinu_api_secret
 ```
 
 ---
 
-## Database Setup
+## Andmebaasi seadistamine
 
-We use Docker to easily spin up a PostgreSQL database.
+Kasutame Dockerit, et lihtsalt luua PostgreSQL andmebaas.
 
-### 1. Start the Database
-Run the following command to start the database container in the background:
+### 1. Käivita andmebaas
+Käivita järgmine käsk andmebaasi konteineri taustal käivitamiseks:
 ```bash
 docker compose up -d
 ```
-This will start a Postgres instance on port `5433` using the credentials defined in the `.env` file.
+See käivitab Postgresi instantsi pordil `5433`, kasutades `.env` failis määratletud mandaate.
 
-### 2. Push the Schema to the Database
-Update the database with the current Drizzle ORM schema:
+### 2. Lükka skeem andmebaasi
+Päevita andmebaas praeguse Drizzle ORM skeemiga:
 ```bash
 bunx drizzle-kit push
 ```
 
-### 3. Seed the Database
-Populate the database with default lookup values (roles, access types, etc.):
+### 3. Asusta andmebaas andmetega (Seed)
+Täida andmebaas vaikeväärtustega (rollid, juurdepääsutüübid jne):
 ```bash
 bun ./lib/db/seed-defaults.ts
 ```
 
-Create an admin user (replace the email with your actual email to grant admin rights):
+Loo administraatori kasutaja (asenda e-posti aadress oma tegeliku aadressiga, et anda administraatori õigused):
 ```bash
-bun ./lib/db/seed-admin.ts --email=your-email@example.com
+bun ./lib/db/seed-admin.ts --email=sinu-email@example.com
 ```
 
 ---
 
-## Running the Project
+## Projekti käivitamine
 
-### Development Server
-To start the Next.js development server:
+### Arendusserver (Development Server)
+Next.js arendusserveri käivitamiseks:
 ```bash
 bun dev
 ```
-The application will be available at [http://localhost:3000](http://localhost:3000).
+Rakendus on kättesaadav aadressil [http://localhost:3000](http://localhost:3000).
 
-### Concurrent Workers & Next.js
-To run the Next.js app and the background worker simultaneously:
+### Samaaegsed taustaprotsessid (Workers) ja Next.js
+Next.js rakenduse ja taustal töötava puhastusprotsessi (cleanup worker) üheaegseks käivitamiseks:
 ```bash
 bun run dev:all
 ```
 
-### Stripe Webhooks (Required for Payments)
-If you are testing payments or subscriptions, you need to listen for Stripe webhooks locally. 
-First, login to Stripe CLI:
+### Stripe Webhooks (Vajalik maksete tegemiseks)
+Kui testid makseid või tellimusi, pead Stripe webhooke kuulama lokaalselt. 
+Kõigepealt logi sisse Stripe CLI-sse:
 ```bash
 stripe login
 ```
-Then, forward the events to your local server:
+Seejärel suuna sündmused oma lokaalsesse serverisse:
 ```bash
 stripe listen --forward-to localhost:3000/api/webhook/stripe
 ```
 
 ---
 
-## Available Pages / Navigation
+## Saadaolevad lehed / Navigeerimine
 
-Once the app is running, you can visit the following key routes:
+Kui rakendus töötab, saad külastada järgmisi peamisi marsruute:
 
-- **`/`** - Home / Landing Page
-- **`/sign-in`** & **`/sign-up`** - Authentication pages
-- **`/chat`** - Real-time chat interface
-- **`/profile`** - User profile management
-- **`/admin`** - Admin dashboard (Requires admin role)
-- **`/staff`** & **`/moderator`** - Role-specific dashboards
-- **`/new-post`** - Create new content
-- **`/notifications`** - View user alerts
-- **`/subscription`** - Manage billing and Stripe plans
-- **`/search`** - Search functionality
-- **`/rules`**, **`/privacy`**, **`/terms`** - Legal and platform information
-
----
-
-## Complete Script Reference
-
-Here are all the scripts and commands available in the project:
-
-### Package Scripts (run with `bun run <script>`)
-- `dev` - Starts the Next.js development server with Turbopack.
-- `dev:all` - Runs both the Next.js server and the cleanup worker.
-- `worker` - Runs the standalone background cleanup worker (`bun utils/cleanup-worker.ts`).
-- `build` - Builds the application for production.
-- `start` - Starts the production server.
-- `test` - Runs Jest unit tests.
-- `test:e2e` - Runs Playwright end-to-end tests.
-
-### Database / Drizzle Commands
-- `bunx drizzle-kit studio` - Opens Drizzle Studio (a web UI to view and edit your database).
-- `bunx drizzle-kit push` - Pushes schema changes to your database.
-- `docker exec nkab-postgres pg_dump -U nkab nkab_vault > dump.sql` - Exports a database dump.
-- `cat dump.sql | docker exec -i nkab-postgres psql -U nkab -d nkab_vault` - Imports a database dump.
+- **`/`** - Kodu / Maandumisleht
+- **`/sign-in`** & **`/sign-up`** - Autentimise lehed (Sisselogimine ja registreerimine)
+- **`/chat`** - Reaalajas vestluse (chat) liides
+- **`/profile`** - Kasutajaprofiili haldamine
+- **`/admin`** - Administraatori töölaud (Nõuab administraatori rolli)
+- **`/staff`** & **`/moderator`** - Rollikohased töölauad
+- **`/new-post`** - Uue sisu loomine
+- **`/notifications`** - Kasutaja teavituste vaatamine
+- **`/subscription`** - Arvelduse ja Stripe'i plaanide haldamine
+- **`/search`** - Otsingufunktsioon
+- **`/rules`**, **`/privacy`**, **`/terms`** - Juriidiline ja platvormi puudutav info
 
 ---
 
-## Useful Links & Resources
+## Täielik skriptide viide
 
-Where to get all the third-party tools and API keys:
+Siin on kõik projektis saadaolevad skriptid ja käsud:
+
+### Paketi skriptid (käivita käskudega `bun run <script>`)
+- `dev` - Käivitab Next.js arendusserveri Turbopackiga.
+- `dev:all` - Käivitab nii Next.js serveri kui ka taustal puhastusprotsessi (cleanup worker).
+- `worker` - Käivitab iseseisva taustal puhastusprotsessi (`bun utils/cleanup-worker.ts`).
+- `build` - Ehitab rakenduse tootmiskeskkonna jaoks (production).
+- `start` - Käivitab tootmiskeskkonna serveri.
+- `test` - Käivitab Jesti ühikutestid (unit tests).
+- `test:e2e` - Käivitab Playwright'i end-to-end testid.
+
+### Andmebaasi / Drizzle käsud
+- `bunx drizzle-kit studio` - Avab Drizzle Studio (veebiliides andmebaasi vaatamiseks ja muutmiseks).
+- `bunx drizzle-kit push` - Lükkab skeemi muudatused andmebaasi.
+- `docker exec nkab-postgres pg_dump -U nkab nkab_vault > dump.sql` - Ekspordib andmebaasi varukoopia (dump).
+- `cat dump.sql | docker exec -i nkab-postgres psql -U nkab -d nkab_vault` - Impordib andmebaasi varukoopia (dump).
+
+---
+
+## Kasulikud lingid ja ressursid
+
+Kust saada kõik kolmanda osapoole tööriistad ja API võtmed:
 
 - **Bun**: [https://bun.sh/](https://bun.sh/)
 - **Node.js**: [https://nodejs.org/](https://nodejs.org/)
 - **Docker Desktop**: [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
-- **PostgreSQL (General info)**: [https://www.postgresql.org/](https://www.postgresql.org/)
+- **PostgreSQL (Üldinfo)**: [https://www.postgresql.org/](https://www.postgresql.org/)
 - **Google Cloud Console (Google Auth)**: [https://console.cloud.google.com/](https://console.cloud.google.com/)
-- **Resend (Email Service)**: [https://resend.com/](https://resend.com/)
-- **Cloudinary (Image Hosting)**: [https://cloudinary.com/](https://cloudinary.com/)
-- **Stripe (Payments)**: [https://stripe.com/](https://stripe.com/)
+- **Resend (E-posti teenus)**: [https://resend.com/](https://resend.com/)
+- **Cloudinary (Piltide majutamine)**: [https://cloudinary.com/](https://cloudinary.com/)
+- **Stripe (Maksed)**: [https://stripe.com/](https://stripe.com/)
 - **Stripe CLI**: [https://docs.stripe.com/stripe-cli](https://docs.stripe.com/stripe-cli)
-- **Better Auth Documentation**: [https://better-auth.com/](https://better-auth.com/)
+- **Better Auth Dokumentatsioon**: [https://better-auth.com/](https://better-auth.com/)
 - **Drizzle ORM**: [https://orm.drizzle.team/](https://orm.drizzle.team/)
 
-Enjoy building with NKAB-Vault!
+Nautige ehitamist NKAB-Vaultiga!
