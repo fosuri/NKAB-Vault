@@ -21,6 +21,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Message = {
   id: string;
@@ -61,6 +69,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -264,7 +273,6 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
   };
 
   const handleDeleteConversation = async () => {
-    if (!confirm("Are you sure you want to delete this entire conversation?")) return;
     try {
       const result = await deleteConversationAction(conversationId);
       if (result.success) {
@@ -308,12 +316,37 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={handleDeleteConversation} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
+            <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
               <Trash2 className="mr-2 h-4 w-4 shrink-0" />
               <span className="truncate">Delete Chat</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Chat</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this entire conversation? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false);
+                  handleDeleteConversation();
+                }}
+              >
+                Delete Chat
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Message List Area */}

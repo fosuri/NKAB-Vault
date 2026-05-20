@@ -7,6 +7,15 @@ import { ChevronDown, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { clearMyAdminHistoryAction } from "@/lib/actions/admin";
 import { ROLES, ADMIN_ACTION_TYPES } from "@/lib/db/auth-schema";
 import { ROLE_NAMES, UserRow, LogRow, ActorRole } from "./types";
@@ -35,6 +44,7 @@ export function AdminActionHistory({
   // State for filtering and navigation
   const [historySearchQuery, setHistorySearchQuery] = useState("");
   const [historyPage, setHistoryPage] = useState(1);
+  const [isClearHistoryOpen, setIsClearHistoryOpen] = useState(false);
   const [historySort, setHistorySort] = useState<{
     key: "createdAt" | "actionType" | "targetUserName" | "details";
     direction: "asc" | "desc";
@@ -175,19 +185,38 @@ export function AdminActionHistory({
 
           {/* Feature to clear personal moderation history */}
           {(!logUserId || logUserId === currentUserId) ? (
-            <Button
-              variant="outline"
-              disabled={!myActionHistory.length || isPending}
-              onClick={() => {
-                if (!window.confirm("Clear your entire moderation history?")) {
-                  return;
-                }
-
-                runAction(() => clearMyAdminHistoryAction(), "History cleared");
-              }}
-            >
-              Clear my history
-            </Button>
+            <Dialog open={isClearHistoryOpen} onOpenChange={setIsClearHistoryOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  disabled={!myActionHistory.length || isPending}
+                >
+                  Clear my history
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Clear moderation history</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to clear your entire moderation history? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsClearHistoryOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      setIsClearHistoryOpen(false);
+                      runAction(() => clearMyAdminHistoryAction(), "History cleared");
+                    }}
+                  >
+                    Clear history
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           ) : null}
         </div>
       </div>
