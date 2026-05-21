@@ -47,12 +47,16 @@ test.describe("public interactions", () => {
     await expect.poll(() => page.evaluate(() => window.localStorage.getItem("theme"))).toBe("dark");
   });
 
-  // Checks that the footer correctly links to the contributors' GitHub profiles.
-  test("exposes footer contributor links", async ({ page }) => {
+  // Checks that the footer correctly links to the contributors' GitHub profiles and legal pages.
+  test("exposes footer contributor and legal links", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.getByRole("link", { name: /fosuri github/i })).toHaveAttribute("href", "https://github.com/fosuri");
     await expect(page.getByRole("link", { name: /arseni github/i })).toHaveAttribute("href", "https://github.com/ArseniBogatorjov");
+
+    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Terms of Service" })).toHaveAttribute("href", "/terms");
+    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy");
+    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Rules" })).toHaveAttribute("href", "/rules");
   });
 
   // Verifies that authentication links are accessible via the sidebar menu on mobile devices.
