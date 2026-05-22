@@ -104,7 +104,7 @@ export const auth = betterAuth({
 
           if (userRecord) {
             // Determine if the attempt failed based on response context
-            // @ts-ignore
+            // @ts-expect-error ctx.returned
             const returned = ctx.context.returned || ctx.returned;
             const isError = returned instanceof APIError || (returned && returned.status && returned.status !== 200) || (returned && returned.error);
 

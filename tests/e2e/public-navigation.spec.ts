@@ -40,7 +40,7 @@ test.describe("public navigation", () => {
 
     await expect(page.getByRole("main").getByRole("link", { name: /privacy policy/i })).toHaveAttribute("href", "/privacy");
 
-    await page.getByRole("link", { name: /terms of service/i }).click();
+    await page.getByRole("main").getByRole("link", { name: /terms of service/i }).click();
     await expect(page.getByRole("heading", { name: "Terms of Service" })).toBeVisible();
 
     await page.goto("/privacy");
