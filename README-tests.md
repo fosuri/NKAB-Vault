@@ -32,6 +32,8 @@ The following npm/bun scripts are configured in `package.json` to help you run t
 - `bunx jest --coverage` - Runs tests and generates a detailed coverage report in the terminal.
 
 ### End-to-End Tests (Playwright)
+> **Important:** Before running E2E tests for the first time, you must install the required Playwright browsers by running `bunx playwright install` (or `npx playwright install`).
+
 - `bun run test:e2e` - Runs all Playwright E2E tests in headless mode.
 - `bun run test:e2e:ui` - Opens the Playwright UI mode, which provides a visual interface for exploring, running, and debugging E2E tests.
 

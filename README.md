@@ -183,7 +183,7 @@ Here are all the scripts and commands available in the project:
 - `build` - Builds the application for production.
 - `start` - Starts the production server.
 - `test` - Runs Jest unit tests.
-- `test:e2e` - Runs Playwright end-to-end tests.
+- `test:e2e` - Runs Playwright end-to-end tests. *(Note: Requires running `bunx playwright install` or `npx playwright install` first to download browsers)*
 
 ### Database / Drizzle Commands
 - `bunx drizzle-kit studio` - Opens Drizzle Studio (a web UI to view and edit your database).

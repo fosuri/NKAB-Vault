@@ -183,7 +183,7 @@ Siin on kõik projektis saadaolevad skriptid ja käsud:
 - `build` - Ehitab rakenduse tootmiskeskkonna jaoks (production).
 - `start` - Käivitab tootmiskeskkonna serveri.
 - `test` - Käivitab Jesti ühikutestid (unit tests).
-- `test:e2e` - Käivitab Playwright'i end-to-end testid.
+- `test:e2e` - Käivitab Playwright'i end-to-end testid. *(Märkus: Enne esimest käivitamist on vaja paigaldada brauserid käsuga `bunx playwright install` või `npx playwright install`)*
 
 ### Andmebaasi / Drizzle käsud
 - `bunx drizzle-kit studio` - Avab Drizzle Studio (veebiliides andmebaasi vaatamiseks ja muutmiseks).
