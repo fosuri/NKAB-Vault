@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
+import { Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Carousel,
   CarouselContent,
@@ -20,6 +22,20 @@ type MediaItem = {
 
 interface PostMediaCarouselProps {
   media: MediaItem[];
+}
+
+function getDisplayUrl(item: MediaItem) {
+  return item.resourceType === "video" ? item.secureUrl.replace(/\.mov$/i, ".mp4") : item.secureUrl;
+}
+
+function getDownloadUrl(item: MediaItem) {
+  return getDisplayUrl(item).replace("/upload/", "/upload/fl_attachment/");
+}
+
+function getDownloadFilename(item: MediaItem, index: number) {
+  const filename = item.originalFilename?.trim() || `post-file-${index + 1}`;
+
+  return filename.replace(/[\\/:*?"<>|]+/g, "-");
 }
 
 /**
@@ -70,6 +86,9 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
     return null;
   }
 
+  const currentIndex = current > 0 ? current - 1 : 0;
+  const currentMedia = media[currentIndex] ?? media[0];
+
   return (
     <>
       <Carousel className="w-full" setApi={setApi}>
@@ -83,7 +102,7 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
                     ref={(el) => {
                       videoRefs.current[index] = el;
                     }}
-                    src={item.secureUrl.replace(/\.mov$/i, ".mp4")}
+                    src={getDisplayUrl(item)}
                     controls
                     className="h-full w-full bg-black object-contain"
                   />
@@ -108,12 +127,26 @@ export function PostMediaCarousel({ media }: PostMediaCarouselProps) {
           </>
         )}
       </Carousel>
-      {/* Pagination Feedback */}
-      {media.length > 1 && count > 0 && (
-        <div className="mt-3 text-center text-sm font-medium text-muted-foreground">
-          File {current} of {count}
-        </div>
-      )}
+      <div className="mt-3 flex items-center justify-between gap-3">
+        {/* Pagination Feedback */}
+        {media.length > 1 && count > 0 ? (
+          <div className="text-sm font-medium text-muted-foreground">
+            File {current} of {count}
+          </div>
+        ) : (
+          <div />
+        )}
+        <Button asChild variant="outline" size="sm">
+          <a
+            href={getDownloadUrl(currentMedia)}
+            download={getDownloadFilename(currentMedia, currentIndex)}
+            aria-label={`Download ${getDownloadFilename(currentMedia, currentIndex)}`}
+          >
+            <Download className="size-4" />
+            Download
+          </a>
+        </Button>
+      </div>
     </>
   );
 }
