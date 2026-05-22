@@ -10,6 +10,7 @@ import {
   MESSAGE_MEDIA_TYPES,
 } from "@/lib/db/auth-schema";
 import { getSession } from "@/lib/auth/auth-server";
+import { ensureCanStartChat } from "@/lib/auth/moderation";
 import { cloudinary } from "@/lib/cloudinary";
 
 /**
@@ -31,6 +32,9 @@ export async function getOrCreateConversationAction(targetUserId: string) {
   if (currentUserId === targetUserId) {
     return { error: "You cannot chat with yourself" };
   }
+
+  const modCheck = await ensureCanStartChat(currentUserId);
+  if (!modCheck.allowed) return { error: modCheck.error };
 
   // 1. Check for existing shared conversation between the two users
   const currentUserParticipant = await db.query.conversationParticipants.findMany({
@@ -197,6 +201,9 @@ export async function sendMessageAction(
   }
 
   const userId = session.user.id;
+
+  const modCheck = await ensureCanStartChat(userId);
+  if (!modCheck.allowed) return { error: modCheck.error };
 
   // Participant check
   const participants = await db.query.conversationParticipants.findMany({

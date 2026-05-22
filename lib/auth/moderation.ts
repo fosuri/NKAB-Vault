@@ -151,3 +151,18 @@ export async function ensureCanCreateComment(userId: string) {
 
   return { allowed: true } as const;
 }
+
+/**
+ * Validates if a user is eligible to start or send messages in private chats.
+ */
+export async function ensureCanStartChat(userId: string) {
+  const state = await getUserModerationState(userId);
+
+  if (!state) return { allowed: false, error: "User not found" } as const;
+
+  if (state.activeBan) return { allowed: false, error: "Your account is banned" } as const;
+
+  if (state.activeMute) return { allowed: false, error: "Your account is muted. You cannot start chats or send messages." } as const;
+
+  return { allowed: true } as const;
+}

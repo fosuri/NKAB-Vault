@@ -275,7 +275,7 @@ export function AdminActionHistory({
 
               return (
                 <tr key={item.id} className="border-t border-border/40">
-                  <td className="py-2 pr-4 whitespace-nowrap">{item.createdAt.toLocaleString()}</td>
+                  <td suppressHydrationWarning className="py-2 pr-4 whitespace-nowrap">{item.createdAt.toLocaleString()}</td>
                   <td className="py-2 pr-4 whitespace-nowrap">{item.actionType}</td>
                   <td className="py-2 pr-4 truncate" title={item.targetUserName ?? "-"}>{item.targetUserName ?? "-"}</td>
                   <td 
