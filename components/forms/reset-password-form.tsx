@@ -22,7 +22,7 @@ import * as z from "zod";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { authClient } from "@/lib/auth/auth-client";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -53,6 +53,8 @@ export function ResetPasswordForm({
   const token = searchParams.get("token") as string;
   
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -109,14 +111,29 @@ export function ResetPasswordForm({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="password"
-                      type="password"
-                      placeholder="Enter your new password"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your new password"
+                        className="pr-10"
+                        required
+                      />
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
+                          onClick={() => setShowPassword((v) => !v)}
+                        >
+                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </Button>
+                      )}
+                    </div>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
@@ -131,14 +148,29 @@ export function ResetPasswordForm({
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel htmlFor="confirmPassword">Confirm Password</FieldLabel>
-                    <Input
-                      {...field}
-                      aria-invalid={fieldState.invalid}
-                      id="confirmPassword"
-                      type="password"
-                      placeholder="Confirm your new password"
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        aria-invalid={fieldState.invalid}
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your new password"
+                        className="pr-10"
+                        required
+                      />
+                      {field.value && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                          className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </Button>
+                      )}
+                    </div>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
