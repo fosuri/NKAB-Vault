@@ -84,7 +84,7 @@ export async function createCheckoutSession() {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/subscription?success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/subscription?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/subscription?canceled=true`,
     });
 
@@ -94,5 +94,51 @@ export async function createCheckoutSession() {
   } catch (error: unknown) {
     console.error(error);
     return { error: "Payment gateway error" };
+  }
+}
+
+/**
+ * Securely verifies a Stripe Checkout Session ID.
+ * Ensures the session exists, is completed/paid, and belongs to the active authenticated user.
+ */
+export async function verifyCheckoutSession(sessionId: string) {
+  if (!sessionId || typeof sessionId !== "string") {
+    return { error: "Invalid session ID" };
+  }
+
+  const session = await getSession();
+  if (!session?.user?.id) {
+    return { error: "Not authenticated" };
+  }
+
+  try {
+    // 1. Fetch the checkout session details directly from Stripe
+    const stripeSession = await stripe.checkout.sessions.retrieve(sessionId);
+
+    // 2. Validate user identity matches the Stripe session references
+    const isReferenceMatch = stripeSession.client_reference_id === session.user.id;
+    const isEmailMatch = stripeSession.customer_email === session.user.email || 
+                          stripeSession.customer_details?.email === session.user.email;
+
+    if (!isReferenceMatch && !isEmailMatch) {
+      return { error: "Session validation failed: account mismatch" };
+    }
+
+    // 3. Verify payment is completed/paid
+    const isPaid = stripeSession.payment_status === "paid";
+    const isComplete = stripeSession.status === "complete";
+
+    if (!isPaid && !isComplete) {
+      return { error: "Payment not completed" };
+    }
+
+    return {
+      success: true,
+      customerEmail: stripeSession.customer_details?.email || stripeSession.customer_email || session.user.email,
+      planName: "Pro Tier",
+    };
+  } catch (error: unknown) {
+    console.error("Error verifying checkout session:", error);
+    return { error: "Payment verification error" };
   }
 }

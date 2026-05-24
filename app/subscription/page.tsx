@@ -2,6 +2,7 @@ import { PricingCard } from "@/components/pricing-card"
 import { getSession } from "@/lib/auth/auth-server"
 import { db } from "@/lib/db/db"
 import { SUBSCRIPTION_STATUSES } from "@/lib/db/auth-schema";
+import { SubscriptionSuccessModal } from "@/components/subscription-success-modal";
 
 /**
  * Subscription Pricing Page.
@@ -68,6 +69,7 @@ export default async function PricingPage() {
           />
         </div>
       </div>
+      <SubscriptionSuccessModal />
     </div>
   )
 }

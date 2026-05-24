@@ -36,7 +36,7 @@ export default function RulesPage() {
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-2">
                 <li>No personal attacks or insults</li>
                 <li>No discrimination based on race, gender, religion, or orientation</li>
-                <li>Debate the idea, don't attack the person</li>
+                <li>Debate the idea, don&apos;t attack the person</li>
               </ul>
             </div>
           </div>

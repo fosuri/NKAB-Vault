@@ -62,7 +62,7 @@ export default function PrivacyPolicyPage() {
               </p>
               <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-2">
                 <li>To create and maintain your account.</li>
-                <li>To display content you've uploaded based on your access settings.</li>
+                <li>To display content you&apos;ve uploaded based on your access settings.</li>
                 <li>To respond to your questions or requests.</li>
               </ul>
             </div>

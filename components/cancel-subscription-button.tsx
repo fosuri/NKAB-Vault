@@ -44,8 +44,10 @@ export function CancelSubscriptionButton({
       } else {
         toast.success("Subscription cancelled successfully.");
         setIsOpen(false);
+        // Redirect to subscription dashboard with unsubscription success parameters
+        window.location.assign("/subscription?canceled_success=true");
       }
-    } catch (error) {
+    } catch {
       toast.error("An unexpected error occurred.");
     } finally {
       setIsLoading(false);
