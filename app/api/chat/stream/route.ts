@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
    */
   const stream = new ReadableStream({
     start(controller) {
-      const listener = (message: any) => {
+      const listener = (message: unknown) => {
         controller.enqueue(
           new TextEncoder().encode(`data: ${JSON.stringify(message)}\n\n`)
         );
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         chatEventEmitter.off(eventName, listener);
         try {
           controller.close();
-        } catch (e) {
+        } catch {
           // Ignore close errors
         }
       });

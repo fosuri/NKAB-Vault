@@ -70,17 +70,35 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
   const [isSending, setIsSending] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Scroll to the latest message automatically
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Scroll to the latest message automatically without scrolling the whole page
+  const scrollToBottom = (behavior: "smooth" | "auto" = "smooth") => {
+    if (scrollContainerRef.current) {
+      const { scrollHeight, clientHeight } = scrollContainerRef.current;
+      if (scrollHeight > clientHeight) {
+        scrollContainerRef.current.scrollTo({
+          top: scrollHeight,
+          behavior,
+        });
+      }
+    }
   };
 
+  // Instant scroll on initial load or conversation change
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom("auto");
+  }, [conversationId]);
+
+  // Smooth scroll when messages change or isSending state changes
+  useEffect(() => {
+    // A tiny timeout ensures the DOM has updated and measured the new elements
+    const timer = setTimeout(() => {
+      scrollToBottom("smooth");
+    }, 50);
+    return () => clearTimeout(timer);
   }, [messages, isSending]);
 
   // Read Status Management: Marks messages as read when the component mounts or updates
@@ -91,7 +109,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
         try {
           const { markConversationMessagesAsReadAction } = await import("@/lib/actions/chat");
           await markConversationMessagesAsReadAction(conversationId);
-        } catch (e) {
+        } catch {
           console.error("Failed to mark messages as read");
         }
       }
@@ -122,7 +140,18 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
           setMessages((prev) => {
             if (prev.some((m) => m.id === data.id)) return prev;
             // Remove optimistic placeholder if it matches the incoming message
-            const withoutTemp = prev.filter(m => !(m.id.startsWith('temp-') && m.senderId === data.senderId && m.content === data.content));
+            const withoutTemp = prev.filter(m => {
+              if (!m.id.startsWith('temp-') || m.senderId !== data.senderId) {
+                return true;
+              }
+              const isContentMatch = m.content === data.content || 
+                (m.content === null && data.content === "") || 
+                (m.content === "" && data.content === null);
+              const isMediaMatch = m.mediaUrl === data.mediaUrl || 
+                (m.mediaUrl?.startsWith('blob:') && !!data.mediaUrl) || 
+                (!m.mediaUrl && !data.mediaUrl);
+              return !(isContentMatch && isMediaMatch);
+            });
             return [...withoutTemp, data];
           });
         }
@@ -148,6 +177,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     ) {
       setMessages(initialMessages);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessages]);
 
   // Handle local file selection with size limit validation
@@ -202,20 +232,25 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     if ((!inputValue.trim() && !selectedFile) || isSending) return;
 
     const content = inputValue.trim();
+    const fileToUpload = selectedFile;
+
     setIsSending(true);
-
-    let mediaData = null;
-    if (selectedFile) {
-      mediaData = await uploadToCloudinary(selectedFile);
-      if (!mediaData) {
-        toast.error("Failed to upload media");
-        setIsSending(false);
-        return;
-      }
-    }
-
     setInputValue("");
     setSelectedFile(null);
+
+    // Create a local blob URL for immediate optimistic UI preview
+    let localPreviewUrl: string | null = null;
+    let optimisticMediaTypeId: number | null = null;
+    if (fileToUpload) {
+      localPreviewUrl = URL.createObjectURL(fileToUpload);
+      if (fileToUpload.type.startsWith("video/")) {
+        optimisticMediaTypeId = MESSAGE_MEDIA_TYPES.VIDEO;
+      } else if (fileToUpload.type.startsWith("image/")) {
+        optimisticMediaTypeId = MESSAGE_MEDIA_TYPES.IMAGE;
+      } else {
+        optimisticMediaTypeId = MESSAGE_MEDIA_TYPES.FILE;
+      }
+    }
 
     // Optimistic placeholder
     const optimisticMessage: Message = {
@@ -223,9 +258,9 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
       conversationId,
       senderId: currentUserId,
       content: content || null,
-      mediaUrl: mediaData?.url || null,
-      mediaTypeId: mediaData?.resourceType === "video" ? MESSAGE_MEDIA_TYPES.VIDEO : mediaData?.resourceType === "image" ? MESSAGE_MEDIA_TYPES.IMAGE : mediaData?.resourceType === "file" ? MESSAGE_MEDIA_TYPES.FILE : null,
-      mediaPublicId: mediaData?.publicId || null,
+      mediaUrl: localPreviewUrl,
+      mediaTypeId: optimisticMediaTypeId,
+      mediaPublicId: null,
       isRead: false,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -238,7 +273,19 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
 
     setMessages(prev => [...prev, optimisticMessage]);
 
+    let mediaData = null;
     try {
+      if (fileToUpload) {
+        mediaData = await uploadToCloudinary(fileToUpload);
+        if (!mediaData) {
+          toast.error("Failed to upload media");
+          setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+          setIsSending(false);
+          if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
+          return;
+        }
+      }
+
       const result = await sendMessageAction(
         conversationId,
         content,
@@ -250,11 +297,15 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
         toast.error(result.error || "Failed to send message");
         setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
       }
-    } catch (error) {
+    } catch {
       toast.error("An error occurred while sending");
       setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
     } finally {
       setIsSending(false);
+      // Clean up the local blob URL to avoid memory leaks
+      if (localPreviewUrl) {
+        URL.revokeObjectURL(localPreviewUrl);
+      }
     }
   };
 
@@ -350,7 +401,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
       </div>
 
       {/* Message List Area */}
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
         {messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm italic">
             No messages yet. Send a message to start the conversation!
@@ -384,14 +435,25 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
                     {message.mediaUrl && (
                       <div className="mb-2 max-w-[200px] sm:max-w-sm rounded-lg overflow-hidden">
                         {message.mediaTypeId === MESSAGE_MEDIA_TYPES.VIDEO ? (
-                          <video src={message.mediaUrl} controls className="w-full h-auto object-cover" />
+                          <video 
+                            src={message.mediaUrl} 
+                            controls 
+                            className="w-full h-auto object-cover" 
+                            onLoadedMetadata={() => scrollToBottom("smooth")}
+                          />
                         ) : (
-                          <img src={message.mediaUrl} alt="Attachment" className="w-full h-auto object-cover" />
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img 
+                            src={message.mediaUrl} 
+                            alt="Attachment" 
+                            className="w-full h-auto object-cover" 
+                            onLoad={() => scrollToBottom("smooth")}
+                          />
                         )}
                       </div>
                     )}
                     {/* Text Content */}
-                    {message.content && <p className="break-words text-sm sm:text-base">{message.content}</p>}
+                    {message.content && <p className="wrap-break-word text-sm sm:text-base">{message.content}</p>}
                   </div>
                 </div>
                 <span className="text-[10px] text-muted-foreground mt-1 px-1" suppressHydrationWarning>
@@ -403,11 +465,10 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
         )}
         {/* Loading Indicator for outgoing messages */}
         {isSending && (
-          <div className="self-end items-end text-muted-foreground mt-1 flex items-center gap-1 text-xs px-2">
+          <div className="self-end text-muted-foreground mt-1 flex items-center gap-1 text-xs px-2">
             Sending... <Loader2 className="h-3 w-3 animate-spin" />
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* File Attachment Preview */}

@@ -11,7 +11,7 @@ import { subscribeToUserEvents } from "@/lib/client-user-events";
 
 import { NOTIFICATION_TYPES } from "@/lib/db/auth-schema";
 
-type Notification = {
+export type Notification = {
   id: string;
   typeId: number;
   message: string | null;

@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         chatEventEmitter.off(eventName, listener);
         try {
           controller.close();
-        } catch (e) {
+        } catch {
           // Ignore stream close errors
         }
       });

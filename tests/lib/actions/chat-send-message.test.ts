@@ -13,6 +13,9 @@ jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/lib/auth/auth-server", () => ({ getSession: jest.fn() }));
 jest.mock("@/lib/events", () => ({ chatEventEmitter: { emit: jest.fn() } }));
 jest.mock("@/lib/cloudinary", () => ({ cloudinary: { uploader: { destroy: jest.fn() } } }));
+jest.mock("@/lib/auth/moderation", () => ({
+  ensureCanStartChat: jest.fn().mockResolvedValue({ allowed: true }),
+}));
 jest.mock("@/lib/db/db", () => ({
   db: {
     query: { conversationParticipants: { findMany: jest.fn() } },

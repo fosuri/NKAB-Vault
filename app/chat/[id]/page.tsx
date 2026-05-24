@@ -1,9 +1,9 @@
 import { getConversationMessagesAction } from "@/lib/actions/chat";
 import { getSession } from "@/lib/auth/auth-server";
 import { db } from "@/lib/db/db";
-import { eq, and, ne } from "drizzle-orm";
-import { conversationParticipants, user } from "@/lib/db/auth-schema";
-import { redirect, notFound } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { conversationParticipants } from "@/lib/db/auth-schema";
+import { redirect } from "next/navigation";
 import { ChatInterface } from "@/components/chat/ChatInterface";
 
 interface PageProps {
