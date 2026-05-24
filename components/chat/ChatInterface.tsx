@@ -48,6 +48,19 @@ type Message = {
   };
 };
 
+const isMatchingOptimisticMessage = (message: Message, incoming: Message) => {
+  if (!message.id.startsWith("temp-") || message.senderId !== incoming.senderId) {
+    return false;
+  }
+
+  const isContentMatch =
+    message.content === incoming.content ||
+    (message.content === null && incoming.content === "") ||
+    (message.content === "" && incoming.content === null);
+
+  return isContentMatch && message.mediaUrl === incoming.mediaUrl;
+};
+
 type ChatInterfaceProps = {
   conversationId: string;
   initialMessages: Message[];
@@ -139,20 +152,17 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
           // New Message Handling with duplicate prevention
           setMessages((prev) => {
             if (prev.some((m) => m.id === data.id)) return prev;
-            // Remove optimistic placeholder if it matches the incoming message
-            const withoutTemp = prev.filter(m => {
-              if (!m.id.startsWith('temp-') || m.senderId !== data.senderId) {
-                return true;
-              }
-              const isContentMatch = m.content === data.content || 
-                (m.content === null && data.content === "") || 
-                (m.content === "" && data.content === null);
-              const isMediaMatch = m.mediaUrl === data.mediaUrl || 
-                (m.mediaUrl?.startsWith('blob:') && !!data.mediaUrl) || 
-                (!m.mediaUrl && !data.mediaUrl);
-              return !(isContentMatch && isMediaMatch);
+
+            const matchingTemp = prev.find((m) => isMatchingOptimisticMessage(m, data));
+            if (!matchingTemp) {
+              return [...prev, data];
+            }
+
+            return prev.map((message) => {
+              if (message.id !== matchingTemp.id) return message;
+
+              return data;
             });
-            return [...withoutTemp, data];
           });
         }
       } catch (error) {
@@ -184,6 +194,7 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      e.target.value = "";
       if (file.size > 20 * 1024 * 1024) {
         toast.error("File must be less than 20MB");
         return;
@@ -238,50 +249,45 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
     setInputValue("");
     setSelectedFile(null);
 
-    // Create a local blob URL for immediate optimistic UI preview
-    let localPreviewUrl: string | null = null;
-    let optimisticMediaTypeId: number | null = null;
-    if (fileToUpload) {
-      localPreviewUrl = URL.createObjectURL(fileToUpload);
-      if (fileToUpload.type.startsWith("video/")) {
-        optimisticMediaTypeId = MESSAGE_MEDIA_TYPES.VIDEO;
-      } else if (fileToUpload.type.startsWith("image/")) {
-        optimisticMediaTypeId = MESSAGE_MEDIA_TYPES.IMAGE;
-      } else {
-        optimisticMediaTypeId = MESSAGE_MEDIA_TYPES.FILE;
-      }
+    const shouldShowOptimisticText = !fileToUpload && !!content;
+    const optimisticMessage: Message | null = shouldShowOptimisticText
+      ? {
+          id: `temp-${Date.now()}`,
+          conversationId,
+          senderId: currentUserId,
+          content,
+          mediaUrl: null,
+          mediaTypeId: null,
+          mediaPublicId: null,
+          isRead: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          sender: {
+            id: currentUserId,
+            name: "You",
+            image: null,
+          }
+        }
+      : null;
+
+    if (optimisticMessage) {
+      setMessages(prev => [...prev, optimisticMessage]);
     }
-
-    // Optimistic placeholder
-    const optimisticMessage: Message = {
-      id: `temp-${Date.now()}`,
-      conversationId,
-      senderId: currentUserId,
-      content: content || null,
-      mediaUrl: localPreviewUrl,
-      mediaTypeId: optimisticMediaTypeId,
-      mediaPublicId: null,
-      isRead: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      sender: {
-        id: currentUserId,
-        name: "You",
-        image: null,
-      }
-    };
-
-    setMessages(prev => [...prev, optimisticMessage]);
 
     let mediaData = null;
     try {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
       if (fileToUpload) {
         mediaData = await uploadToCloudinary(fileToUpload);
         if (!mediaData) {
           toast.error("Failed to upload media");
-          setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+          if (optimisticMessage) {
+            setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+          }
           setIsSending(false);
-          if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
           return;
         }
       }
@@ -295,17 +301,17 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
       );
       if (!result.success) {
         toast.error(result.error || "Failed to send message");
-        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+        if (optimisticMessage) {
+          setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+        }
       }
     } catch {
       toast.error("An error occurred while sending");
-      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      if (optimisticMessage) {
+        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      }
     } finally {
       setIsSending(false);
-      // Clean up the local blob URL to avoid memory leaks
-      if (localPreviewUrl) {
-        URL.revokeObjectURL(localPreviewUrl);
-      }
     }
   };
 
@@ -478,7 +484,17 @@ export function ChatInterface({ conversationId, initialMessages, currentUserId, 
             <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="truncate">{selectedFile.name}</span>
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full shrink-0" onClick={() => setSelectedFile(null)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 rounded-full shrink-0"
+            onClick={() => {
+              setSelectedFile(null);
+              if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+              }
+            }}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
