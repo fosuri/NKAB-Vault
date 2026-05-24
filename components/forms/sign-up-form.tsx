@@ -204,18 +204,16 @@ export function SignUpForm({
                         className="text-sm"
                         required
                       />
-                      {field.value && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
-                          onClick={() => setShowPassword((v) => !v)}
-                        >
-                          {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                        </Button>
-                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                        onClick={() => setShowPassword((v) => !v)}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
                     </div>
                     {/* Visual Checklist for Password Strength */}
                     <div className="flex flex-col gap-1 mt-1 text-xs font-medium">
@@ -263,18 +261,16 @@ export function SignUpForm({
                           className="text-sm"
                           required
                         />
-                        {field.value && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
-                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
-                            onClick={() => setShowConfirmPassword((v) => !v)}
-                          >
-                            {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                          </Button>
-                        )}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-muted-foreground"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </Button>
                       </div>
                       {fieldState.invalid && (
                         <FieldError id={errorId} className="sr-only" errors={[fieldState.error]} />

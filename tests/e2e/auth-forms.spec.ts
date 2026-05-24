@@ -10,7 +10,7 @@ test.describe("auth forms", () => {
     await expect(main.getByText("Welcome back")).toBeVisible();
     await expect(page.getByRole("button", { name: "Login with Google" })).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
 
     await page.getByRole("link", { name: /forgot your password/i }).click();
     await expect(page).toHaveURL(/\/forgot-password$/);
@@ -78,7 +78,7 @@ test.describe("auth forms", () => {
 
     if ((page.viewportSize()?.width ?? 0) < 1024) {
       await expect(page.getByText("At least 8 characters")).toBeVisible();
-      await expect(page.getByLabel("Confirm Password")).toBeVisible();
+      await expect(page.getByLabel("Confirm Password", { exact: true })).toBeVisible();
       return;
     }
 

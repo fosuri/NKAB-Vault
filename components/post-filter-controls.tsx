@@ -55,7 +55,7 @@ export function PostFilterControls({ actionPath, time, contentType, query }: Pos
         {/* Time Filter Selection */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full justify-between font-normal text-foreground">
+            <Button type="button" variant="outline" className="w-full justify-between font-normal text-foreground">
               {TIME_LABELS[selectedTime as string] ?? "Any time"}
               <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
             </Button>
@@ -72,7 +72,7 @@ export function PostFilterControls({ actionPath, time, contentType, query }: Pos
         {/* Content Type Filter Selection */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full justify-between font-normal text-foreground">
+            <Button type="button" variant="outline" className="w-full justify-between font-normal text-foreground">
               {CONTENT_TYPE_LABELS[selectedContentType as string] ?? "Any content"}
               <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
             </Button>
