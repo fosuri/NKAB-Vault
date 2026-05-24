@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Loader2, Search } from "lucide-react";
 
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -53,6 +53,7 @@ export function HeaderSearch({
 
       {/* Search Overlay Content */}
       <DialogContent className="top-4 w-full max-w-2xl translate-y-0 border-none bg-transparent p-0 px-4 ring-0 shadow-none sm:max-w-2xl lg:max-w-3xl md:px-0 [&>button]:hidden">
+        <DialogTitle className="sr-only">Search posts</DialogTitle>
         <div className="rounded-xl border border-input bg-card shadow-lg">
           {/* Search Input Area */}
           <div className="flex h-10 w-full items-center gap-2 border-b border-border/60 px-2">
