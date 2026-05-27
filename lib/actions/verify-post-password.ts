@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/db";
 import { posts, ACCESS_TYPES } from "@/lib/db/auth-schema";
-import { verifyPostPassword as utilVerify } from "@/lib/post-password";
+import { createOneTimePostAccessToken, verifyPostPassword as utilVerify } from "@/lib/post-password";
 
 /**
  * Validates access credentials for protected content.
@@ -15,7 +15,7 @@ import { verifyPostPassword as utilVerify } from "@/lib/post-password";
 export async function verifyPostPassword(
   postId: string,
   enteredPassword: string,
-): Promise<{ valid: boolean; error?: string }> {
+): Promise<{ valid: boolean; error?: string; unlockToken?: string }> {
   // 1. Identify the post and its security state
   const post = await db.query.posts.findFirst({
     where: eq(posts.id, postId),
@@ -35,7 +35,10 @@ export async function verifyPostPassword(
   const isValid = await utilVerify(enteredPassword.trim(), post.password);
   
   if (isValid) {
-    return { valid: true };
+    return {
+      valid: true,
+      unlockToken: createOneTimePostAccessToken(postId, post.password),
+    };
   }
 
   return { valid: false, error: "Incorrect password" };

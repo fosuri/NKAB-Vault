@@ -1,6 +1,6 @@
 import { verifyPostPassword } from "../../../lib/actions/verify-post-password";
 import { db } from "@/lib/db/db";
-import { verifyPostPassword as verifyPasswordValue } from "@/lib/post-password";
+import { createOneTimePostAccessToken, verifyPostPassword as verifyPasswordValue } from "@/lib/post-password";
 
 jest.mock("drizzle-orm", () => ({
   eq: jest.fn((field, value) => ({ field, value })),
@@ -28,6 +28,7 @@ jest.mock("@/lib/db/auth-schema", () => ({
 }));
 
 jest.mock("@/lib/post-password", () => ({
+  createOneTimePostAccessToken: jest.fn(() => "one-time-unlock-token"),
   verifyPostPassword: jest.fn(),
 }));
 
@@ -64,6 +65,7 @@ describe("verifyPostPassword action", () => {
 
     await expect(verifyPostPassword("public-post", "wrong")).resolves.toEqual({ valid: true });
     expect(verifyPasswordValue).not.toHaveBeenCalled();
+    expect(createOneTimePostAccessToken).not.toHaveBeenCalled();
   });
 
   // Allows entry if the post is marked private but the author forgot to set a password.
@@ -72,6 +74,7 @@ describe("verifyPostPassword action", () => {
 
     await expect(verifyPostPassword("private-post", "secret")).resolves.toEqual({ valid: true });
     expect(verifyPasswordValue).not.toHaveBeenCalled();
+    expect(createOneTimePostAccessToken).not.toHaveBeenCalled();
   });
 
   // Verifies that spaces accidentally typed around the password are ignored before checking.
@@ -81,8 +84,10 @@ describe("verifyPostPassword action", () => {
 
     await expect(verifyPostPassword("private-post", "  secret  ")).resolves.toEqual({
       valid: true,
+      unlockToken: "one-time-unlock-token",
     });
     expect(verifyPasswordValue).toHaveBeenCalledWith("secret", "hashed-password");
+    expect(createOneTimePostAccessToken).toHaveBeenCalledWith("private-post", "hashed-password");
   });
 
   // Correctly rejects access if the typed password does not match the stored hash.
@@ -94,5 +99,6 @@ describe("verifyPostPassword action", () => {
       valid: false,
       error: "Incorrect password",
     });
+    expect(createOneTimePostAccessToken).not.toHaveBeenCalled();
   });
 });

@@ -4,7 +4,7 @@
  */
 
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index, integer, unique, serial, uuid, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, integer, unique, serial, uuid } from "drizzle-orm/pg-core";
 
 // ============================================================================
 // LOOKUP TABLES & CONSTANTS

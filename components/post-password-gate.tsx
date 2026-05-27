@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, KeyRound, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { verifyPostPassword } from "@/lib/actions/verify-post-password";
 
 interface PostPasswordGateProps {
   postId: string;
-  onUnlocked: () => void;
+  onUnlocked?: () => void;
 }
 
 /**
@@ -20,6 +21,7 @@ interface PostPasswordGateProps {
  * before granting access to the protected content.
  */
 export function PostPasswordGate({ postId, onUnlocked }: PostPasswordGateProps) {
+  const router = useRouter();
   // Local state for password input and UI visibility toggles
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +41,12 @@ export function PostPasswordGate({ postId, onUnlocked }: PostPasswordGateProps) 
     startTransition(async () => {
       const result = await verifyPostPassword(postId, password);
       if (result.valid) {
-        onUnlocked(); // Notify the parent wrapper to reveal the content
+        onUnlocked?.();
+        if (result.unlockToken) {
+          router.replace(`/post/${postId}?unlock=${encodeURIComponent(result.unlockToken)}`);
+          return;
+        }
+        router.replace(`/post/${postId}`);
       } else {
         // Handle validation errors or incorrect credentials
         setError(result.error ?? "Incorrect password");

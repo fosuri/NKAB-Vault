@@ -23,7 +23,7 @@ declare global {
 }
 
 const WINDOW_MS = 60_000; // 1-minute tracking window
-const MAX_REQUESTS = 200; // Threshold before throttling
+const MAX_REQUESTS = 100; // Threshold before throttling
 const KEY_PREFIX = "global";
 
 // 1. Maintain a persistent store across hot reloads in development

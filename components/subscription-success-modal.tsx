@@ -66,20 +66,11 @@ function SubscriptionSuccessModalContent() {
           cleanUrl();
         });
     } else if (canceledSuccess === "true") {
-      const storageKey = `nkab_vault_sub_cancel_shown`;
-      
-      // Prevent showing again on page reload
-      if (sessionStorage.getItem(storageKey)) {
-        cleanUrl();
-        return;
-      }
-
       // Start the cancellation confirmation flow asynchronously to prevent synchronous render cascades
       Promise.resolve().then(() => {
         setIsOpen(true);
         setVerificationStatus("success_cancel");
       });
-      sessionStorage.setItem(storageKey, "true");
       cleanUrl();
     }
   }, [searchParams]);

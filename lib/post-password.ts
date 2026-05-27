@@ -10,7 +10,11 @@ import crypto from "crypto";
  * Derives a secure 256-bit key from system environment secrets.
  */
 const getKey = (): Buffer => {
-  const secret = process.env.POST_ENCRYPTION_KEY || process.env.BETTER_AUTH_SECRET || "fallback_default_secret_key_123456";
+  const secret = process.env.BETTER_AUTH_SECRET;
+  if (!secret) {
+    throw new Error("BETTER_AUTH_SECRET is required to protect post passwords");
+  }
+
   return crypto.createHash('sha256').update(secret).digest();
 };
 
@@ -72,4 +76,46 @@ export async function verifyPostPassword(password: string, dbValue: string | nul
     return password === dbValue; // Legacy plain-text fallback
   }
   return false;
+}
+
+type OneTimePostAccessToken = {
+  passwordFingerprint: string;
+  postId: string;
+};
+
+declare global {
+  var __nkabPostAccessTokens: Map<string, OneTimePostAccessToken> | undefined;
+}
+
+const postAccessTokens = globalThis.__nkabPostAccessTokens ?? new Map<string, OneTimePostAccessToken>();
+
+if (!globalThis.__nkabPostAccessTokens) {
+  globalThis.__nkabPostAccessTokens = postAccessTokens;
+}
+
+function getPasswordFingerprint(dbValue: string): string {
+  return crypto.createHash("sha256").update(dbValue).digest("base64url");
+}
+
+export function createOneTimePostAccessToken(postId: string, dbValue: string): string {
+  const token = crypto.randomBytes(32).toString("base64url");
+
+  postAccessTokens.set(token, {
+    passwordFingerprint: getPasswordFingerprint(dbValue),
+    postId,
+  });
+
+  return token;
+}
+
+export function consumeOneTimePostAccessToken(postId: string, dbValue: string | null, token: string | undefined): boolean {
+  if (!dbValue || !token) return false;
+
+  const stored = postAccessTokens.get(token);
+  postAccessTokens.delete(token);
+
+  if (!stored || stored.postId !== postId) return false;
+  if (stored.passwordFingerprint !== getPasswordFingerprint(dbValue)) return false;
+
+  return true;
 }

@@ -1,17 +1,23 @@
-import { getActualPassword, protectPassword, verifyPostPassword } from "../../lib/post-password";
+import {
+  consumeOneTimePostAccessToken,
+  createOneTimePostAccessToken,
+  getActualPassword,
+  protectPassword,
+  verifyPostPassword,
+} from "../../lib/post-password";
 
 describe("post password protection", () => {
-  const originalEnv = process.env.POST_ENCRYPTION_KEY;
+  const originalEnv = process.env.BETTER_AUTH_SECRET;
 
   beforeEach(() => {
-    process.env.POST_ENCRYPTION_KEY = "test-encryption-secret";
+    process.env.BETTER_AUTH_SECRET = "test-encryption-secret";
   });
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      delete process.env.POST_ENCRYPTION_KEY;
+      delete process.env.BETTER_AUTH_SECRET;
     } else {
-      process.env.POST_ENCRYPTION_KEY = originalEnv;
+      process.env.BETTER_AUTH_SECRET = originalEnv;
     }
   });
 
@@ -49,5 +55,13 @@ describe("post password protection", () => {
   it("handles missing stored values safely", async () => {
     expect(getActualPassword(null)).toBeNull();
     await expect(verifyPostPassword("anything", null)).resolves.toBe(false);
+  });
+
+  it("creates post access tokens that can only be consumed once", () => {
+    const storedPassword = "hashed-password-bundle";
+    const token = createOneTimePostAccessToken("post-1", storedPassword);
+
+    expect(consumeOneTimePostAccessToken("post-1", storedPassword, token)).toBe(true);
+    expect(consumeOneTimePostAccessToken("post-1", storedPassword, token)).toBe(false);
   });
 });

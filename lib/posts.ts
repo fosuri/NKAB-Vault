@@ -256,16 +256,39 @@ export async function getPostsByUserId(userId: string, viewerUserId?: string) {
 /**
  * Fetches a single post by ID with full engagement metrics (likes, dislikes, reaction state).
  */
-export async function getPostById(postId: string, currentUserId?: string) {
+export async function getPostAccessById(postId: string) {
   const lightweightPost = await db.query.posts.findFirst({
     where: and(eq(posts.id, postId), isNull(posts.deletedByStaffAt)),
-    columns: { id: true, userId: true },
+    columns: { id: true, userId: true, accessTypeId: true, password: true },
   });
 
   if (!lightweightPost) return null;
 
   const moderationState = await getUserModerationState(lightweightPost.userId);
   if (moderationState?.activeBan) return null;
+
+  return lightweightPost;
+}
+
+/**
+ * Fetches a single post by ID with full engagement metrics (likes, dislikes, reaction state).
+ */
+export async function getPostById(
+  postId: string,
+  currentUserId?: string,
+  options: { includeProtectedContent?: boolean } = {},
+) {
+  const lightweightPost = await getPostAccessById(postId);
+
+  if (!lightweightPost) return null;
+
+  if (
+    lightweightPost.accessTypeId === ACCESS_TYPES.PRIVATE &&
+    lightweightPost.password &&
+    !options.includeProtectedContent
+  ) {
+    return null;
+  }
 
   const [post, reactions] = await Promise.all([
     db.query.posts.findFirst({
