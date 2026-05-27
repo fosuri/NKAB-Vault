@@ -2,6 +2,7 @@
 
 import { getSession } from "@/lib/auth/auth-server";
 import { cloudinary } from "@/lib/cloudinary";
+import { getUserCloudinaryFolder } from "@/lib/cloudinary-assets";
 
 /**
  * Cloudinary Security Configuration Actions.
@@ -21,7 +22,7 @@ export async function getCloudinarySignature() {
   const timestamp = Math.round(new Date().getTime() / 1000);
   
   // 2. Isolate uploads in user-specific folders for security
-  const folder = `nkab-vault/${session.user.id}`;
+  const folder = getUserCloudinaryFolder(session.user.id);
 
   // 3. Cryptographic signature generation (Server-side secret)
   const signature = cloudinary.utils.api_sign_request(

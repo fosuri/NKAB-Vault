@@ -51,13 +51,13 @@ describe("deleteMessageAction", () => {
   it("deletes owned message media and emits a delete event", async () => {
     findMessageMock.mockResolvedValue({
       conversationId: "conversation-1",
-      mediaPublicId: "media-1",
+      mediaPublicId: "nkab-vault/user-1/media-1",
       mediaTypeId: 2,
       senderId: "user-1",
     });
 
     await expect(deleteMessageAction("message-1")).resolves.toEqual({ success: true });
-    expect(destroyMock).toHaveBeenCalledWith("media-1", { resource_type: "video" });
+    expect(destroyMock).toHaveBeenCalledWith("nkab-vault/user-1/media-1", { resource_type: "video" });
     expect(chatEventEmitter.emit).toHaveBeenCalledWith("chat:conversation-1", {
       messageId: "message-1",
       type: "delete_message",

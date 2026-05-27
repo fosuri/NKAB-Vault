@@ -40,7 +40,9 @@ describe("deleteConversationAction", () => {
     getSessionMock.mockResolvedValue({ user: { id: "user-1" } } as never);
     findParticipantMock.mockResolvedValue({ id: "participant-1" });
     findParticipantsMock.mockResolvedValue([{ userId: "user-1" }, { userId: "user-2" }]);
-    findMessagesMock.mockResolvedValue([{ mediaPublicId: "media-1", mediaTypeId: 1 }]);
+    findMessagesMock.mockResolvedValue([
+      { mediaPublicId: "nkab-vault/user-1/media-1", mediaTypeId: 1, senderId: "user-1" },
+    ]);
     deleteMock.mockReturnValue({ where: jest.fn().mockResolvedValue(undefined) });
   });
 
@@ -57,7 +59,7 @@ describe("deleteConversationAction", () => {
   // Verifies that deleting a conversation also removes its media files, notifies the other user, and deletes the record.
   it("destroys media, notifies participants, and deletes the conversation", async () => {
     await expect(deleteConversationAction("conversation-1")).resolves.toEqual({ success: true });
-    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("media-1", { resource_type: "image" });
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("nkab-vault/user-1/media-1", { resource_type: "image" });
     expect(chatEventEmitter.emit).toHaveBeenCalledWith("user:user-2", {
       conversationId: "conversation-1",
       type: "delete_conversation",

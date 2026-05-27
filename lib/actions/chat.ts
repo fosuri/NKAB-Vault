@@ -11,7 +11,7 @@ import {
 } from "@/lib/db/auth-schema";
 import { getSession } from "@/lib/auth/auth-server";
 import { ensureCanStartChat } from "@/lib/auth/moderation";
-import { cloudinary } from "@/lib/cloudinary";
+import { destroyUserCloudinaryAsset, validateUserCloudinaryAsset } from "@/lib/cloudinary-assets";
 
 /**
  * Private Messaging and Conversation Orchestration Actions.
@@ -214,6 +214,23 @@ export async function sendMessageAction(
     return { error: "You do not have access to this conversation" };
   }
 
+  let verifiedMedia: Awaited<ReturnType<typeof validateUserCloudinaryAsset>>["asset"] | null = null;
+  if (mediaUrl || mediaType || mediaPublicId) {
+    if (!mediaUrl || !mediaType || !mediaPublicId) {
+      return { error: "Invalid media asset" };
+    }
+
+    const result = await validateUserCloudinaryAsset(userId, {
+      publicId: mediaPublicId,
+      resourceType: mediaType,
+      secureUrl: mediaUrl,
+    });
+    if (result.error) {
+      return { error: result.error };
+    }
+    verifiedMedia = result.asset;
+  }
+
   let newMessageData: any;
 
   // 1. Transactional: Insert message and update conversation 'last activity' timestamp
@@ -222,9 +239,9 @@ export async function sendMessageAction(
       conversationId,
       senderId: userId,
       content,
-      mediaUrl,
-      mediaTypeId: mediaType === "video" ? MESSAGE_MEDIA_TYPES.VIDEO : mediaType === "image" ? MESSAGE_MEDIA_TYPES.IMAGE : mediaType === "file" ? MESSAGE_MEDIA_TYPES.FILE : undefined,
-      mediaPublicId,
+      mediaUrl: verifiedMedia?.secureUrl,
+      mediaTypeId: verifiedMedia?.resourceType === "video" ? MESSAGE_MEDIA_TYPES.VIDEO : verifiedMedia?.resourceType === "image" ? MESSAGE_MEDIA_TYPES.IMAGE : undefined,
+      mediaPublicId: verifiedMedia?.publicId,
     }).returning();
 
     newMessageData = newMessage;
@@ -278,7 +295,7 @@ export async function deleteMessageAction(messageId: string) {
   if (msg.mediaPublicId) {
     try {
       const resourceType = msg.mediaTypeId === MESSAGE_MEDIA_TYPES.VIDEO ? "video" : "image";
-      await cloudinary.uploader.destroy(msg.mediaPublicId, { resource_type: resourceType });
+      await destroyUserCloudinaryAsset(msg.senderId, msg.mediaPublicId, resourceType);
     } catch (error) {
       console.error(error);
     }
@@ -331,7 +348,7 @@ export async function deleteConversationAction(conversationId: string) {
     if (msg.mediaPublicId) {
       try {
         const resourceType = msg.mediaTypeId === MESSAGE_MEDIA_TYPES.VIDEO ? "video" : "image";
-        await cloudinary.uploader.destroy(msg.mediaPublicId, { resource_type: resourceType });
+        await destroyUserCloudinaryAsset(msg.senderId, msg.mediaPublicId, resourceType);
       } catch (error) {
         console.error(error);
       }

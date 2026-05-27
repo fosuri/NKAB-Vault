@@ -8,6 +8,7 @@ import { postMedia, posts, subscriptions, SUBSCRIPTION_STATUSES, ACCESS_TYPES, R
 import { eq, and, inArray } from "drizzle-orm";
 import { ensureCanCreatePost } from "@/lib/auth/moderation";
 import { protectPassword } from "@/lib/post-password";
+import { type ValidatedCloudinaryAsset, validateUserCloudinaryAsset } from "@/lib/cloudinary-assets";
 
 /**
  * Post Submission and Content Lifecycle Actions.
@@ -74,10 +75,27 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
 
   const maxBytes = hasPro ? 20 * 1024 * 1024 : 10 * 1024 * 1024; // 20MB for Pro, 10MB for Free
 
+  const verifiedMedia: Array<ValidatedCloudinaryAsset & { originalFilename?: string | null }> = [];
   for (const item of parsed.data.media) {
-    if (item.bytes && item.bytes > maxBytes) {
+    const result = await validateUserCloudinaryAsset(session.user.id, item);
+    if (result.error) {
+      return { error: result.error };
+    }
+
+    if (result.asset.bytes && result.asset.bytes > maxBytes) {
       return { error: `File size exceeds the limit of ${hasPro ? 20 : 10}MB` };
     }
+
+    verifiedMedia.push({
+      bytes: result.asset.bytes,
+      format: result.asset.format ?? item.format ?? null,
+      height: result.asset.height,
+      originalFilename: item.originalFilename,
+      publicId: result.asset.publicId,
+      resourceType: result.asset.resourceType,
+      secureUrl: result.asset.secureUrl,
+      width: result.asset.width,
+    });
   }
 
   // 5. Atomic Persistence: Ensure Post and Media are created together or not at all
@@ -94,10 +112,10 @@ export async function createPost(payload: CreatePostPayload): Promise<CreatePost
 
     // Relate media records to the newly created post ID
     await tx.insert(postMedia).values(
-      parsed.data.media.map((item, index) => ({
+      verifiedMedia.map((item, index) => ({
         postId,
         publicId: item.publicId,
-        resourceTypeId: item.resourceType === "video" ? RESOURCE_TYPES.VIDEO : item.resourceType === "audio" ? RESOURCE_TYPES.AUDIO : RESOURCE_TYPES.IMAGE,
+        resourceTypeId: item.resourceType === "video" ? RESOURCE_TYPES.VIDEO : RESOURCE_TYPES.IMAGE,
         formatId: item.format === "gif" ? MEDIA_FORMATS.GIF : item.format === "mp4" ? MEDIA_FORMATS.MP4 : item.format === "webm" ? MEDIA_FORMATS.WEBM : item.format === "png" ? MEDIA_FORMATS.PNG : MEDIA_FORMATS.JPEG,
         secureUrl: item.secureUrl,
         width: item.width ?? null,

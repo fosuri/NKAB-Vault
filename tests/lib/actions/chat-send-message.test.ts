@@ -12,7 +12,12 @@ jest.mock("drizzle-orm", () => ({
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/lib/auth/auth-server", () => ({ getSession: jest.fn() }));
 jest.mock("@/lib/events", () => ({ chatEventEmitter: { emit: jest.fn() } }));
-jest.mock("@/lib/cloudinary", () => ({ cloudinary: { uploader: { destroy: jest.fn() } } }));
+jest.mock("@/lib/cloudinary", () => ({
+  cloudinary: {
+    api: { resource: jest.fn() },
+    uploader: { destroy: jest.fn() },
+  },
+}));
 jest.mock("@/lib/auth/moderation", () => ({
   ensureCanStartChat: jest.fn().mockResolvedValue({ allowed: true }),
 }));
@@ -45,12 +50,20 @@ describe("sendMessageAction", () => {
   const findParticipantsMock = db.query.conversationParticipants.findMany as unknown as jest.Mock;
   const transactionMock = db.transaction as unknown as jest.Mock;
   const emitMock = chatEventEmitter.emit as jest.MockedFunction<typeof chatEventEmitter.emit>;
+  const { cloudinary } = jest.requireMock("@/lib/cloudinary") as {
+    cloudinary: { api: { resource: jest.Mock } };
+  };
 
   beforeEach(() => {
     getSessionMock.mockResolvedValue({
       user: { id: "user-1", image: "avatar.png", name: "Alice" },
     } as never);
     findParticipantsMock.mockResolvedValue([{ userId: "user-1" }, { userId: "user-2" }]);
+    cloudinary.api.resource.mockResolvedValue({
+      public_id: "nkab-vault/user-1/media-1",
+      resource_type: "image",
+      secure_url: "https://res.cloudinary.com/demo/image/upload/nkab-vault/user-1/media-1.jpg",
+    });
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -76,12 +89,24 @@ describe("sendMessageAction", () => {
     const tx = txBuilder();
     transactionMock.mockImplementation(async (callback) => callback(tx));
 
-    await expect(sendMessageAction("conversation-1", "Hello", "url", "image", "media-1")).resolves.toEqual({
+    await expect(sendMessageAction(
+      "conversation-1",
+      "Hello",
+      "https://res.cloudinary.com/demo/image/upload/nkab-vault/user-1/media-1.jpg",
+      "image",
+      "nkab-vault/user-1/media-1"
+    )).resolves.toEqual({
       messageId: "message-1",
       success: true,
     });
     expect(tx.values).toHaveBeenCalledWith(
-      expect.objectContaining({ content: "Hello", mediaTypeId: 1, senderId: "user-1" })
+      expect.objectContaining({
+        content: "Hello",
+        mediaPublicId: "nkab-vault/user-1/media-1",
+        mediaTypeId: 1,
+        mediaUrl: "https://res.cloudinary.com/demo/image/upload/nkab-vault/user-1/media-1.jpg",
+        senderId: "user-1",
+      })
     );
     expect(emitMock).toHaveBeenCalledWith("chat:conversation-1", expect.objectContaining({ id: "message-1" }));
     expect(emitMock).toHaveBeenCalledWith("user:user-2", {

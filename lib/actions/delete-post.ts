@@ -4,10 +4,10 @@ import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db/db";
 import { getSession } from "@/lib/auth/auth-server";
-import { cloudinary } from "@/lib/cloudinary";
 import { posts, user, ROLES, adminActionLog, notifications, ADMIN_ACTION_TYPES, NOTIFICATION_TYPES, RESOURCE_TYPES } from "@/lib/db/auth-schema";
 import { getUserModerationState } from "@/lib/auth/moderation";
 import { chatEventEmitter } from "@/lib/events";
+import { destroyUserCloudinaryAsset } from "@/lib/cloudinary-assets";
 
 /**
  * Personal and Administrative Post Deletion Actions.
@@ -85,9 +85,11 @@ export async function deletePost(postId: string): Promise<DeletePostResult> {
     // 5. Media Cleanup & Database Wipe for user self-deletion
     await Promise.allSettled(
       post.media.map((m) =>
-        cloudinary.uploader.destroy(m.publicId, {
-          resource_type: m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
-        })
+        destroyUserCloudinaryAsset(
+          post.userId,
+          m.publicId,
+          m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
+        )
       )
     );
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { and, isNotNull, lt, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/db";
-import { cloudinary } from "@/lib/cloudinary";
+import { destroyUserCloudinaryAsset } from "@/lib/cloudinary-assets";
 import {
   posts,
   comments,
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         isNotNull(posts.deletedByStaffAt),
         lt(posts.deletedByStaffAt, thirtyDaysAgo)
       ),
-      columns: { id: true },
+      columns: { id: true, userId: true },
       with: {
         media: {
           columns: { publicId: true, resourceTypeId: true },
@@ -50,11 +50,14 @@ export async function GET(request: NextRequest) {
       const allMediaItems = expiredPosts.flatMap((p) => p.media);
       if (allMediaItems.length > 0) {
         const cloudinaryResults = await Promise.allSettled(
-          allMediaItems.map((m) =>
-            cloudinary.uploader.destroy(m.publicId, {
-              resource_type:
+          expiredPosts.flatMap((post) =>
+            post.media.map((m) =>
+              destroyUserCloudinaryAsset(
+                post.userId,
+                m.publicId,
                 m.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
-            })
+              )
+            )
           )
         );
         deletedPostMediaCount = cloudinaryResults.filter(

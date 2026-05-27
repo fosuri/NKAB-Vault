@@ -165,8 +165,8 @@ describe("deletePost", () => {
     findPostMock.mockResolvedValue(
       post({
         media: [
-          { publicId: "image-1", resourceTypeId: 1 },
-          { publicId: "video-1", resourceTypeId: 2 },
+          { publicId: "nkab-vault/user-1/image-1", resourceTypeId: 1 },
+          { publicId: "nkab-vault/user-1/video-1", resourceTypeId: 2 },
         ],
         userId: "user-1",
       })
@@ -175,8 +175,8 @@ describe("deletePost", () => {
 
     await expect(deletePost("post-1")).resolves.toEqual({ success: true });
 
-    expect(destroyMock).toHaveBeenCalledWith("image-1", { resource_type: "image" });
-    expect(destroyMock).toHaveBeenCalledWith("video-1", { resource_type: "video" });
+    expect(destroyMock).toHaveBeenCalledWith("nkab-vault/user-1/image-1", { resource_type: "image" });
+    expect(destroyMock).toHaveBeenCalledWith("nkab-vault/user-1/video-1", { resource_type: "video" });
     expect(deleteBuilder.where).toHaveBeenCalledWith({
       field: "posts.id",
       type: "eq",

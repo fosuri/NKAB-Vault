@@ -71,7 +71,11 @@ describe("cleanup cron route", () => {
   // Checks that old or deleted posts, comments, logs, and media files are successfully removed.
   it("deletes expired posts, comments, logs, and media", async () => {
     findPostsMock.mockResolvedValue([
-      { id: "post-1", media: [{ publicId: "video-1", resourceTypeId: 2 }] },
+      {
+        id: "post-1",
+        userId: "user-1",
+        media: [{ publicId: "nkab-vault/user-1/video-1", resourceTypeId: 2 }],
+      },
     ]);
     selectMock.mockReturnValue({
       from: jest.fn().mockReturnThis(),
@@ -91,7 +95,7 @@ describe("cleanup cron route", () => {
       posts: { deleted: 1, logsDeleted: 1, mediaDeletedFromCloudinary: 1 },
       success: true,
     });
-    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("video-1", {
+    expect(cloudinary.uploader.destroy).toHaveBeenCalledWith("nkab-vault/user-1/video-1", {
       resource_type: "video",
     });
   });

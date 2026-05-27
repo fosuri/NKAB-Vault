@@ -2,7 +2,7 @@
 
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { cloudinary } from "@/lib/cloudinary";
+import { destroyUserCloudinaryAsset } from "@/lib/cloudinary-assets";
 import { getSession } from "@/lib/auth/auth-server";
 import {
   getUserModerationState,
@@ -111,9 +111,11 @@ async function purgeUserContentOnBan(targetUserId: string) {
   if (mediaItems.length > 0) {
     await Promise.allSettled(
       mediaItems.map((mediaItem) =>
-        cloudinary.uploader.destroy(mediaItem.publicId, {
-          resource_type: mediaItem.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
-        })
+        destroyUserCloudinaryAsset(
+          targetUserId,
+          mediaItem.publicId,
+          mediaItem.resourceTypeId === RESOURCE_TYPES.VIDEO ? "video" : "image",
+        )
       )
     );
   }
