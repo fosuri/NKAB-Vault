@@ -10,6 +10,8 @@ import { ensureDefaults } from "@/lib/db/ensure-defaults";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import { eq } from "drizzle-orm";
 
+import argon2 from "argon2";
+
 /**
  * Server-side authentication engine for secure session and account management.
  */
@@ -137,6 +139,14 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    password: {
+      hash: async (password) => {
+        return await argon2.hash(password);
+      },
+      verify: async ({ hash, password }) => {
+        return await argon2.verify(hash, password);
+      },
+    },
     // Integration with Resend for transactional emails
     sendResetPassword: async ({ user, url }) => {
       const { error } = await resend.emails.send({
