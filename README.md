@@ -1,6 +1,15 @@
 # NKAB-Vault
 
-*Read this in other languages: [English](README.md), [Eesti](README.et.md)*
+---
+
+**Language / Keel:** [English](README.md) | [Eesti](README.et.md)
+
+**Guides / Juhendid:**
+- **Setup Guide** — [English](README.md) | [Eesti](README.et.md)
+- **Scripts Reference** — [English](README-scripts.md) | [Eesti](README-scripts.et.md)
+- **Testing Guide** — [English](README-tests.md) | [Eesti](README-tests.et.md)
+
+---
 
 A comprehensive guide on how to download, set up, and run the NKAB-Vault project.
 

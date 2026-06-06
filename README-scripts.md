@@ -1,5 +1,16 @@
 # NKAB-Vault Scripts Execution Order
 
+---
+
+**Language / Keel:** [English](README-scripts.md) | [Eesti](README-scripts.et.md)
+
+**Guides / Juhendid:**
+- **Setup Guide** — [English](README.md) | [Eesti](README.et.md)
+- **Scripts Reference** — [English](README-scripts.md) | [Eesti](README-scripts.et.md)
+- **Testing Guide** — [English](README-tests.md) | [Eesti](README-tests.et.md)
+
+---
+
 This guide provides the exact execution order of commands needed to spin up the database, push the schema, seed the initial data, and run the project locally.
 
 All commands must be executed in your terminal from the root directory of the project.

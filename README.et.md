@@ -1,6 +1,15 @@
 # NKAB-Vault
 
-*Loe seda teistes keeltes: [English](README.md), [Eesti](README.et.md)*
+---
+
+**Language / Keel:** [English](README.md) | [Eesti](README.et.md)
+
+**Juhendid / Guides:**
+- **Seadistuse juhend** — [English](README.md) | [Eesti](README.et.md)
+- **Skriptide viide** — [English](README-scripts.md) | [Eesti](README-scripts.et.md)
+- **Testimise juhend** — [English](README-tests.md) | [Eesti](README-tests.et.md)
+
+---
 
 Põhjalik juhend NKAB-Vault projekti allalaadimiseks, seadistamiseks ja käivitamiseks.
 

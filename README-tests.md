@@ -1,5 +1,16 @@
 # Testing Guide for NKAB-Vault
 
+---
+
+**Language / Keel:** [English](README-tests.md) | [Eesti](README-tests.et.md)
+
+**Guides / Juhendid:**
+- **Setup Guide** — [English](README.md) | [Eesti](README.et.md)
+- **Scripts Reference** — [English](README-scripts.md) | [Eesti](README-scripts.et.md)
+- **Testing Guide** — [English](README-tests.md) | [Eesti](README-tests.et.md)
+
+---
+
 This document provides an overview of the testing infrastructure, methods, and coverage in the NKAB-Vault project.
 
 ## Testing Stack
