@@ -5,9 +5,9 @@
 **Language / Keel:** [English](README-tests.md) | [Eesti](README-tests.et.md)
 
 **Guides / Juhendid:**
-- **Setup Guide** — [English](README.md) | [Eesti](README.et.md)
-- **Scripts Reference** — [English](README-scripts.md) | [Eesti](README-scripts.et.md)
-- **Testing Guide** — [English](README-tests.md) | [Eesti](README-tests.et.md)
+- **Setup Guide / Seadistuse juhend** — [English](README.md) | [Eesti](README.et.md)
+- **Scripts Reference / Skriptide viide** — [English](README-scripts.md) | [Eesti](README-scripts.et.md)
+- **Testing Guide / Testimise juhend** — [English](README-tests.md) | [Eesti](README-tests.et.md)
 
 ---
 
